@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tinybuilder-agent"
+version = "0.1.0"
+description = "Experimental local-first coding agent with MCP, Laravel Boost and optional Soup training"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "TinyBuilder contributors" }]
+dependencies = []
+classifiers = ["Programming Language :: Python :: 3"]
+
+[project.scripts]
+tinybuilder = "tinybuilder.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tinybuilder*"]

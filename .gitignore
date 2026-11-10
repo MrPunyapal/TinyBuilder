@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+training/output/
+training/checkpoints/
+*.gguf
+*.safetensors
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example

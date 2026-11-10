@@ -1,0 +1,20 @@
+# Experimental starting recipe; validate with `soup doctor --config training/soup.yaml`
+# The dataset is a tiny format example only, not adequate for useful training.
+base: Qwen/Qwen2.5-Coder-0.5B-Instruct
+task: sft
+
+data:
+  train: ./training/sample-traces.jsonl
+  format: alpaca
+  val_split: 0.1
+
+training:
+  epochs: 1
+  lr: 0.00002
+  batch_size: auto
+  lora:
+    r: 8
+    alpha: 16
+  quantization: 4bit
+
+output: ./training/output
