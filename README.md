@@ -123,6 +123,34 @@ tinybuilder memory delete test_runner --project /path/to/laravel-app
 
 Memory is stored at `~/.tinybuilder/memory.sqlite` by default, scoped by absolute project path. It is a normal SQLite file; safeguard it if you store private preferences or decisions. No conversation history or online documentation is persisted by the runtime.
 
+### Experimental strict JSON tool protocol (opt-in)
+
+The stock Qwen2.5-Coder 0.5B, 1.5B and 3B Ollama tags produced **zero native tool calls** in the [recorded Windows evaluation](benchmarks/results/2026-11-11-windows.md). They sometimes printed JSON-looking examples in text; these were not actions. This does **not** establish that changing the protocol will make those models reliable.
+
+Native tool calling remains the **default**. As an experimental comparison, `--tool-protocol strict-json` asks the model to emit a **single JSON object** (not fenced Markdown), with an exact action shape:
+
+```json
+{"type":"tool","name":"read_file","arguments":{"path":"composer.json"}}
+```
+
+Or a final response:
+
+```json
+{"type":"final","content":"Facts verified from the tool observation."}
+```
+
+The parser accepts **only** the five known local tools (`list_files`, `read_file`, `search_files`, `write_file`, `run_command`). It validates all fields and local argument types before dispatch, rejects ambiguous/malformed/mixed/oversized responses and duplicate keys, and retries a bad response only once. It never interprets fenced JSON or prose as an action. This mode intentionally excludes MCP servers; use native mode for Boost. Permission flags and exact argv allowlists still apply.
+
+PowerShell read-only smoke test, with Ollama running and the model already downloaded:
+
+```powershell
+.\.venv\Scripts\python.exe -m tinybuilder chat 'Read composer.json using tools, then report its package name.' --project $app --model qwen2.5-coder:1.5b --tool-protocol strict-json --verbose
+```
+
+For an explicitly disposable project only, add `--allow-write` to permit edits. For a test command, also use `--allow-exec --exec-command '["php","artisan","test"]'`. Do not give an unrestricted execution flag to untrusted projects. Validate edits with `git diff` and actual Laravel tests; a model's final text is not evidence of work.
+
+Sanitized `--verbose` events now distinguish rejected protocols/arguments, permission denials and failed execution without exposing source contents or generated action arguments. HTTP response errors no longer include returned server error bodies. The strict JSON mode has **not yet been evaluated on the Windows laptop**.
+
 ## Optional Soup experiments
 
 `training/soup.yaml` is a **starter recipe**, based on Soup's documented SFT format, not a validated, benchmarked model. Its two-row `sample-traces.jsonl` exists to show the expected format and is far too small for useful fine-tuning. Use an isolated environment to install and validate Soup:

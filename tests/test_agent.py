@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from tinybuilder.agent import Agent
+from tinybuilder.protocol import ProtocolError
 from tinybuilder.tools import LocalTools
 
 
@@ -34,7 +35,7 @@ class TestAgent(unittest.TestCase):
             self.assertNotIn("secret", json.dumps(events))
             self.assertNotIn("composer.json", json.dumps(events))
 
-    def test_invalid_arguments_and_unknown_names_are_sanitized(self):
+    def test_malformed_native_batch_is_rejected_atomically_and_sanitized(self):
         class BadModel:
             def complete(self, messages, tools):
                 return {"tool_calls": [
@@ -42,10 +43,10 @@ class TestAgent(unittest.TestCase):
                     {"function": {"name": "secret-injected-name", "arguments": "{}"}}]}
         with tempfile.TemporaryDirectory() as d:
             events = []
-            Agent(BadModel(), LocalTools(Path(d)), max_steps=1, on_event=events.append).run("Inspect")
-            ends = [e for e in events if e["event"] == "tool_end"]
-            self.assertEqual([e["status"] for e in ends], ["error", "error"])
-            self.assertEqual(ends[1]["tool"], "unknown")
+            with self.assertRaises(ProtocolError):
+                Agent(BadModel(), LocalTools(Path(d)), max_steps=1, on_event=events.append).run("Inspect")
+            self.assertEqual([e["event"] for e in events], ["model_start", "model_end", "protocol_error"])
+            self.assertFalse(any(e["event"] == "tool_start" for e in events))
             self.assertNotIn("secret", json.dumps(events))
 
     def test_tool_loop_and_no_storage(self):

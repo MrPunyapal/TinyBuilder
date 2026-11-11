@@ -27,8 +27,10 @@ def parser() -> argparse.ArgumentParser:
     chat.add_argument("--allow-write", action="store_true", help="Permit modifying project files")
     chat.add_argument("--allow-exec", action="store_true", help="Permit arbitrary local argv commands (NOT sandboxed)")
     chat.add_argument("--exec-command", action="append", default=None, metavar="JSON_ARGV",
-                      help="Restrict --allow-exec to an exact argv array; repeat to permit multiple commands")
-    chat.add_argument("--verbose", action="store_true", help="Print sanitized tool activity as JSON to stderr (no arguments or outputs)")
+                      help="Restrict --allow-exec to exact argv; repeat for multiple commands")
+    chat.add_argument("--verbose", action="store_true", help="Emit sanitized events on stderr")
+    chat.add_argument("--tool-protocol", choices=("native", "strict-json"), default="native",
+                      help="native OpenAI tool calls (default), or experimental opt-in strict JSON actions")
     chat.add_argument("--max-steps", type=int, default=8)
     chat.add_argument("--memory-db", default="~/.tinybuilder/memory.sqlite")
 
@@ -78,13 +80,16 @@ def main(argv: list[str] | None = None) -> int:
             for key, value in store.all(scope).items():
                 print(f"{key}: {value}")
         return 0
+    if args.tool_protocol == "strict-json" and args.mcp_config:
+        print("Error: --tool-protocol strict-json supports local tools only; omit --mcp-config or use native", file=sys.stderr)
+        return 2
     if args.max_steps < 1 or args.max_steps > 50:
         print("--max-steps must be between 1 and 50", file=sys.stderr)
         return 2
     try:
         commands = [json.loads(command) for command in args.exec_command] if args.exec_command else None
         if commands is not None and (not args.allow_exec or any(
-                not isinstance(command, list) or not command or
+                not isinstance(command, list) or not command or len(command) > 25 or
                 not all(isinstance(part, str) and part for part in command) for command in commands)):
             raise ValueError("--exec-command requires --allow-exec and non-empty JSON argv arrays")
     except (ValueError, TypeError) as exc:
@@ -103,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
         def event(data):
             print(json.dumps(data), file=sys.stderr, flush=True)
         agent = Agent(model, local, bridge, store.all(str(project)), args.max_steps,
-                      on_event=event if args.verbose else None)
+                      on_event=event if args.verbose else None, tool_protocol=args.tool_protocol)
         print(agent.run(args.task))
         return 0
     except (ModelError, MCPError, OSError, ValueError) as exc:

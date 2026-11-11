@@ -113,9 +113,9 @@ class LocalTools:
                 argv = args["argv"]
                 if not isinstance(argv, list) or not argv or len(argv) > 25 or not all(isinstance(a, str) and a for a in argv):
                     return "Invalid argv"
+                # This is not a sandbox: --allow-exec grants local command execution.
                 if self.exec_commands is not None and argv not in self.exec_commands:
                     return "Permission denied: command is not in the operator's exact argv allowlist"
-                # This is not a sandbox: --allow-exec grants local command execution.
                 result = subprocess.run(argv, cwd=self.root, shell=False, capture_output=True,
                                         text=True, timeout=60, errors="replace", stdin=subprocess.DEVNULL)
                 output = result.stdout + ("\n" + result.stderr if result.stderr else "")

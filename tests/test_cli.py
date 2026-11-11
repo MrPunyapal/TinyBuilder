@@ -37,3 +37,11 @@ class TestCLI(unittest.TestCase):
                 with contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(main(["chat", "test", "--project", d, *extra]), 2)
             model.assert_not_called()
+
+    def test_strict_json_rejects_mcp_config_without_starting_server(self):
+        with tempfile.TemporaryDirectory() as d, patch("tinybuilder.cli.MCPBridge") as bridge:
+            with contextlib.redirect_stderr(io.StringIO()):
+                code = main(["chat", "test", "--project", d, "--tool-protocol", "strict-json",
+                             "--mcp-config", "some-mcp.json"])
+            self.assertEqual(code, 2)
+            bridge.assert_not_called()

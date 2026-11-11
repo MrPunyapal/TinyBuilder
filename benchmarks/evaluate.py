@@ -15,6 +15,7 @@ from pathlib import Path
 
 from tinybuilder.agent import Agent
 from tinybuilder.model import ChatModel, ModelError
+from tinybuilder.protocol import ProtocolError
 from tinybuilder.tools import LocalTools
 
 
@@ -56,36 +57,75 @@ def require(argv, root):
     return result.stdout.strip()
 
 
-def task(model_name, root, prompt, write=False, expected=None, php="php"):
+def _failure_kind(result: dict, expected: bool = False) -> str | None:
+    """Separate protocol, permissions and execution from factual benchmark failures."""
+    events = result["events"]
+    if result["error"]:
+        if result["error_kind"]:
+            return result["error_kind"]
+        return "execution"
+    if any(e.get("event") == "protocol_error" for e in events):
+        errors = [e for e in events if e.get("event") == "protocol_error"]
+        return "argument" if errors[-1].get("reason", "").startswith("argument_") else "protocol"
+    failures = [e.get("reason") for e in events if e.get("event") == "tool_end" and e.get("status") != "ok"]
+    if "permission" in failures:
+        return "permission"
+    if "unknown_tool" in failures:
+        return "protocol"
+    if failures:
+        return "execution"
+    if result["tool_calls"] == 0:
+        return "no_tool_call"
+    if result.get("missing_required_tools"):
+        return "missing_required_tool"
+    if expected and not result.get("facts_correct", False):
+        return "factual"
+    return None
+
+
+def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
+         required_tools=()):
     events = []
     local = LocalTools(root, allow_write=write, allow_exec=write,
                        exec_commands=[[php, "artisan", "test"]])
     started = time.monotonic()
-    answer, error = "", None
+    answer, error, error_kind = "", None, None
     try:
         answer = Agent(ChatModel("http://127.0.0.1:11434/v1", model_name), local,
-                       max_steps=8, on_event=events.append).run(prompt)
-    except (ModelError, OSError, ValueError) as exc:
+                       max_steps=8, on_event=events.append, tool_protocol=tool_protocol).run(prompt)
+    except (ModelError, ProtocolError, OSError, ValueError) as exc:
         # Do not persist HTTP error bodies, which may contain remote or model content.
         error = type(exc).__name__
+        error_kind = exc.kind if isinstance(exc, ModelError) else ("protocol" if isinstance(exc, ProtocolError) else "execution")
+        if isinstance(exc, ProtocolError) and any(
+                event.get("reason", "").startswith("argument_")
+                for event in events if event["event"] == "protocol_error"):
+            error_kind = "argument"
         print(f"{model_name}: {exc}", file=sys.stderr, flush=True)
     calls = [event for event in events if event["event"] == "tool_end"]
-    result = {"model": model_name, "duration_seconds": round(time.monotonic() - started, 3),
-              "error": error, "events": events, "tool_calls": len(calls),
+    result = {"model": model_name, "tool_protocol": tool_protocol,
+              "duration_seconds": round(time.monotonic() - started, 3),
+              "error": error, "error_kind": error_kind, "events": events, "tool_calls": len(calls),
               "valid_tool_calls": sum(event["status"] == "ok" for event in calls),
               "read_file_called": any(event["tool"] == "read_file" and event["status"] == "ok" for event in calls),
               "write_file_called": any(event["tool"] == "write_file" and event["status"] == "ok" for event in calls),
               "run_command_called": any(event["tool"] == "run_command" and event["status"] == "ok" for event in calls),
               "final_answer": bool(answer) and not answer.startswith("Stopped after")}
     if expected:
+        required_tools = (*required_tools, "read_file")
+    required_tools = tuple(dict.fromkeys(required_tools))
+    result["missing_required_tools"] = [name for name in required_tools if not any(
+        event["tool"] == name and event["status"] == "ok" for event in calls)]
+    if expected:
         result["facts_correct"] = all(value in answer for value in expected)
         result["passed"] = result["facts_correct"] and result["read_file_called"] and result["final_answer"]
+    result["failure_kind"] = _failure_kind(result, expected=bool(expected))
     # Answers and observations stay in RAM. Metadata alone goes to the report.
     print(json.dumps(result), flush=True)
     return result
 
 
-def smoke(root, models):
+def smoke(root, models, tool_protocol="native"):
     root.mkdir()
     package = "tinybuilder/" + uuid.uuid4().hex
     (root / "composer.json").write_text(json.dumps({"name": package, "type": "project", "require": {
@@ -94,10 +134,10 @@ def smoke(root, models):
     (root / "routes/web.php").write_text("<?php\nuse Illuminate\\Support\\Facades\\Route;\nRoute::get('/', fn () => view('welcome'));\n", encoding="utf-8")
     (root / "app").mkdir()
     (root / "app/Example.php").write_text("<?php\nnamespace App;\nclass Example {}\n", encoding="utf-8")
-    return [task(model, root, READ_TASK, expected=[package, "^12.0"]) for model in models]
+    return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol) for model in models]
 
 
-def laravel(base, output, models, php):
+def laravel(base, output, models, php, tool_protocol="native"):
     # Never execute tests or install dependencies inside an arbitrary user's project.
     # The marker is created explicitly by the operator in a NEW disposable project.
     if not (base / ".tinybuilder-disposable").is_file():
@@ -121,9 +161,10 @@ def laravel(base, output, models, php):
         negative = command([php, "artisan", "test", "--filter=TinyBuilderHealthTest"], root)
         (output / f"baseline-health-{index}.txt").write_text(negative.stdout + negative.stderr, encoding="utf-8")
         test.unlink()  # Evaluator-owned file, kept hidden from the agent.
-        read = task(model, root, ROUTE_TASK)
+        read = task(model, root, ROUTE_TASK, tool_protocol=tool_protocol, required_tools=("read_file",))
         write_prompt = WRITE_TASK.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
-        write = task(model, root, write_prompt, write=True, php=php)
+        write = task(model, root, write_prompt, write=True, php=php, tool_protocol=tool_protocol,
+                     required_tools=("read_file", "write_file", "run_command"))
         # Capture the actual agent diff BEFORE adding the evaluator-owned hidden tests.
         diff = require(["git", "diff", "--", "routes/web.php"], root)
         (output / f"diff-{index}.patch").write_text(diff + "\n", encoding="utf-8")
@@ -150,6 +191,8 @@ def laravel(base, output, models, php):
                   "passed": baseline.returncode == 0 and negative.returncode == 1 and
                   validation.returncode == 0 and health_registered and bool(diff) and scope_ok and
                   write["write_file_called"] and write["run_command_called"]}
+        result["failure_kind"] = (None if result["passed"] else
+                                  read["failure_kind"] or write["failure_kind"] or "validation")
         results.append(result)
         print(json.dumps({"laravel_result": result}), flush=True)
     return results
@@ -158,18 +201,21 @@ def laravel(base, output, models, php):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--models", nargs="+", default=["qwen2.5-coder:0.5b", "qwen2.5-coder:1.5b"])
+    parser.add_argument("--tool-protocol", choices=("native", "strict-json"), default="native",
+                        help="Native OpenAI tool calls or experimental opt-in strict JSON actions")
     parser.add_argument("--output", type=Path, required=True, help="New directory for disposable fixtures and metadata")
     parser.add_argument("--laravel", type=Path, help="Explicitly marked disposable Laravel baseline Git repository")
     parser.add_argument("--php", default="php", help="PHP binary for evaluator checks")
     args = parser.parse_args()
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
-    report = {"smoke": smoke(args.output / "smoke", args.models)}
+    report = {"smoke": smoke(args.output / "smoke", args.models, tool_protocol=args.tool_protocol)}
     # Save partial evidence even if dependency/setup work later fails.
     report_path = args.output / "results.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     if args.laravel:
-        report["laravel"] = laravel(args.laravel.resolve(), args.output, args.models, args.php)
+        report["laravel"] = laravel(args.laravel.resolve(), args.output, args.models, args.php,
+                                    tool_protocol=args.tool_protocol)
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return 0 if all(r["passed"] for group in report.values() for r in group) else 1
 

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tinybuilder.mcp import MCPBridge
+from tinybuilder.mcp import MCPBridge, MCPError
 
 SERVER = r'''
 import json, sys
@@ -17,7 +17,8 @@ for line in sys.stdin:
     elif method == "tools/list":
         result = {"tools":[{"name":"ping", "description":"test", "inputSchema":{"type":"object","properties":{"word":{"type":"string"}}}}]}
     elif method == "tools/call":
-        result = {"content":[{"type":"text", "text":"pong:"+req["params"]["arguments"].get("word", "")}], "isError": False}
+        failed = req["params"]["arguments"].get("word") == "fail"
+        result = {"content":[{"type":"text", "text":"private-error" if failed else "pong:"+req["params"]["arguments"].get("word", "")}], "isError": failed}
     else:
         result = {}
     print(json.dumps({"jsonrpc":"2.0", "id":req["id"], "result":result}), flush=True)
@@ -36,5 +37,8 @@ class TestMCP(unittest.TestCase):
             try:
                 self.assertEqual(bridge.specs[0]["function"]["name"], "mcp_fake__ping")
                 self.assertEqual(bridge.call("mcp_fake__ping", {"word": "hello"}), "pong:hello")
+                with self.assertRaises(MCPError) as err:
+                    bridge.call("mcp_fake__ping", {"word": "fail"})
+                self.assertNotIn("private-error", str(err.exception))
             finally:
                 bridge.close()

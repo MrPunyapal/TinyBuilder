@@ -10,6 +10,30 @@ tools, but **no successful model-driven inspection or Laravel edit** with the
 tested Qwen2.5-Coder 0.5B and 1.5B tags. The optional 3B smoke test also failed.
 See the accompanying [metadata](results/2026-11-11-windows.json).
 
+## Opt-in tool protocol comparison
+
+The original [2026-11-11 Windows evaluation](results/2026-11-11-windows.md) remains unchanged historical evidence. Native OpenAI-style tool calls remain the default. The **experimental**, opt-in `strict-json` protocol tests whether a small model can produce one exact JSON tool action per round; it does not extract tool calls from Markdown or prose and has no MCP tools.
+
+From PowerShell, with Ollama already running and both local models downloaded, compare separate **new** output directories:
+
+```powershell
+$native = Join-Path $env:TEMP ('tinybuilder-native-' + [guid]::NewGuid().ToString('N'))
+$strict = Join-Path $env:TEMP ('tinybuilder-strict-' + [guid]::NewGuid().ToString('N'))
+.\.venv\Scripts\python.exe benchmarks\evaluate.py --tool-protocol native --output $native
+.\.venv\Scripts\python.exe benchmarks\evaluate.py --tool-protocol strict-json --output $strict
+```
+
+Both commands may exit 1; that is an honest task failure. Each smoke test still hides the random package name, requires an **actual successful `read_file` event** and checks the exact package name and Laravel constraint. Printed JSON alone never counts. `failure_kind` and `missing_required_tools` separate HTTP connectivity, protocol, argument, permission, execution and factual failures.
+
+To repeat the endpoint evaluation after creating the **explicitly disposable** baseline described below:
+
+```powershell
+$strictLaravel = Join-Path $env:TEMP ('tinybuilder-strict-laravel-' + [guid]::NewGuid().ToString('N'))
+.\.venv\Scripts\python.exe benchmarks\evaluate.py --tool-protocol strict-json --laravel $app --output $strictLaravel
+```
+
+Do not count success unless route changes, tool events and restored hidden PHPUnit tests all pass. Never use a production project for this harness. No Soup training, model downloads or paid inference occurs automatically.
+
 ## Windows reproduction
 
 Run from the TinyBuilder checkout. Use an actual Python 3.10+ interpreter if the

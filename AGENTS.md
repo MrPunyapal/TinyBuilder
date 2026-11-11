@@ -12,6 +12,8 @@ Important constraints:
 - Laravel Boost's MCP command is `php artisan boost:mcp` inside an existing Laravel app. Handle missing Boost gracefully.
 - Focus the next engineering milestone on a repeatable benchmark harness using disposable Git worktrees and real Pest/PHPUnit pass/fail signals. Only train when baseline failures and evaluation data justify it.
 
+- Tool protocol fallback is explicitly opt-in (`--tool-protocol strict-json`), limited to known local tools, with strict JSON and argument validation. Never parse arbitrary markdown/prose/fenced JSON as actions. Preserve native calls and all permission/argv controls.
+
 Quick local checks:
 
 ```

@@ -7,7 +7,9 @@ from typing import Any
 
 
 class ModelError(RuntimeError):
-    pass
+    def __init__(self, message: str, kind: str = "response_protocol"):
+        self.kind = kind
+        super().__init__(message)
 
 
 class ChatModel:
@@ -31,11 +33,20 @@ class ChatModel:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 data = json.load(response)
         except urllib.error.HTTPError as exc:
-            body = exc.read(1000).decode("utf-8", "replace")
-            raise ModelError(f"Model server HTTP {exc.code}: {body}") from exc
-        except (urllib.error.URLError, TimeoutError) as exc:
-            raise ModelError(f"Cannot reach model at {url}: {exc}") from exc
+            # HTTP error bodies may echo prompts, source contents and credentials.
+            raise ModelError(f"Model server HTTP {exc.code}", "http") from exc
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise ModelError("Cannot reach the configured model server", "connectivity") from exc
+        except (json.JSONDecodeError, UnicodeError) as exc:
+            raise ModelError("Model server returned invalid JSON", "response_protocol") from exc
         try:
-            return data["choices"][0]["message"]
+            message = data["choices"][0]["message"]
         except (KeyError, IndexError, TypeError) as exc:
             raise ModelError("Model response lacks choices[0].message") from exc
+        if not isinstance(message, dict) or message.get("role", "assistant") != "assistant":
+            raise ModelError("Model message is not an assistant object")
+        if not isinstance(message.get("content"), (str, type(None))):
+            raise ModelError("Model message content must be text or null")
+        if "tool_calls" in message and message["tool_calls"] is not None and not isinstance(message["tool_calls"], list):
+            raise ModelError("Model tool_calls field must be a list")
+        return message

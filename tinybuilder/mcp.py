@@ -66,6 +66,8 @@ class MCPServer:
 
     def call(self, name: str, arguments: dict) -> str:
         result = self._request("tools/call", {"name": name, "arguments": arguments})
+        if result.get("isError") is True:
+            raise MCPError(f"MCP {self.name}: tool reported failure")
         parts = result.get("content", [])
         chunks = [str(p.get("text", "")) for p in parts if isinstance(p, dict) and p.get("type") == "text"]
         output = "\n".join(chunks) or json.dumps(result, ensure_ascii=False)
