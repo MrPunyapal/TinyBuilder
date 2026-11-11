@@ -205,3 +205,7 @@ This test suite uses a fake model and fake MCP server. It verifies the tool loop
 5. Add OpenCode integration and a local OpenAI-compatible agent endpoint, once the CLI's task-solving performance justifies it.
 
 Contributions welcome. See [benchmarks/README.md](benchmarks/README.md) for the experimental standard.
+
+### Opt-in progress guidance and repeated evaluation
+
+The [retest guide](benchmarks/RETEST.md) explains the experimental completion checklist (`--progress-guidance checklist`), repeated hidden-name runs (`--trials`), route-preservation variants, and failing-test repair evaluation. All are opt-in; the previously measured constrained 3B profile remains unchanged without these flags. Results on local Ollama/Laravel hardware require separate verification.

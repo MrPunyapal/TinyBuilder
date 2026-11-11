@@ -165,3 +165,7 @@ working does not mean a model chose or correctly used its tools.
 Next, expand to 20–50 pinned tasks with locked dependencies, repeated trials and
 resource sampling. Compare unmodified local baselines before collecting training
 data. Do not train or run Soup until observed failures and evaluation data justify it.
+
+## Expanded opt-in regression evaluation
+
+See [RETEST.md](RETEST.md) for exact PowerShell commands covering repeated randomized Composer smoke trials, an opt-in completion checklist, unrelated-route preservation, and a failing-test repair task. These additions preserve the existing acceptance assertions and do not run in CI.

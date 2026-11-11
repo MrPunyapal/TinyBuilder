@@ -4,6 +4,7 @@ Run with the installed TinyBuilder Python: python benchmarks/evaluate.py --help.
 """
 
 import argparse
+import difflib
 import hashlib
 import json
 import shutil
@@ -26,6 +27,22 @@ ROUTE_TASK = ("Read routes/web.php and bootstrap/app.php using tools. Explain th
 WRITE_TASK = ("Read routes/web.php first. Add GET /health returning JSON {\"status\":\"ok\"} in "
               "routes/web.php, preserving all existing routes. Use write_file to make the change. "
               "Then run [\"php\",\"artisan\",\"test\"] using run_command. Do not modify tests or other files.")
+REPAIR_TASK = ("Read routes/web.php and tests/Feature/TinyBuilderRepairRegressionTest.php using "
+               "read_file. A test for GET /health is failing. Fix the Laravel route in routes/web.php "
+               "without changing tests or other routes. Use write_file, then run "
+               '["php","artisan","test"] via run_command. If tests fail, inspect and fix the failure.')
+REPAIR_VISIBLE_TEST = '''<?php
+namespace Tests\\Feature;
+use Tests\\TestCase;
+class TinyBuilderRepairRegressionTest extends TestCase
+{
+    public function test_health_regression(): void
+    {
+        $this->getJson('/health')->assertOk()->assertExactJson(['status' => 'ok']);
+    }
+}
+'''
+REPAIR_TEST_PATH = "tests/Feature/TinyBuilderRepairRegressionTest.php"
 HEALTH_TEST = '''<?php
 namespace Tests\\Feature;
 use Tests\\TestCase;
@@ -41,6 +58,48 @@ class TinyBuilderHealthTest extends TestCase
     }
 }
 '''
+
+
+def hidden_health_test(preserved_slug: str | None = None, marker: str | None = None) -> str:
+    """Hidden assertions remain absent from the model's inference worktree."""
+    if preserved_slug is None:
+        return HEALTH_TEST
+    if marker is None:
+        raise ValueError("Preservation marker required")
+    extra = ("    public function test_sibling_route_is_preserved(): void\n"
+             "    {\n"
+             f"        $this->getJson('/{preserved_slug}')->assertOk()"
+             f"->assertExactJson(['marker' => '{marker}']);\n"
+             "    }\n")
+    return HEALTH_TEST[:-2] + extra + "}\n"
+
+
+def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling_route: bool = False):
+    """Seed only disposable worktrees, never the original Laravel baseline."""
+    if scenario not in ("health", "repair"):
+        raise ValueError("Unknown evaluation scenario")
+    route_path = root / "routes/web.php"
+    previous = route_path.read_text(encoding="utf-8")
+    if "'/health'" in previous or '"/health"' in previous:
+        raise ValueError("Disposable baseline already has /health; use a fresh baseline")
+    if scenario == "repair":
+        previous += "\nRoute::get('/health', fn () => response()->json(['status' => 'broken']));\n"
+        visible_path = root / REPAIR_TEST_PATH
+        if visible_path.exists():
+            raise ValueError("Repair regression fixture already exists")
+        visible_path.parent.mkdir(parents=True, exist_ok=True)
+        visible_path.write_text(REPAIR_VISIBLE_TEST, encoding="utf-8")
+    marker = None
+    slug = None
+    if preserve_sibling_route:
+        marker = uuid.uuid4().hex
+        slug = "tinybuilder-preserve-" + marker[:12]
+        previous += (f"\nRoute::get('/{slug}', fn () => response()->json("
+                     f"['marker' => '{marker}']));\n")
+    # No rewrite in the measured default scenario (preserves Windows line endings).
+    if scenario == "repair" or preserve_sibling_route:
+        route_path.write_text(previous, encoding="utf-8")
+    return {"initial_route": previous, "slug": slug, "marker": marker}
 
 
 def command(argv, root, timeout=180):
@@ -82,6 +141,8 @@ def _failure_kind(result: dict, expected: bool = False) -> str | None:
         return "missing_required_tool"
     if result.get("missing_required_files"):
         return "missing_required_file"
+    if result.get("required_sequence_ok") is False:
+        return "tool_order"
     if not result["final_answer"]:
         return "incomplete"
     if expected and not result.get("facts_correct", False):
@@ -95,16 +156,41 @@ class EvaluationTools(LocalTools):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.files_read = set()
+        self.operations = []  # Transient local-only sequence; not included in results.json.
 
     def call(self, name, args):
         output = super().call(name, args)
         if name == "read_file" and not output.startswith(("Tool error:", "File not found")):
-            self.files_read.add(self._path(args["path"]))
+            path = self._path(args["path"])
+            self.files_read.add(path)
+            self.operations.append(("read_file", path))
+        elif name == "write_file" and output.startswith("Wrote "):
+            self.operations.append(("write_file", self._path(args["path"])))
+        elif name == "run_command" and output.startswith("Exit code: 0\n"):
+            self.operations.append(("run_command", tuple(args["argv"])))
         return output
 
 
+def sequence_verified(operations, sequence):
+    """Check ordered, successful local events, not model assertions or printed JSON."""
+    cursor = iter(operations)
+    return all(any(item == wanted for item in cursor) for wanted in sequence)
+
+
+def change_scope_verified(paths, model_changed_route, scenario, visible_intact):
+    """Exclude an evaluator-owned visible test only if the model left it byte-identical."""
+    ignored = {REPAIR_TEST_PATH} if scenario == "repair" and visible_intact else set()
+    return (set(paths) - ignored == {"routes/web.php"} and visible_intact and model_changed_route)
+
+
 def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
-         required_tools=(), strict_json_profile="prompt", required_files=()):
+         required_tools=(), strict_json_profile="prompt", required_files=(),
+         progress_guidance="off", required_sequence=()):
+    if expected:
+        required_tools = (*required_tools, "read_file")
+        required_files = (*required_files, "composer.json")
+    required_tools = tuple(dict.fromkeys(required_tools))
+    required_files = tuple(dict.fromkeys(required_files))
     events = []
     local = EvaluationTools(root, allow_write=write, allow_exec=write,
                        exec_commands=[[php, "artisan", "test"]])
@@ -113,11 +199,16 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     try:
         answer = Agent(ChatModel("http://127.0.0.1:11434/v1", model_name), local,
                        max_steps=8, on_event=events.append, tool_protocol=tool_protocol,
-                       strict_json_profile=strict_json_profile).run(prompt)
+                       strict_json_profile=strict_json_profile,
+                       progress_guidance=progress_guidance,
+                       required_reads=required_files if progress_guidance == "checklist" else (),
+                       required_tools=required_tools if progress_guidance == "checklist" else ()).run(prompt)
     except (ModelError, ProtocolError, OSError, ValueError) as exc:
         # Do not persist HTTP error bodies, which may contain remote or model content.
         error = type(exc).__name__
-        error_kind = exc.kind if isinstance(exc, ModelError) else ("protocol" if isinstance(exc, ProtocolError) else "execution")
+        error_kind = (exc.kind if isinstance(exc, ModelError) else
+                      "incomplete" if isinstance(exc, ProtocolError) and exc.code == "task_requirements_missing" else
+                      "protocol" if isinstance(exc, ProtocolError) else "execution")
         if isinstance(exc, ProtocolError) and any(
                 event.get("reason", "").startswith("argument_")
                 for event in events if event["event"] == "protocol_error"):
@@ -125,7 +216,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
         print(f"{model_name}: {exc}", file=sys.stderr, flush=True)
     calls = [event for event in events if event["event"] == "tool_end"]
     result = {"model": model_name, "tool_protocol": tool_protocol,
-              "strict_json_profile": strict_json_profile,
+              "strict_json_profile": strict_json_profile, "progress_guidance": progress_guidance,
               "duration_seconds": round(time.monotonic() - started, 3),
               "error": error, "error_kind": error_kind, "events": events, "tool_calls": len(calls),
               "valid_tool_calls": sum(event["status"] == "ok" for event in calls),
@@ -133,15 +224,14 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
               "write_file_called": any(event["tool"] == "write_file" and event["status"] == "ok" for event in calls),
               "run_command_called": any(event["tool"] == "run_command" and event["status"] == "ok" for event in calls),
               "final_answer": bool(answer) and not answer.startswith("Stopped after")}
-    if expected:
-        required_tools = (*required_tools, "read_file")
-        required_files = (*required_files, "composer.json")
-    required_tools = tuple(dict.fromkeys(required_tools))
     result["missing_required_tools"] = [name for name in required_tools if not any(
         event["tool"] == name and event["status"] == "ok" for event in calls)]
     # Only evaluator-supplied public fixture names appear in metadata, never arbitrary paths.
     result["missing_required_files"] = [name for name in dict.fromkeys(required_files)
                                         if (local.root / name).resolve() not in local.files_read]
+    if required_sequence:
+        # Only a boolean is persisted. Actual paths and command args remain in process RAM.
+        result["required_sequence_ok"] = sequence_verified(local.operations, required_sequence)
     if expected:
         result["facts_correct"] = all(value in answer for value in expected)
         result["passed"] = (result["facts_correct"] and result["read_file_called"] and
@@ -152,7 +242,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     return result
 
 
-def smoke(root, models, tool_protocol="native", strict_json_profile="prompt"):
+def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", progress_guidance="off"):
     root.mkdir()
     package = "tinybuilder/" + uuid.uuid4().hex
     (root / "composer.json").write_text(json.dumps({"name": package, "type": "project", "require": {
@@ -162,12 +252,12 @@ def smoke(root, models, tool_protocol="native", strict_json_profile="prompt"):
     (root / "app").mkdir()
     (root / "app/Example.php").write_text("<?php\nnamespace App;\nclass Example {}\n", encoding="utf-8")
     return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol,
-                 strict_json_profile=strict_json_profile) for model in models]
+                 strict_json_profile=strict_json_profile, progress_guidance=progress_guidance) for model in models]
 
 
-def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt"):
+def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt",
+            progress_guidance="off", scenario="health", preserve_sibling_route=False):
     # Never execute tests or install dependencies inside an arbitrary user's project.
-    # The marker is created explicitly by the operator in a NEW disposable project.
     if not (base / ".tinybuilder-disposable").is_file():
         raise ValueError("--laravel requires a NEW disposable Git project with .tinybuilder-disposable marker")
     revision = require(["git", "rev-parse", "HEAD"], base)
@@ -179,30 +269,54 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
     for index, model in enumerate(models):
         root = output / f"laravel-{index}"
         require(["git", "worktree", "add", "--detach", str(root), revision], base)
-        # Copy installed dependencies from this disposable baseline; no network fetches.
+        # Copy dependencies from the explicitly disposable baseline, without network requests.
         shutil.copytree(base / "vendor", root / "vendor")
         shutil.copyfile(root / ".env.example", root / ".env")
         require([php, "artisan", "key:generate", "--no-interaction"], root)
         baseline = command([php, "artisan", "test"], root)
+        # Optional route variations belong only to each detached worktree, never to baseline.
+        fixture = prepare_route_variant(root, scenario=scenario, preserve_sibling_route=preserve_sibling_route)
+        hidden_test = hidden_health_test(fixture["slug"], fixture["marker"])
         test = root / "tests/Feature/TinyBuilderHealthTest.php"
-        test.write_text(HEALTH_TEST, encoding="utf-8")
+        if test.exists():
+            raise ValueError("Disposable baseline already contains the evaluator's hidden test")
+        test.write_text(hidden_test, encoding="utf-8")
         negative = command([php, "artisan", "test", "--filter=TinyBuilderHealthTest"], root)
         (output / f"baseline-health-{index}.txt").write_text(negative.stdout + negative.stderr, encoding="utf-8")
-        test.unlink()  # Evaluator-owned file, kept hidden from the agent.
+        test.unlink()  # Hidden assertion must NOT be visible during inference.
+        visible_test = root / REPAIR_TEST_PATH
+        visible_before = visible_test.read_bytes() if scenario == "repair" else None
+        repair_negative = command([php, "artisan", "test", "--filter=TinyBuilderRepairRegressionTest"], root) if scenario == "repair" else None
+        # No hidden tests and no answer content are persisted by the agent.
         read = task(model, root, ROUTE_TASK, tool_protocol=tool_protocol, required_tools=("read_file",),
-                    strict_json_profile=strict_json_profile, required_files=("routes/web.php", "bootstrap/app.php"))
-        write_prompt = WRITE_TASK.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
+                    strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
+                    required_files=("routes/web.php", "bootstrap/app.php"))
+        write_prompt = (REPAIR_TASK if scenario == "repair" else WRITE_TASK)
+        write_prompt = write_prompt.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
+        required = ("routes/web.php", REPAIR_TEST_PATH) if scenario == "repair" else ("routes/web.php",)
         write = task(model, root, write_prompt, write=True, php=php, tool_protocol=tool_protocol,
                      required_tools=("read_file", "write_file", "run_command"),
-                     strict_json_profile=strict_json_profile, required_files=("routes/web.php",))
-        # Capture the actual agent diff BEFORE adding the evaluator-owned hidden tests.
+                     strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
+                     required_files=required,
+                     required_sequence=(("read_file", root / "routes/web.php"),
+                                        ("write_file", root / "routes/web.php"),
+                                        ("run_command", (php, "artisan", "test"))))
+        # This model delta excludes any evaluator-seeded route (including intentionally broken one).
+        current_route = (root / "routes/web.php").read_text(encoding="utf-8")
+        model_changed_route = current_route != fixture["initial_route"]
+        model_diff = "".join(difflib.unified_diff(fixture["initial_route"].splitlines(keepends=True),
+                                                  current_route.splitlines(keepends=True),
+                                                  fromfile="seeded/routes/web.php", tofile="model/routes/web.php"))
+        (output / f"model-diff-{index}.patch").write_text(model_diff, encoding="utf-8")
         diff = require(["git", "diff", "--", "routes/web.php"], root)
         (output / f"diff-{index}.patch").write_text(diff + "\n", encoding="utf-8")
         changed = require(["git", "status", "--porcelain"], root)
         paths = require(["git", "diff", "--name-only", "HEAD"], root).splitlines()
         paths += require(["git", "ls-files", "--others", "--exclude-standard"], root).splitlines()
-        scope_ok = set(paths) == {"routes/web.php"}
-        test.write_text(HEALTH_TEST, encoding="utf-8")
+        # The evaluator-created visible repair test must remain byte-identical; exclude it only if intact.
+        visible_intact = visible_before is None or (visible_test.is_file() and visible_test.read_bytes() == visible_before)
+        scope_ok = change_scope_verified(paths, model_changed_route, scenario, visible_intact)
+        test.write_text(hidden_test, encoding="utf-8")
         validation = command([php, "artisan", "test"], root)
         routes = command([php, "artisan", "route:list", "--path=health", "--json"], root)
         try:
@@ -211,18 +325,21 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         except (ValueError, TypeError, KeyError):
             health_registered = False
         (output / f"phpunit-{index}.txt").write_text(validation.stdout + validation.stderr, encoding="utf-8")
-        result = {"model": model, "baseline_commit": revision, "worktree": str(root),
+        result = {"model": model, "scenario": scenario, "preserve_sibling_route": preserve_sibling_route,
+                  "baseline_commit": revision, "worktree": str(root),
                   "composer_lock_sha256": hashlib.sha256((base / "composer.lock").read_bytes()).hexdigest(),
                   "baseline_test_exit": baseline.returncode, "baseline_health_exit": negative.returncode,
-                  "read": read, "write": write,
-                  "agent_changes": changed.splitlines(), "route_registered": health_registered,
-                  "change_scope_ok": scope_ok,
-                  "validation_test_exit": validation.returncode,
+                  "baseline_repair_exit": repair_negative.returncode if repair_negative else None,
+                  "read": read, "write": write, "changed_path_count": len(paths),
+                  "route_registered": health_registered, "model_changed_route": model_changed_route,
+                  "change_scope_ok": scope_ok, "validation_test_exit": validation.returncode,
                   "passed": baseline.returncode == 0 and negative.returncode == 1 and
-                  validation.returncode == 0 and health_registered and bool(diff) and scope_ok and
+                  (repair_negative is None or repair_negative.returncode == 1) and
+                  validation.returncode == 0 and health_registered and bool(diff) and model_changed_route and
+                  scope_ok and read["final_answer"] and not read["missing_required_files"] and
                   write["write_file_called"] and write["run_command_called"] and
                   write["final_answer"] and not write["missing_required_tools"] and
-                  not write["missing_required_files"]}
+                  not write["missing_required_files"] and write.get("required_sequence_ok") is True}
         result["failure_kind"] = (None if result["passed"] else
                                   read["failure_kind"] or write["failure_kind"] or "validation")
         results.append(result)
@@ -237,24 +354,67 @@ def main():
                         help="Native OpenAI tool calls or experimental opt-in strict JSON actions")
     parser.add_argument("--strict-json-profile", choices=("prompt", "constrained"), default="prompt",
                         help="constrained: compact prompt plus server JSON schema; requires strict-json")
+    parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
+                        help="opt-in bounded checklist; requires constrained strict-json")
+    parser.add_argument("--trials", type=int, default=1, help="1–10 independent random-name trials")
+    parser.add_argument("--scenario", choices=("health", "repair"), default="health",
+                        help="health is the measured baseline; repair is opt-in failing-test repair")
+    parser.add_argument("--preserve-sibling-route", action="store_true",
+                        help="seed a random unrelated route and assert it survives (opt-in)")
     parser.add_argument("--output", type=Path, required=True, help="New directory for disposable fixtures and metadata")
     parser.add_argument("--laravel", type=Path, help="Explicitly marked disposable Laravel baseline Git repository")
     parser.add_argument("--php", default="php", help="PHP binary for evaluator checks")
     args = parser.parse_args()
     if args.strict_json_profile != "prompt" and args.tool_protocol != "strict-json":
         parser.error("--strict-json-profile constrained requires --tool-protocol strict-json")
+    if args.progress_guidance != "off" and (args.tool_protocol != "strict-json" or args.strict_json_profile != "constrained"):
+        parser.error("--progress-guidance checklist requires constrained strict-json")
+    if not 1 <= args.trials <= 10:
+        parser.error("--trials must be between 1 and 10")
+    if (args.scenario != "health" or args.preserve_sibling_route) and not args.laravel:
+        parser.error("--scenario repair and --preserve-sibling-route require --laravel")
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
-    report = {"smoke": smoke(args.output / "smoke", args.models, tool_protocol=args.tool_protocol,
-                             strict_json_profile=args.strict_json_profile)}
-    # Save partial evidence even if dependency/setup work later fails.
+    all_trials = []
     report_path = args.output / "results.json"
-    report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    if args.laravel:
-        report["laravel"] = laravel(args.laravel.resolve(), args.output, args.models, args.php,
-                                    tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile)
+    for trial_number in range(1, args.trials + 1):
+        trial_root = args.output if args.trials == 1 else args.output / f"trial-{trial_number:03d}"
+        if args.trials > 1:
+            trial_root.mkdir()
+        trial = {"trial": trial_number,
+                 "smoke": smoke(trial_root / "smoke", args.models, tool_protocol=args.tool_protocol,
+                                strict_json_profile=args.strict_json_profile,
+                                progress_guidance=args.progress_guidance)}
+        if args.laravel:
+            trial["laravel"] = laravel(args.laravel.resolve(), trial_root, args.models, args.php,
+                                      tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile,
+                                      progress_guidance=args.progress_guidance, scenario=args.scenario,
+                                      preserve_sibling_route=args.preserve_sibling_route)
+        all_trials.append(trial)
+        # Partial report saved after each trial; model content/hidden names are never reported.
+        if args.trials == 1:
+            report = {k: v for k, v in trial.items() if k != "trial"}
+        else:
+            report = {"configuration": {"trials_requested": args.trials, "scenario": args.scenario,
+                                         "preserve_sibling_route": args.preserve_sibling_route,
+                                         "tool_protocol": args.tool_protocol,
+                                         "strict_json_profile": args.strict_json_profile,
+                                         "progress_guidance": args.progress_guidance},
+                      "trials": all_trials}
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    return 0 if all(r["passed"] for group in report.values() for r in group) else 1
+    # No optimistic inference from model narratives. Use each task's actual verified pass signal.
+    all_results = [result for trial in all_trials for name in ("smoke", "laravel")
+                   for result in trial.get(name, [])]
+    if args.trials > 1:
+        report["summary"] = {
+            model: {name: {"passed": sum(1 for trial in all_trials for item in trial.get(name, [])
+                                            if item["model"] == model and item["passed"]),
+                           "total": sum(1 for trial in all_trials for item in trial.get(name, [])
+                                        if item["model"] == model)}
+                    for name in ("smoke", "laravel") if any(name in trial for trial in all_trials)}
+            for model in args.models}
+        report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return 0 if all(result["passed"] for result in all_results) else 1
 
 
 if __name__ == "__main__":

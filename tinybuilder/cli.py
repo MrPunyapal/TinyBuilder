@@ -33,6 +33,12 @@ def parser() -> argparse.ArgumentParser:
                       help="native OpenAI tool calls (default), or experimental opt-in strict JSON actions")
     chat.add_argument("--strict-json-profile", choices=("prompt", "constrained"), default="prompt",
                       help="constrained: compact prompt plus server JSON schema; requires strict-json")
+    chat.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
+                      help="opt-in bounded completion checklist; requires constrained strict-json")
+    chat.add_argument("--required-read", action="append", default=[], metavar="PATH",
+                      help="operator-specified file that the model must actually read; repeatable")
+    chat.add_argument("--required-tool", action="append", default=[], metavar="TOOL",
+                      help="operator-specified local tool that must succeed; repeatable")
     chat.add_argument("--max-steps", type=int, default=8)
     chat.add_argument("--memory-db", default="~/.tinybuilder/memory.sqlite")
 
@@ -85,6 +91,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.strict_json_profile != "prompt" and args.tool_protocol != "strict-json":
         print("Error: --strict-json-profile constrained requires --tool-protocol strict-json", file=sys.stderr)
         return 2
+    if args.progress_guidance == "checklist" and (
+            args.tool_protocol != "strict-json" or args.strict_json_profile != "constrained"):
+        print("Error: --progress-guidance checklist requires constrained strict-json", file=sys.stderr)
+        return 2
+    if args.progress_guidance == "checklist" and not (args.required_read or args.required_tool):
+        print("Error: checklist requires at least one --required-read or --required-tool", file=sys.stderr)
+        return 2
+    if args.progress_guidance == "off" and (args.required_read or args.required_tool):
+        print("Error: --required-read and --required-tool need --progress-guidance checklist", file=sys.stderr)
+        return 2
     if args.tool_protocol == "strict-json" and args.mcp_config:
         print("Error: --tool-protocol strict-json supports local tools only; omit --mcp-config or use native", file=sys.stderr)
         return 2
@@ -114,7 +130,10 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(data), file=sys.stderr, flush=True)
         agent = Agent(model, local, bridge, store.all(str(project)), args.max_steps,
                       on_event=event if args.verbose else None, tool_protocol=args.tool_protocol,
-                      strict_json_profile=args.strict_json_profile)
+                      strict_json_profile=args.strict_json_profile,
+                      progress_guidance=args.progress_guidance,
+                      required_reads=tuple(args.required_read),
+                      required_tools=tuple(args.required_tool))
         print(agent.run(args.task))
         return 0
     except (ModelError, MCPError, OSError, ValueError) as exc:

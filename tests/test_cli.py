@@ -17,6 +17,19 @@ class TestCLI(unittest.TestCase):
                                        "--strict-json-profile", "constrained"]), 2)
             model.assert_not_called()
 
+    def test_checklist_flags_are_explicit_and_fail_before_model_start(self):
+        with tempfile.TemporaryDirectory() as d, patch("tinybuilder.cli.ChatModel") as model:
+            for extra in (["--progress-guidance", "checklist"],
+                          ["--required-read", "composer.json"],
+                          ["--tool-protocol", "strict-json", "--strict-json-profile", "constrained",
+                           "--progress-guidance", "checklist"],
+                          ["--tool-protocol", "strict-json", "--progress-guidance", "checklist"],
+                          ["--tool-protocol", "native", "--strict-json-profile", "constrained",
+                           "--progress-guidance", "checklist"]):
+                with self.subTest(extra=extra), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(main(["chat", "inspect", "--project", d, *extra]), 2)
+            model.assert_not_called()
+
     def test_verbose_cli_emits_metadata_only(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
