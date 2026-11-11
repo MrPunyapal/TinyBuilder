@@ -149,7 +149,23 @@ PowerShell read-only smoke test, with Ollama running and the model already downl
 
 For an explicitly disposable project only, add `--allow-write` to permit edits. For a test command, also use `--allow-exec --exec-command '["php","artisan","test"]'`. Do not give an unrestricted execution flag to untrusted projects. Validate edits with `git diff` and actual Laravel tests; a model's final text is not evidence of work.
 
-Sanitized `--verbose` events now distinguish rejected protocols/arguments, permission denials and failed execution without exposing source contents or generated action arguments. HTTP response errors no longer include returned server error bodies. The strict JSON mode has **not yet been evaluated on the Windows laptop**.
+Sanitized `--verbose` events distinguish rejected protocols/arguments, permission denials and failed execution without exposing source contents or generated action arguments. HTTP response errors do not include returned server error bodies.
+
+The prompt-only strict JSON mode was evaluated locally and still often produced
+forbidden Markdown fences. A separate opt-in profile uses a compact prompt and
+requests server-side JSON-schema generation via `response_format`, supported by
+[local Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs):
+
+```powershell
+.\.venv\Scripts\python.exe -m tinybuilder chat 'Read composer.json and report its exact package name and Laravel constraint.' --project $app --model qwen2.5-coder:3b --tool-protocol strict-json --strict-json-profile constrained --verbose
+```
+
+This profile requires a server supporting JSON-schema responses. There is no
+silent fallback or extraction from prose. The same independent parser, permission
+checks, command allowlist and retry limit still apply even if the server ignores
+the schema. The default native and prompt-only strict JSON modes are unchanged.
+Constrained syntax does not establish factual correctness or task completion;
+see the [local protocol comparison](benchmarks/results/2026-11-11-protocol-comparison.md).
 
 ## Optional Soup experiments
 

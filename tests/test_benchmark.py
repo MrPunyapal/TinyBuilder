@@ -8,6 +8,33 @@ from benchmarks.evaluate import laravel, smoke, task
 
 
 class TestBenchmark(unittest.TestCase):
+    def test_recovered_protocol_error_is_not_reported_as_terminal_failure(self):
+        with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
+            root = Path(d)
+            (root / "composer.json").write_text('{"name":"random/package"}')
+            model.return_value.complete.side_effect = [
+                {"content": "```invalid```"},
+                {"content": '{"type":"tool","name":"read_file","arguments":{"path":"composer.json"}}'},
+                {"content": '{"type":"final","content":"random/package"}'}]
+            with patch("builtins.print"):
+                result = task("fake", root, "inspect", expected=["random/package"], tool_protocol="strict-json")
+            self.assertTrue(result["passed"])
+            self.assertIsNone(result["failure_kind"])
+            self.assertTrue(any(e["event"] == "protocol_error" for e in result["events"]))
+
+    def test_reading_wrong_file_does_not_prove_composer_inspection(self):
+        with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
+            root = Path(d)
+            (root / "other.txt").write_text("unrelated")
+            model.return_value.complete.side_effect = [
+                {"content": '{"type":"tool","name":"read_file","arguments":{"path":"other.txt"}}'},
+                {"content": '{"type":"final","content":"random/package"}'}]
+            with patch("builtins.print"):
+                result = task("fake", root, "inspect", expected=["random/package"], tool_protocol="strict-json")
+            self.assertTrue(result["facts_correct"])
+            self.assertFalse(result["passed"])
+            self.assertEqual(result["failure_kind"], "missing_required_file")
+
     def test_correct_guess_without_tool_call_is_failure(self):
         with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
             model.return_value.complete.return_value = {"content": "random/package ^12.0"}

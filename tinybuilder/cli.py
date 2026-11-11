@@ -31,6 +31,8 @@ def parser() -> argparse.ArgumentParser:
     chat.add_argument("--verbose", action="store_true", help="Emit sanitized events on stderr")
     chat.add_argument("--tool-protocol", choices=("native", "strict-json"), default="native",
                       help="native OpenAI tool calls (default), or experimental opt-in strict JSON actions")
+    chat.add_argument("--strict-json-profile", choices=("prompt", "constrained"), default="prompt",
+                      help="constrained: compact prompt plus server JSON schema; requires strict-json")
     chat.add_argument("--max-steps", type=int, default=8)
     chat.add_argument("--memory-db", default="~/.tinybuilder/memory.sqlite")
 
@@ -80,6 +82,9 @@ def main(argv: list[str] | None = None) -> int:
             for key, value in store.all(scope).items():
                 print(f"{key}: {value}")
         return 0
+    if args.strict_json_profile != "prompt" and args.tool_protocol != "strict-json":
+        print("Error: --strict-json-profile constrained requires --tool-protocol strict-json", file=sys.stderr)
+        return 2
     if args.tool_protocol == "strict-json" and args.mcp_config:
         print("Error: --tool-protocol strict-json supports local tools only; omit --mcp-config or use native", file=sys.stderr)
         return 2
@@ -108,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
         def event(data):
             print(json.dumps(data), file=sys.stderr, flush=True)
         agent = Agent(model, local, bridge, store.all(str(project)), args.max_steps,
-                      on_event=event if args.verbose else None, tool_protocol=args.tool_protocol)
+                      on_event=event if args.verbose else None, tool_protocol=args.tool_protocol,
+                      strict_json_profile=args.strict_json_profile)
         print(agent.run(args.task))
         return 0
     except (ModelError, MCPError, OSError, ValueError) as exc:

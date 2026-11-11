@@ -19,8 +19,11 @@ class ChatModel:
         self.api_key = api_key
         self.timeout = timeout
 
-    def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
+    def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]],
+                 response_format: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = {"model": self.model, "messages": messages, "stream": False, "temperature": 0.1}
+        if response_format is not None:
+            payload["response_format"] = response_format
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"

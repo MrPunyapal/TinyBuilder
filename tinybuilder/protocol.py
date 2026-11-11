@@ -13,6 +13,19 @@ MAX_ACTION_BYTES = 64_000
 LOCAL_SCHEMAS = {spec["function"]["name"]: spec["function"]["parameters"] for spec in SPECS}
 
 
+def strict_response_format() -> dict[str, Any]:
+    """Request constrained generation; the independent parser still validates it."""
+    branches = [{"type": "object", "properties": {
+        "type": {"const": "final"}, "content": {"type": "string"}},
+        "required": ["type", "content"], "additionalProperties": False}]
+    for name, schema in LOCAL_SCHEMAS.items():
+        branches.append({"type": "object", "properties": {
+            "type": {"const": "tool"}, "name": {"const": name}, "arguments": schema},
+            "required": ["type", "name", "arguments"], "additionalProperties": False})
+    return {"type": "json_schema", "json_schema": {
+        "name": "tinybuilder_action", "strict": True, "schema": {"oneOf": branches}}}
+
+
 class ProtocolError(ValueError):
     """A rejected model action. `code` contains only a fixed, safe category."""
 

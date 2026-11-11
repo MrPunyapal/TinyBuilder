@@ -1,0 +1,2126 @@
+{
+  "date": "2026-11-11",
+  "baseline_tinybuilder_commit": "857a227",
+  "environment": {
+    "ollama": "0.32.5",
+    "python": "3.12.14",
+    "php": "8.5.12",
+    "laravel": "13.42.0",
+    "boost": "2.10.4",
+    "phpunit": "12.5.43",
+    "models": {
+      "0.5b": "4ff64a7f502a",
+      "1.5b": "d7372fd82851",
+      "3b": "f72c60cabf62"
+    },
+    "context_tokens": 4096
+  },
+  "native": {
+    "smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "native",
+        "duration_seconds": 7.922,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "native"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 7.907
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "native",
+        "duration_seconds": 2.828,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "native"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 2.828
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "native",
+        "duration_seconds": 3.969,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "native"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 3.969
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      }
+    ],
+    "laravel": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "native/laravel-0",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "native",
+          "duration_seconds": 0.844,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.813
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "write": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "native",
+          "duration_seconds": 0.312,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.312
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "native/laravel-1",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "native",
+          "duration_seconds": 0.969,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.922
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "write": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "native",
+          "duration_seconds": 0.531,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.531
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "native/laravel-2",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "native",
+          "duration_seconds": 1.094,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 1.079
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "write": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "native",
+          "duration_seconds": 0.578,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "native"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.578
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      }
+    ]
+  },
+  "strict_prompt": {
+    "smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.859,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.516
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.328
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.922,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.437
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.485
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.172,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.75
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.422
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      }
+    ],
+    "laravel": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_prompt/laravel-0",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 0.781,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 1,
+              "duration_seconds": 0.531
+            },
+            {
+              "event": "tool_start",
+              "step": 1,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 1,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.219
+            }
+          ],
+          "tool_calls": 1,
+          "valid_tool_calls": 1,
+          "read_file_called": true,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [],
+          "failure_kind": null
+        },
+        "write": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 0.578,
+          "error": "ProtocolError",
+          "error_kind": "protocol",
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.282
+            },
+            {
+              "event": "protocol_error",
+              "step": 1,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.281
+            },
+            {
+              "event": "protocol_error",
+              "step": 2,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": false,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "protocol"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_prompt/laravel-1",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 2.297,
+          "error": "ProtocolError",
+          "error_kind": "protocol",
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 1.813
+            },
+            {
+              "event": "protocol_error",
+              "step": 1,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.453
+            },
+            {
+              "event": "protocol_error",
+              "step": 2,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": false,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "failure_kind": "protocol"
+        },
+        "write": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 1.187,
+          "error": "ProtocolError",
+          "error_kind": "protocol",
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.515
+            },
+            {
+              "event": "protocol_error",
+              "step": 1,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.672
+            },
+            {
+              "event": "protocol_error",
+              "step": 2,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": false,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "protocol"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_prompt/laravel-2",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 5.625,
+          "error": "ProtocolError",
+          "error_kind": "protocol",
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 5.016
+            },
+            {
+              "event": "protocol_error",
+              "step": 1,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.578
+            },
+            {
+              "event": "protocol_error",
+              "step": 2,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": false,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "failure_kind": "protocol"
+        },
+        "write": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "strict-json",
+          "duration_seconds": 1.203,
+          "error": "ProtocolError",
+          "error_kind": "protocol",
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.609
+            },
+            {
+              "event": "protocol_error",
+              "step": 1,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.594
+            },
+            {
+              "event": "protocol_error",
+              "step": 2,
+              "reason": "not_json_object",
+              "failure_class": "protocol"
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": false,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "failure_kind": "protocol"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "protocol"
+      }
+    ]
+  },
+  "strict_constrained": {
+    "smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "strict-json",
+        "strict_json_profile": "constrained",
+        "duration_seconds": 0.547,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.532
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "missing_required_files": [
+          "composer.json"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "strict-json",
+        "strict_json_profile": "constrained",
+        "duration_seconds": 0.812,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.421
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.391
+          }
+        ],
+        "tool_calls": 1,
+        "valid_tool_calls": 1,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "missing_required_files": [],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "factual"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "strict_json_profile": "constrained",
+        "duration_seconds": 1.516,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.594
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.922
+          }
+        ],
+        "tool_calls": 1,
+        "valid_tool_calls": 1,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "missing_required_files": [],
+        "facts_correct": true,
+        "passed": true,
+        "failure_kind": null
+      }
+    ],
+    "laravel": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_constrained/laravel-0",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 0.625,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.593
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file"
+          ],
+          "missing_required_files": [
+            "routes/web.php",
+            "bootstrap/app.php"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "write": {
+          "model": "qwen2.5-coder:0.5b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 0.282,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 0,
+              "duration_seconds": 0.282
+            }
+          ],
+          "tool_calls": 0,
+          "valid_tool_calls": 0,
+          "read_file_called": false,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "read_file",
+            "write_file",
+            "run_command"
+          ],
+          "missing_required_files": [
+            "routes/web.php"
+          ],
+          "failure_kind": "no_tool_call"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_constrained/laravel-1",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 1.328,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 1,
+              "duration_seconds": 0.703
+            },
+            {
+              "event": "tool_start",
+              "step": 1,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 1,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.578
+            }
+          ],
+          "tool_calls": 1,
+          "valid_tool_calls": 1,
+          "read_file_called": true,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [],
+          "missing_required_files": [
+            "bootstrap/app.php"
+          ],
+          "failure_kind": "missing_required_file"
+        },
+        "write": {
+          "model": "qwen2.5-coder:1.5b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 0.703,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 1,
+              "duration_seconds": 0.375
+            },
+            {
+              "event": "tool_start",
+              "step": 1,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 1,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 0,
+              "duration_seconds": 0.328
+            }
+          ],
+          "tool_calls": 1,
+          "valid_tool_calls": 1,
+          "read_file_called": true,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [
+            "write_file",
+            "run_command"
+          ],
+          "missing_required_files": [],
+          "failure_kind": "missing_required_tool"
+        },
+        "agent_changes": [],
+        "route_registered": false,
+        "change_scope_ok": false,
+        "validation_test_exit": 1,
+        "passed": false,
+        "failure_kind": "missing_required_file"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+        "worktree": "strict_constrained/laravel-2",
+        "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+        "baseline_test_exit": 0,
+        "baseline_health_exit": 1,
+        "read": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 1.937,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 1,
+              "duration_seconds": 0.938
+            },
+            {
+              "event": "tool_start",
+              "step": 1,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 1,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 1,
+              "duration_seconds": 0.453
+            },
+            {
+              "event": "tool_start",
+              "step": 2,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 2,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 3,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 3,
+              "tool_calls": 0,
+              "duration_seconds": 0.515
+            }
+          ],
+          "tool_calls": 2,
+          "valid_tool_calls": 2,
+          "read_file_called": true,
+          "write_file_called": false,
+          "run_command_called": false,
+          "final_answer": true,
+          "missing_required_tools": [],
+          "missing_required_files": [],
+          "failure_kind": null
+        },
+        "write": {
+          "model": "qwen2.5-coder:3b",
+          "tool_protocol": "strict-json",
+          "strict_json_profile": "constrained",
+          "duration_seconds": 4.579,
+          "error": null,
+          "error_kind": null,
+          "events": [
+            {
+              "event": "model_start",
+              "step": 1,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 1,
+              "tool_calls": 1,
+              "duration_seconds": 0.532
+            },
+            {
+              "event": "tool_start",
+              "step": 1,
+              "tool": "read_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 1,
+              "tool": "read_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 2,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 2,
+              "tool_calls": 1,
+              "duration_seconds": 1.5
+            },
+            {
+              "event": "tool_start",
+              "step": 2,
+              "tool": "write_file"
+            },
+            {
+              "event": "tool_end",
+              "step": 2,
+              "tool": "write_file",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 0.0
+            },
+            {
+              "event": "model_start",
+              "step": 3,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 3,
+              "tool_calls": 1,
+              "duration_seconds": 0.531
+            },
+            {
+              "event": "tool_start",
+              "step": 3,
+              "tool": "run_command"
+            },
+            {
+              "event": "tool_end",
+              "step": 3,
+              "tool": "run_command",
+              "status": "ok",
+              "reason": "ok",
+              "duration_seconds": 1.594
+            },
+            {
+              "event": "model_start",
+              "step": 4,
+              "protocol": "strict-json"
+            },
+            {
+              "event": "model_end",
+              "step": 4,
+              "tool_calls": 0,
+              "duration_seconds": 0.422
+            }
+          ],
+          "tool_calls": 3,
+          "valid_tool_calls": 3,
+          "read_file_called": true,
+          "write_file_called": true,
+          "run_command_called": true,
+          "final_answer": true,
+          "missing_required_tools": [],
+          "missing_required_files": [],
+          "failure_kind": null
+        },
+        "agent_changes": [
+          "M routes/web.php"
+        ],
+        "route_registered": true,
+        "change_scope_ok": true,
+        "validation_test_exit": 0,
+        "passed": true,
+        "failure_kind": null
+      }
+    ]
+  },
+  "diagnostics": {
+    "prompt_only_smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.016,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.672
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.328
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.937,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.453
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.484
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.188,
+        "error": "ProtocolError",
+        "error_kind": "protocol",
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.766
+          },
+          {
+            "event": "protocol_error",
+            "step": 1,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.422
+          },
+          {
+            "event": "protocol_error",
+            "step": 2,
+            "reason": "not_json_object",
+            "failure_class": "protocol"
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": false,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "protocol"
+      }
+    ],
+    "schema_with_original_prompt_smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.578,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.563
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.453,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.453
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.406,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.734
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.672
+          }
+        ],
+        "tool_calls": 1,
+        "valid_tool_calls": 1,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "factual"
+      }
+    ],
+    "compact_with_schema_smoke": [
+      {
+        "model": "qwen2.5-coder:0.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.438,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.422
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [
+          "read_file"
+        ],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "no_tool_call"
+      },
+      {
+        "model": "qwen2.5-coder:1.5b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 0.765,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.375
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.39
+          }
+        ],
+        "tool_calls": 1,
+        "valid_tool_calls": 1,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "facts_correct": false,
+        "passed": false,
+        "failure_kind": "factual"
+      },
+      {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.391,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.547
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 0,
+            "duration_seconds": 0.844
+          }
+        ],
+        "tool_calls": 1,
+        "valid_tool_calls": 1,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "facts_correct": true,
+        "passed": true,
+        "failure_kind": null
+      }
+    ]
+  },
+  "diagnostic_laravel_3b": [
+    {
+      "model": "qwen2.5-coder:3b",
+      "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+      "worktree": "diagnostic/laravel-0",
+      "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695",
+      "baseline_test_exit": 0,
+      "baseline_health_exit": 1,
+      "read": {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 1.828,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.875
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 1,
+            "duration_seconds": 0.421
+          },
+          {
+            "event": "tool_start",
+            "step": 2,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 2,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 3,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 3,
+            "tool_calls": 0,
+            "duration_seconds": 0.5
+          }
+        ],
+        "tool_calls": 2,
+        "valid_tool_calls": 2,
+        "read_file_called": true,
+        "write_file_called": false,
+        "run_command_called": false,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "failure_kind": null
+      },
+      "write": {
+        "model": "qwen2.5-coder:3b",
+        "tool_protocol": "strict-json",
+        "duration_seconds": 5.563,
+        "error": null,
+        "error_kind": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 1,
+            "duration_seconds": 0.86
+          },
+          {
+            "event": "tool_start",
+            "step": 1,
+            "tool": "list_files"
+          },
+          {
+            "event": "tool_end",
+            "step": 1,
+            "tool": "list_files",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.047
+          },
+          {
+            "event": "model_start",
+            "step": 2,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 2,
+            "tool_calls": 1,
+            "duration_seconds": 1.218
+          },
+          {
+            "event": "tool_start",
+            "step": 2,
+            "tool": "read_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 2,
+            "tool": "read_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 3,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 3,
+            "tool_calls": 1,
+            "duration_seconds": 1.469
+          },
+          {
+            "event": "tool_start",
+            "step": 3,
+            "tool": "write_file"
+          },
+          {
+            "event": "tool_end",
+            "step": 3,
+            "tool": "write_file",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.0
+          },
+          {
+            "event": "model_start",
+            "step": 4,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 4,
+            "tool_calls": 1,
+            "duration_seconds": 0.516
+          },
+          {
+            "event": "tool_start",
+            "step": 4,
+            "tool": "run_command"
+          },
+          {
+            "event": "tool_end",
+            "step": 4,
+            "tool": "run_command",
+            "status": "ok",
+            "reason": "ok",
+            "duration_seconds": 0.875
+          },
+          {
+            "event": "model_start",
+            "step": 5,
+            "protocol": "strict-json"
+          },
+          {
+            "event": "model_end",
+            "step": 5,
+            "tool_calls": 0,
+            "duration_seconds": 0.578
+          }
+        ],
+        "tool_calls": 4,
+        "valid_tool_calls": 4,
+        "read_file_called": true,
+        "write_file_called": true,
+        "run_command_called": true,
+        "final_answer": true,
+        "missing_required_tools": [],
+        "failure_kind": null
+      },
+      "agent_changes": [
+        "M routes/web.php"
+      ],
+      "route_registered": true,
+      "change_scope_ok": true,
+      "validation_test_exit": 0,
+      "passed": true,
+      "failure_kind": null
+    }
+  ],
+  "mcp": {
+    "tools_discovered": 9,
+    "sqlite_project_information_verified": true,
+    "responses_saved": false,
+    "strict_json_supports_mcp": false
+  },
+  "resource_snapshot": {
+    "all_three_models_gpu_mib": 3892,
+    "gpu_total_mib": 4096,
+    "full_gpu_offload": true,
+    "free_system_ram_kib": 576812,
+    "peak_measured": false,
+    "runner_working_set_bytes": [
+      583925760,
+      794439680,
+      675291136
+    ],
+    "runner_private_commit_bytes": [
+      1296584704,
+      3200638976,
+      2083250176
+    ]
+  },
+  "independent_3b_validation": {
+    "route_registered": "GET|HEAD health",
+    "phpunit_tests": 4,
+    "phpunit_passed": 4,
+    "assertions": 5,
+    "after_pint_passed": true,
+    "only_agent_changed_file": "routes/web.php"
+  }
+}

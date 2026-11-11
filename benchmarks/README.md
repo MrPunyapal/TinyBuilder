@@ -34,6 +34,28 @@ $strictLaravel = Join-Path $env:TEMP ('tinybuilder-strict-laravel-' + [guid]::Ne
 
 Do not count success unless route changes, tool events and restored hidden PHPUnit tests all pass. Never use a production project for this harness. No Soup training, model downloads or paid inference occurs automatically.
 
+For the separately evaluated compact/schema-constrained variant, use a fresh
+output directory and add `--strict-json-profile constrained`:
+
+```powershell
+$constrained = Join-Path $env:TEMP ('tinybuilder-constrained-' + [guid]::NewGuid().ToString('N'))
+.\.venv\Scripts\python.exe benchmarks\evaluate.py --tool-protocol strict-json --strict-json-profile constrained --models qwen2.5-coder:0.5b qwen2.5-coder:1.5b qwen2.5-coder:3b --laravel $app --output $constrained
+```
+
+The profile requests a JSON schema from the local inference server and uses a
+shorter system prompt. It leaves tool decisions and factual answers to the model.
+Its client-side parser rejects the same malformed, fenced, unknown and oversized
+actions. A server HTTP error is a failure, with no automatic protocol fallback.
+See the [local comparison and measured limitations](results/2026-11-11-protocol-comparison.md).
+
+The evaluator now also checks the specific requested file reads: `composer.json`
+for the smoke task; `routes/web.php` and `bootstrap/app.php` for the Laravel read
+task; and `routes/web.php` during the edit task. Only these fixed, public fixture
+names can appear in `missing_required_files`; arbitrary paths and source contents
+are not logged. A recovered parse error remains in events but does not label an
+otherwise successful smoke task as failed. Laravel success additionally requires
+a final answer and all required edit-tool/file evidence.
+
 ## Windows reproduction
 
 Run from the TinyBuilder checkout. Use an actual Python 3.10+ interpreter if the

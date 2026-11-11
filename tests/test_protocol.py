@@ -13,9 +13,11 @@ class SequenceModel:
     def __init__(self, *answers):
         self.answers = list(answers)
         self.requests = []
+        self.formats = []
 
-    def complete(self, messages, tools):
+    def complete(self, messages, tools, **kwargs):
         self.requests.append((list(messages), list(tools)))
+        self.formats.append(kwargs.get("response_format"))
         return self.answers.pop(0)
 
 
@@ -24,6 +26,35 @@ def action(name, **arguments):
 
 
 class TestProtocol(unittest.TestCase):
+    def test_constrained_server_output_still_rejects_fences_and_unknown_tools(self):
+        with tempfile.TemporaryDirectory() as d:
+            model = SequenceModel({"content": '```json\n{"type":"final","content":"secret"}\n```'},
+                                  {"content": '{"type":"tool","name":"secret-unknown","arguments":{}}'})
+            events = []
+            with self.assertRaises(ProtocolError):
+                Agent(model, LocalTools(Path(d), allow_write=True), tool_protocol="strict-json",
+                      strict_json_profile="constrained", on_event=events.append).run("inspect")
+            self.assertTrue(all(format_["type"] == "json_schema" for format_ in model.formats))
+            self.assertFalse(any(e["event"] == "tool_start" for e in events))
+            self.assertNotIn("secret", json.dumps(events))
+            self.assertEqual(list(Path(d).iterdir()), [])
+
+    def test_constrained_profile_preserves_permissions_and_exact_argv(self):
+        for allow_write, allow_exec in [(False, False), (True, True)]:
+            with self.subTest(allow_write=allow_write), tempfile.TemporaryDirectory() as d:
+                model = SequenceModel(action("write_file", path="new.php", content="example"),
+                                      action("run_command", argv=["php", "artisan", "migrate:fresh"]),
+                                      {"content": '{"type":"final","content":"Done"}'})
+                events = []
+                Agent(model, LocalTools(Path(d), allow_write=allow_write, allow_exec=allow_exec,
+                                       exec_commands=[["php", "artisan", "test"]]),
+                      tool_protocol="strict-json", strict_json_profile="constrained",
+                      on_event=events.append).run("inspect")
+                ends = [e for e in events if e["event"] == "tool_end"]
+                self.assertEqual(ends[0]["status"], "ok" if allow_write else "error")
+                self.assertEqual(ends[1]["reason"], "permission")
+                self.assertEqual((Path(d) / "new.php").exists(), allow_write)
+
     def test_strict_schema_accepts_correct_tool_and_final(self):
         self.assertEqual(parse_strict_action(action("read_file", path="composer.json")["content"])["name"], "read_file")
         self.assertEqual(parse_strict_action('{"type":"final","content":"OK"}')["content"], "OK")

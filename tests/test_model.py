@@ -63,6 +63,14 @@ class TestModel(unittest.TestCase):
         self.model.complete([{"role": "user", "content": "hi"}], [])
         self.assertNotIn("tools", Handler.seen[-1])
         self.assertNotIn("tool_choice", Handler.seen[-1])
+        self.assertNotIn("response_format", Handler.seen[-1])
+
+    def test_explicit_response_format_is_forwarded_without_native_tools(self):
+        from tinybuilder.protocol import strict_response_format
+        schema = strict_response_format()
+        self.model.complete([{"role": "user", "content": "inspect"}], [], response_format=schema)
+        self.assertEqual(Handler.seen[-1]["response_format"], schema)
+        self.assertNotIn("tools", Handler.seen[-1])
 
     def test_malformed_http_response_is_rejected(self):
         Handler.mode = "bad_calls"

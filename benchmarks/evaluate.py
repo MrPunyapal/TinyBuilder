@@ -60,6 +60,8 @@ def require(argv, root):
 def _failure_kind(result: dict, expected: bool = False) -> str | None:
     """Separate protocol, permissions and execution from factual benchmark failures."""
     events = result["events"]
+    if result.get("passed") is True:
+        return None
     if result["error"]:
         if result["error_kind"]:
             return result["error_kind"]
@@ -78,21 +80,40 @@ def _failure_kind(result: dict, expected: bool = False) -> str | None:
         return "no_tool_call"
     if result.get("missing_required_tools"):
         return "missing_required_tool"
+    if result.get("missing_required_files"):
+        return "missing_required_file"
+    if not result["final_answer"]:
+        return "incomplete"
     if expected and not result.get("facts_correct", False):
         return "factual"
     return None
 
 
+class EvaluationTools(LocalTools):
+    """Remember read targets in RAM without persisting arguments or observations."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.files_read = set()
+
+    def call(self, name, args):
+        output = super().call(name, args)
+        if name == "read_file" and not output.startswith(("Tool error:", "File not found")):
+            self.files_read.add(self._path(args["path"]))
+        return output
+
+
 def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
-         required_tools=()):
+         required_tools=(), strict_json_profile="prompt", required_files=()):
     events = []
-    local = LocalTools(root, allow_write=write, allow_exec=write,
+    local = EvaluationTools(root, allow_write=write, allow_exec=write,
                        exec_commands=[[php, "artisan", "test"]])
     started = time.monotonic()
     answer, error, error_kind = "", None, None
     try:
         answer = Agent(ChatModel("http://127.0.0.1:11434/v1", model_name), local,
-                       max_steps=8, on_event=events.append, tool_protocol=tool_protocol).run(prompt)
+                       max_steps=8, on_event=events.append, tool_protocol=tool_protocol,
+                       strict_json_profile=strict_json_profile).run(prompt)
     except (ModelError, ProtocolError, OSError, ValueError) as exc:
         # Do not persist HTTP error bodies, which may contain remote or model content.
         error = type(exc).__name__
@@ -104,6 +125,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
         print(f"{model_name}: {exc}", file=sys.stderr, flush=True)
     calls = [event for event in events if event["event"] == "tool_end"]
     result = {"model": model_name, "tool_protocol": tool_protocol,
+              "strict_json_profile": strict_json_profile,
               "duration_seconds": round(time.monotonic() - started, 3),
               "error": error, "error_kind": error_kind, "events": events, "tool_calls": len(calls),
               "valid_tool_calls": sum(event["status"] == "ok" for event in calls),
@@ -113,19 +135,24 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
               "final_answer": bool(answer) and not answer.startswith("Stopped after")}
     if expected:
         required_tools = (*required_tools, "read_file")
+        required_files = (*required_files, "composer.json")
     required_tools = tuple(dict.fromkeys(required_tools))
     result["missing_required_tools"] = [name for name in required_tools if not any(
         event["tool"] == name and event["status"] == "ok" for event in calls)]
+    # Only evaluator-supplied public fixture names appear in metadata, never arbitrary paths.
+    result["missing_required_files"] = [name for name in dict.fromkeys(required_files)
+                                        if (local.root / name).resolve() not in local.files_read]
     if expected:
         result["facts_correct"] = all(value in answer for value in expected)
-        result["passed"] = result["facts_correct"] and result["read_file_called"] and result["final_answer"]
+        result["passed"] = (result["facts_correct"] and result["read_file_called"] and
+                            result["final_answer"] and not result["missing_required_files"])
     result["failure_kind"] = _failure_kind(result, expected=bool(expected))
     # Answers and observations stay in RAM. Metadata alone goes to the report.
     print(json.dumps(result), flush=True)
     return result
 
 
-def smoke(root, models, tool_protocol="native"):
+def smoke(root, models, tool_protocol="native", strict_json_profile="prompt"):
     root.mkdir()
     package = "tinybuilder/" + uuid.uuid4().hex
     (root / "composer.json").write_text(json.dumps({"name": package, "type": "project", "require": {
@@ -134,10 +161,11 @@ def smoke(root, models, tool_protocol="native"):
     (root / "routes/web.php").write_text("<?php\nuse Illuminate\\Support\\Facades\\Route;\nRoute::get('/', fn () => view('welcome'));\n", encoding="utf-8")
     (root / "app").mkdir()
     (root / "app/Example.php").write_text("<?php\nnamespace App;\nclass Example {}\n", encoding="utf-8")
-    return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol) for model in models]
+    return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol,
+                 strict_json_profile=strict_json_profile) for model in models]
 
 
-def laravel(base, output, models, php, tool_protocol="native"):
+def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt"):
     # Never execute tests or install dependencies inside an arbitrary user's project.
     # The marker is created explicitly by the operator in a NEW disposable project.
     if not (base / ".tinybuilder-disposable").is_file():
@@ -161,10 +189,12 @@ def laravel(base, output, models, php, tool_protocol="native"):
         negative = command([php, "artisan", "test", "--filter=TinyBuilderHealthTest"], root)
         (output / f"baseline-health-{index}.txt").write_text(negative.stdout + negative.stderr, encoding="utf-8")
         test.unlink()  # Evaluator-owned file, kept hidden from the agent.
-        read = task(model, root, ROUTE_TASK, tool_protocol=tool_protocol, required_tools=("read_file",))
+        read = task(model, root, ROUTE_TASK, tool_protocol=tool_protocol, required_tools=("read_file",),
+                    strict_json_profile=strict_json_profile, required_files=("routes/web.php", "bootstrap/app.php"))
         write_prompt = WRITE_TASK.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
         write = task(model, root, write_prompt, write=True, php=php, tool_protocol=tool_protocol,
-                     required_tools=("read_file", "write_file", "run_command"))
+                     required_tools=("read_file", "write_file", "run_command"),
+                     strict_json_profile=strict_json_profile, required_files=("routes/web.php",))
         # Capture the actual agent diff BEFORE adding the evaluator-owned hidden tests.
         diff = require(["git", "diff", "--", "routes/web.php"], root)
         (output / f"diff-{index}.patch").write_text(diff + "\n", encoding="utf-8")
@@ -190,7 +220,9 @@ def laravel(base, output, models, php, tool_protocol="native"):
                   "validation_test_exit": validation.returncode,
                   "passed": baseline.returncode == 0 and negative.returncode == 1 and
                   validation.returncode == 0 and health_registered and bool(diff) and scope_ok and
-                  write["write_file_called"] and write["run_command_called"]}
+                  write["write_file_called"] and write["run_command_called"] and
+                  write["final_answer"] and not write["missing_required_tools"] and
+                  not write["missing_required_files"]}
         result["failure_kind"] = (None if result["passed"] else
                                   read["failure_kind"] or write["failure_kind"] or "validation")
         results.append(result)
@@ -203,19 +235,24 @@ def main():
     parser.add_argument("--models", nargs="+", default=["qwen2.5-coder:0.5b", "qwen2.5-coder:1.5b"])
     parser.add_argument("--tool-protocol", choices=("native", "strict-json"), default="native",
                         help="Native OpenAI tool calls or experimental opt-in strict JSON actions")
+    parser.add_argument("--strict-json-profile", choices=("prompt", "constrained"), default="prompt",
+                        help="constrained: compact prompt plus server JSON schema; requires strict-json")
     parser.add_argument("--output", type=Path, required=True, help="New directory for disposable fixtures and metadata")
     parser.add_argument("--laravel", type=Path, help="Explicitly marked disposable Laravel baseline Git repository")
     parser.add_argument("--php", default="php", help="PHP binary for evaluator checks")
     args = parser.parse_args()
+    if args.strict_json_profile != "prompt" and args.tool_protocol != "strict-json":
+        parser.error("--strict-json-profile constrained requires --tool-protocol strict-json")
     args.output = args.output.resolve()
     args.output.mkdir(parents=True, exist_ok=False)
-    report = {"smoke": smoke(args.output / "smoke", args.models, tool_protocol=args.tool_protocol)}
+    report = {"smoke": smoke(args.output / "smoke", args.models, tool_protocol=args.tool_protocol,
+                             strict_json_profile=args.strict_json_profile)}
     # Save partial evidence even if dependency/setup work later fails.
     report_path = args.output / "results.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     if args.laravel:
         report["laravel"] = laravel(args.laravel.resolve(), args.output, args.models, args.php,
-                                    tool_protocol=args.tool_protocol)
+                                    tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile)
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return 0 if all(r["passed"] for group in report.values() for r in group) else 1
 

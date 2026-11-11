@@ -1,0 +1,12 @@
+diff --git a/routes/web.php b/routes/web.php
+index 86a06c5..7962e42 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -5,3 +5,7 @@
+ Route::get('/', function () {
+     return view('welcome');
+ });
++
++Route::get('/health', function () {
++    return response()->json(['status' => 'ok']);
++});

@@ -10,6 +10,13 @@ from tinybuilder.cli import main
 
 
 class TestCLI(unittest.TestCase):
+    def test_constrained_profile_requires_strict_protocol_before_model_call(self):
+        with tempfile.TemporaryDirectory() as d, patch("tinybuilder.cli.ChatModel") as model:
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["chat", "inspect", "--project", d,
+                                       "--strict-json-profile", "constrained"]), 2)
+            model.assert_not_called()
+
     def test_verbose_cli_emits_metadata_only(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
