@@ -1,6 +1,7 @@
 """User-facing CLI for local agent, diagnostics, and explicit preference storage."""
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -25,6 +26,9 @@ def parser() -> argparse.ArgumentParser:
     chat.add_argument("--mcp-config", default=None, help="Path to MCP servers JSON config")
     chat.add_argument("--allow-write", action="store_true", help="Permit modifying project files")
     chat.add_argument("--allow-exec", action="store_true", help="Permit arbitrary local argv commands (NOT sandboxed)")
+    chat.add_argument("--exec-command", action="append", default=None, metavar="JSON_ARGV",
+                      help="Restrict --allow-exec to an exact argv array; repeat to permit multiple commands")
+    chat.add_argument("--verbose", action="store_true", help="Print sanitized tool activity as JSON to stderr (no arguments or outputs)")
     chat.add_argument("--max-steps", type=int, default=8)
     chat.add_argument("--memory-db", default="~/.tinybuilder/memory.sqlite")
 
@@ -77,8 +81,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.max_steps < 1 or args.max_steps > 50:
         print("--max-steps must be between 1 and 50", file=sys.stderr)
         return 2
+    try:
+        commands = [json.loads(command) for command in args.exec_command] if args.exec_command else None
+        if commands is not None and (not args.allow_exec or any(
+                not isinstance(command, list) or not command or
+                not all(isinstance(part, str) and part for part in command) for command in commands)):
+            raise ValueError("--exec-command requires --allow-exec and non-empty JSON argv arrays")
+    except (ValueError, TypeError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
     store = MemoryStore(Path(args.memory_db))
-    local = LocalTools(project, allow_write=args.allow_write, allow_exec=args.allow_exec)
+    local = LocalTools(project, allow_write=args.allow_write, allow_exec=args.allow_exec,
+                       exec_commands=commands)
     model = ChatModel(args.base_url, args.model,
                       api_key=args.api_key if args.api_key is not None else os.environ.get("TINYBUILDER_API_KEY", ""))
     bridge = None
@@ -86,7 +100,10 @@ def main(argv: list[str] | None = None) -> int:
         if args.mcp_config:
             bridge = MCPBridge(project, Path(args.mcp_config).expanduser().resolve())
             print(f"Connected MCP tools: {len(bridge.specs)}", file=sys.stderr)
-        agent = Agent(model, local, bridge, store.all(str(project)), args.max_steps)
+        def event(data):
+            print(json.dumps(data), file=sys.stderr, flush=True)
+        agent = Agent(model, local, bridge, store.all(str(project)), args.max_steps,
+                      on_event=event if args.verbose else None)
         print(agent.run(args.task))
         return 0
     except (ModelError, MCPError, OSError, ValueError) as exc:

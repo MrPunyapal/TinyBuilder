@@ -1,0 +1,331 @@
+{
+  "smoke": [
+    {
+      "model": "qwen2.5-coder:0.5b",
+      "duration_seconds": 1.969,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 1.953
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    },
+    {
+      "model": "qwen2.5-coder:1.5b",
+      "duration_seconds": 0.672,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 0.672
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    }
+  ],
+  "laravel": [
+    {
+      "model": "qwen2.5-coder:0.5b",
+      "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+      "worktree": "laravel-0",
+      "baseline_test_exit": 0,
+      "baseline_health_exit": 1,
+      "read": {
+        "model": "qwen2.5-coder:0.5b",
+        "duration_seconds": 0.828,
+        "error": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.813
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "final_answer": true
+      },
+      "write": {
+        "model": "qwen2.5-coder:0.5b",
+        "duration_seconds": 0.297,
+        "error": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.297
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "final_answer": true
+      },
+      "agent_changes": [],
+      "route_registered": false,
+      "validation_test_exit": 1,
+      "passed": false
+    },
+    {
+      "model": "qwen2.5-coder:1.5b",
+      "baseline_commit": "13392feebf08620c9f871c775b8ff321aef87b2e",
+      "worktree": "laravel-1",
+      "baseline_test_exit": 0,
+      "baseline_health_exit": 1,
+      "read": {
+        "model": "qwen2.5-coder:1.5b",
+        "duration_seconds": 5.985,
+        "error": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 5.969
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "final_answer": true
+      },
+      "write": {
+        "model": "qwen2.5-coder:1.5b",
+        "duration_seconds": 0.609,
+        "error": null,
+        "events": [
+          {
+            "event": "model_start",
+            "step": 1
+          },
+          {
+            "event": "model_end",
+            "step": 1,
+            "tool_calls": 0,
+            "duration_seconds": 0.609
+          }
+        ],
+        "tool_calls": 0,
+        "valid_tool_calls": 0,
+        "read_file_called": false,
+        "final_answer": true
+      },
+      "agent_changes": [],
+      "route_registered": false,
+      "validation_test_exit": 1,
+      "passed": false
+    }
+  ],
+  "optional_3b_smoke": [
+    {
+      "model": "qwen2.5-coder:3b",
+      "duration_seconds": 11.203,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 11.188
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    }
+  ],
+  "initial_smoke": [
+    {
+      "model": "qwen2.5-coder:0.5b",
+      "duration_seconds": 55.454,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 55.454
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    },
+    {
+      "model": "qwen2.5-coder:1.5b",
+      "duration_seconds": 5.75,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 5.734
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    }
+  ],
+  "date": "2026-11-11",
+  "environment": {
+    "os": "Windows 11 10.0.26300",
+    "python": "3.12.14",
+    "ollama": "0.32.5",
+    "php": "8.5.12",
+    "composer": "2.11.1",
+    "laravel": "13.42.0",
+    "boost": "2.10.4",
+    "laravel_mcp": "1.2.0",
+    "phpunit": "12.5.43",
+    "composer_lock_sha256": "93a729350d188fc6d960e10d06677be94ddc1a1ff9250778dee6f16b209f7695"
+  },
+  "mcp": {
+    "discovered_tools": 9,
+    "database_connections_verified": true,
+    "search_docs_verified": true,
+    "documentation_characters": 12423,
+    "observations_persisted": false,
+    "model_selected_tools": 0
+  },
+  "deterministic_control": {
+    "kind": "deterministic local-tool control, NOT model success",
+    "write_executed": true,
+    "test_passed": true,
+    "shared_vendor_requires_explicit_APP_BASE_PATH": true,
+    "health_route": [
+      {
+        "domain": null,
+        "method": "GET|HEAD",
+        "uri": "health",
+        "name": null,
+        "action": "Closure",
+        "middleware": [
+          "web"
+        ],
+        "path": "routes/web.php:9"
+      }
+    ]
+  },
+  "resource_snapshots": {
+    "gpu_mib_05_alone": 541,
+    "gpu_mib_05_and_15": 1738,
+    "gpu_mib_3b_alone": 2149,
+    "context_tokens": 4096,
+    "full_gpu_offload": true,
+    "peak_measured": false
+  },
+  "final_smoke": [
+    {
+      "model": "qwen2.5-coder:0.5b",
+      "duration_seconds": 4.828,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 4.828
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "write_file_called": false,
+      "run_command_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    },
+    {
+      "model": "qwen2.5-coder:1.5b",
+      "duration_seconds": 2.922,
+      "error": null,
+      "events": [
+        {
+          "event": "model_start",
+          "step": 1
+        },
+        {
+          "event": "model_end",
+          "step": 1,
+          "tool_calls": 0,
+          "duration_seconds": 2.922
+        }
+      ],
+      "tool_calls": 0,
+      "valid_tool_calls": 0,
+      "read_file_called": false,
+      "write_file_called": false,
+      "run_command_called": false,
+      "final_answer": true,
+      "facts_correct": false,
+      "passed": false
+    }
+  ]
+}

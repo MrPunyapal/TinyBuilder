@@ -31,10 +31,12 @@ SPECS = [
 
 
 class LocalTools:
-    def __init__(self, root: Path, allow_write: bool = False, allow_exec: bool = False):
+    def __init__(self, root: Path, allow_write: bool = False, allow_exec: bool = False,
+                 exec_commands: list[list[str]] | None = None):
         self.root = Path(root).resolve(strict=True)
         self.allow_write = allow_write
         self.allow_exec = allow_exec
+        self.exec_commands = exec_commands
 
     def _path(self, relative: str) -> Path:
         if not isinstance(relative, str) or not relative.strip():
@@ -111,6 +113,8 @@ class LocalTools:
                 argv = args["argv"]
                 if not isinstance(argv, list) or not argv or len(argv) > 25 or not all(isinstance(a, str) and a for a in argv):
                     return "Invalid argv"
+                if self.exec_commands is not None and argv not in self.exec_commands:
+                    return "Permission denied: command is not in the operator's exact argv allowlist"
                 # This is not a sandbox: --allow-exec grants local command execution.
                 result = subprocess.run(argv, cwd=self.root, shell=False, capture_output=True,
                                         text=True, timeout=60, errors="replace", stdin=subprocess.DEVNULL)

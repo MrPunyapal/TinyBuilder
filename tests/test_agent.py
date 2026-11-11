@@ -21,6 +21,33 @@ class FakeModel:
 
 
 class TestAgent(unittest.TestCase):
+    def test_events_do_not_expose_file_contents_or_arguments(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "composer.json").write_text('{"name":"secret/package"}')
+            events = []
+            Agent(FakeModel(), LocalTools(root), on_event=events.append).run("Inspect")
+            self.assertEqual([e["event"] for e in events],
+                             ["model_start", "model_end", "tool_start", "tool_end", "model_start", "model_end"])
+            self.assertEqual(events[3]["status"], "ok")
+            self.assertEqual(events[3]["tool"], "read_file")
+            self.assertNotIn("secret", json.dumps(events))
+            self.assertNotIn("composer.json", json.dumps(events))
+
+    def test_invalid_arguments_and_unknown_names_are_sanitized(self):
+        class BadModel:
+            def complete(self, messages, tools):
+                return {"tool_calls": [
+                    {"function": {"name": "read_file", "arguments": "[1]"}},
+                    {"function": {"name": "secret-injected-name", "arguments": "{}"}}]}
+        with tempfile.TemporaryDirectory() as d:
+            events = []
+            Agent(BadModel(), LocalTools(Path(d)), max_steps=1, on_event=events.append).run("Inspect")
+            ends = [e for e in events if e["event"] == "tool_end"]
+            self.assertEqual([e["status"] for e in ends], ["error", "error"])
+            self.assertEqual(ends[1]["tool"], "unknown")
+            self.assertNotIn("secret", json.dumps(events))
+
     def test_tool_loop_and_no_storage(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

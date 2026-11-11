@@ -41,6 +41,34 @@ tinybuilder chat "Inspect my routes and suggest a simple health endpoint" \
 
 By default TinyBuilder calls `http://127.0.0.1:11434/v1/chat/completions`, the Ollama OpenAI-compatible endpoint. For llama.cpp, pass `--base-url http://127.0.0.1:8080/v1` and your model name. Ollama must be running; Python alone does not run the model.
 
+For an isolated Windows PowerShell install (Python 3.10+):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe -m tinybuilder doctor --project .
+ollama pull qwen2.5-coder:1.5b
+```
+
+If `python` opens the Microsoft Store, use the absolute path to an installed Python
+interpreter to create the environment. Activating the environment is optional when
+using its executable directly. For POSIX shells use `.venv/bin/python` instead.
+
+Use `chat --verbose` to observe JSON events on stderr: model rounds, tool names,
+success/error status and duration. Arguments, file contents, model answers, tool
+outputs and call IDs are excluded from these events. JSON printed in a model's
+answer is **not** a tool call; look for `tool_end` events and verify resulting files.
+
+On Windows, Herd may expose `php.bat` rather than `php.exe`. Python's shell-free
+subprocess launcher cannot resolve the bare `php` batch wrapper. Put the actual
+PHP executable directory first in the **current process** PATH before running
+TinyBuilder, or configure MCP with the absolute `php.exe` path:
+
+```powershell
+$phpExe = php -r 'echo PHP_BINARY;'
+$env:PATH = (Split-Path $phpExe) + ';' + $env:PATH
+```
+
 ### Enable Laravel Boost (optional)
 
 Inside an existing Laravel project:
@@ -70,6 +98,16 @@ tinybuilder chat "Add a migration, then review it" --project /path/to/laravel-ap
 tinybuilder chat "Run the failing Pest test and explain the result" \
   --project /path/to/laravel-app --allow-exec
 ```
+
+For disposable evaluations, restrict execution to exact argv arrays (repeat the
+flag to permit additional commands):
+
+```bash
+tinybuilder chat 'Run the tests' --project /path/to/disposable-app --allow-exec \
+  --exec-command '["php","artisan","test"]' --verbose
+```
+
+This restriction compares every argument before execution; it is not an OS sandbox.
 
 **Security warning:** `--allow-exec` permits arbitrary local commands, not a sandbox. `--allow-write` allows editing and replacing project files. Read-only mode does **not** constrain side effects of independently configured MCP servers. Use a disposable Git worktree/container for untrusted tasks, and review changes with `git diff`. Tool output and source files can contain prompt-injection attempts; the agent labels them untrusted but this is not a security boundary.
 
@@ -104,7 +142,7 @@ You can train tool-use trajectories with Soup, but copying generated answers fro
 python -m unittest discover -s tests -v
 ```
 
-This test suite uses a fake model and fake MCP server. It verifies the basic tool loop and MCP wire protocol **without** downloading model weights, installing PHP, or calling external services. Real Laravel task-solving benchmarks are not yet implemented; see `benchmarks/README.md`.
+This test suite uses a fake model and fake MCP server. It verifies the tool loop and MCP wire protocol **without** downloading model weights, installing PHP, or calling external services. Run the separate, opt-in local-model/Laravel evaluation with `benchmarks/evaluate.py`; see [benchmarks/README.md](benchmarks/README.md) for setup and measured results.
 
 ## What is deliberately not built yet?
 
