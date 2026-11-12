@@ -143,7 +143,11 @@ def _failure_kind(result: dict, expected: bool = False) -> str | None:
         return "missing_required_tool"
     if result.get("missing_required_files"):
         return "missing_required_file"
-    if result.get("required_sequence_ok") is False or result.get("tests_after_last_edit") is False:
+    if result.get("model_write_scope_ok") is False:
+        return "scope"
+    if (result.get("required_sequence_ok") is False or
+            result.get("tests_after_last_edit") is False or
+            result.get("required_reads_before_edit") is False):
         return "tool_order"
     if not result["final_answer"]:
         return "incomplete"
@@ -190,6 +194,26 @@ def tests_after_last_edit_verified(operations, target, command_argv):
     tests = [idx for idx, item in enumerate(operations)
              if item == ("run_command", tuple(command_argv))]
     return bool(writes and tests and tests[-1] > writes[-1])
+
+
+def reads_before_first_edit_verified(operations, files, target):
+    """Required source reads must precede the FIRST model edit, not merely a later edit.
+
+    This is a benchmark evidence check, not an automatic action or permission.
+    """
+    first_write = next((idx for idx, event in enumerate(operations)
+                        if event == ("write_file", target)), None)
+    if first_write is None:
+        return False
+    prior_reads = {path for operation, path in operations[:first_write]
+                   if operation == "read_file"}
+    return set(files).issubset(prior_reads)
+
+
+def writes_only_target_verified(operations, target):
+    """Git status misses ignored paths (.env, vendor); check successful tool writes too."""
+    writes = [path for operation, path in operations if operation == "write_file"]
+    return bool(writes) and all(path == target for path in writes)
 
 
 def validate_laravel_baseline(base: Path, output: Path):
@@ -276,6 +300,11 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
         # edit may invalidate the proof that the model tested its final edit.
         result["tests_after_last_edit"] = tests_after_last_edit_verified(
             local.operations, required_sequence[1][1], required_sequence[-1][1])
+        result["required_reads_before_edit"] = reads_before_first_edit_verified(
+            local.operations, [local.root / name for name in required_files],
+            required_sequence[1][1])
+        result["model_write_scope_ok"] = writes_only_target_verified(
+            local.operations, required_sequence[1][1])
     if expected:
         result["facts_correct"] = all(value in answer for value in expected)
         result["passed"] = (result["facts_correct"] and result["read_file_called"] and
@@ -384,6 +413,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   "read": read, "write": write, "changed_path_count": len(paths),
                   "route_registered": health_registered, "model_changed_route": model_changed_route,
                   "change_scope_ok": scope_ok, "validation_test_exit": validation.returncode,
+                  "model_write_scope_ok": write.get("model_write_scope_ok"),
                   "passed": baseline.returncode == 0 and negative.returncode == 1 and
                   (repair_negative is None or repair_negative.returncode == 1) and
                   validation.returncode == 0 and health_registered and bool(diff) and model_changed_route and
@@ -391,7 +421,9 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   write["write_file_called"] and write["run_command_called"] and
                   write["final_answer"] and not write["missing_required_tools"] and
                   not write["missing_required_files"] and write.get("required_sequence_ok") is True and
-                  write.get("tests_after_last_edit") is True}
+                  write.get("tests_after_last_edit") is True and
+                  write.get("required_reads_before_edit") is True and
+                  write.get("model_write_scope_ok") is True}
         result["failure_kind"] = (None if result["passed"] else
                                   read["failure_kind"] or write["failure_kind"] or "validation")
         results.append(result)
