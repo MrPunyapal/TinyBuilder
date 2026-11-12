@@ -6,6 +6,7 @@ Run with the installed TinyBuilder Python: python benchmarks/evaluate.py --help.
 import argparse
 import difflib
 import hashlib
+import hmac
 import json
 import shutil
 import subprocess
@@ -74,7 +75,8 @@ def hidden_health_test(preserved_slug: str | None = None, marker: str | None = N
     return HEALTH_TEST[:-2] + extra + "}\n"
 
 
-def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling_route: bool = False):
+def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling_route: bool = False,
+                          paired_marker: str | None = None):
     """Seed only disposable worktrees, never the original Laravel baseline."""
     if scenario not in ("health", "repair"):
         raise ValueError("Unknown evaluation scenario")
@@ -92,7 +94,7 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
     marker = None
     slug = None
     if preserve_sibling_route:
-        marker = uuid.uuid4().hex
+        marker = paired_marker if paired_marker is not None else uuid.uuid4().hex
         slug = "tinybuilder-preserve-" + marker[:12]
         previous += (f"\nRoute::get('/{slug}', fn () => response()->json("
                      f"['marker' => '{marker}']));\n")
@@ -141,7 +143,7 @@ def _failure_kind(result: dict, expected: bool = False) -> str | None:
         return "missing_required_tool"
     if result.get("missing_required_files"):
         return "missing_required_file"
-    if result.get("required_sequence_ok") is False:
+    if result.get("required_sequence_ok") is False or result.get("tests_after_last_edit") is False:
         return "tool_order"
     if not result["final_answer"]:
         return "incomplete"
@@ -175,6 +177,44 @@ def sequence_verified(operations, sequence):
     """Check ordered, successful local events, not model assertions or printed JSON."""
     cursor = iter(operations)
     return all(any(item == wanted for item in cursor) for wanted in sequence)
+
+
+def tests_after_last_edit_verified(operations, target, command_argv):
+    """The last edit to the target must precede a successful allowed test run.
+
+    A test run before a later edit does not demonstrate validation of the final
+    model-authored contents. Operations are transient and contain no model prose.
+    """
+    writes = [idx for idx, item in enumerate(operations)
+              if item == ("write_file", target)]
+    tests = [idx for idx, item in enumerate(operations)
+             if item == ("run_command", tuple(command_argv))]
+    return bool(writes and tests and tests[-1] > writes[-1])
+
+
+def validate_laravel_baseline(base: Path, output: Path):
+    """Refuse unsafe benchmark locations before any model request or fixture write."""
+    base, output = base.resolve(), output.resolve()
+    if not (base / ".tinybuilder-disposable").is_file():
+        raise ValueError("--laravel requires a NEW disposable Git project with .tinybuilder-disposable marker")
+    if output.is_relative_to(base) or base.is_relative_to(output):
+        raise ValueError("Benchmark output must be separate from the disposable Laravel baseline")
+    if not (base / "composer.lock").is_file():
+        raise ValueError("Disposable baseline requires composer.lock")
+    if not (base / "vendor").is_dir():
+        raise ValueError("Disposable baseline requires installed vendor dependencies")
+    for path in ("routes/web.php", "bootstrap/app.php", ".env.example"):
+        if not (base / path).is_file():
+            raise ValueError("Disposable baseline is missing required Laravel project files")
+    revision = require(["git", "rev-parse", "HEAD"], base)
+    repo_root = Path(require(["git", "rev-parse", "--show-toplevel"], base)).resolve()
+    if repo_root != base:
+        raise ValueError("Disposable Laravel baseline must be the Git repository root")
+    # Respect normal .gitignore rules for vendor/.env, but refuse untracked
+    # source files that would not be present in the detached worktrees.
+    if require(["git", "status", "--porcelain"], base):
+        raise ValueError("Disposable baseline must have no tracked or untracked changes")
+    return revision
 
 
 def change_scope_verified(paths, model_changed_route, scenario, visible_intact):
@@ -230,8 +270,12 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     result["missing_required_files"] = [name for name in dict.fromkeys(required_files)
                                         if (local.root / name).resolve() not in local.files_read]
     if required_sequence:
-        # Only a boolean is persisted. Actual paths and command args remain in process RAM.
+        # Only booleans are persisted. Actual paths and argv remain in process RAM.
         result["required_sequence_ok"] = sequence_verified(local.operations, required_sequence)
+        # Distinct from finding any read->write->test subsequence: no later
+        # edit may invalidate the proof that the model tested its final edit.
+        result["tests_after_last_edit"] = tests_after_last_edit_verified(
+            local.operations, required_sequence[1][1], required_sequence[-1][1])
     if expected:
         result["facts_correct"] = all(value in answer for value in expected)
         result["passed"] = (result["facts_correct"] and result["read_file_called"] and
@@ -242,9 +286,16 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     return result
 
 
-def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", progress_guidance="off"):
+def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", progress_guidance="off",
+          fixture_seed=None, trial_number=1):
     root.mkdir()
-    package = "tinybuilder/" + uuid.uuid4().hex
+    # A shared, operator-owned seed permits matched inputs across separate
+    # baseline/guided runs. This value and the generated identity are never
+    # sent to the model, included in the task prompt, or saved in results.json.
+    suffix = (hmac.new(bytes.fromhex(fixture_seed), f"smoke:{trial_number}".encode(),
+                       hashlib.sha256).hexdigest()[:32] if fixture_seed is not None
+              else uuid.uuid4().hex)
+    package = "tinybuilder/" + suffix
     (root / "composer.json").write_text(json.dumps({"name": package, "type": "project", "require": {
         "php": "^8.2", "laravel/framework": "^12.0"}, "autoload": {"psr-4": {"App\\": "app/"}}}), encoding="utf-8")
     (root / "routes").mkdir()
@@ -256,15 +307,10 @@ def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", pr
 
 
 def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt",
-            progress_guidance="off", scenario="health", preserve_sibling_route=False):
+            progress_guidance="off", scenario="health", preserve_sibling_route=False,
+            fixture_seed=None, trial_number=1):
     # Never execute tests or install dependencies inside an arbitrary user's project.
-    if not (base / ".tinybuilder-disposable").is_file():
-        raise ValueError("--laravel requires a NEW disposable Git project with .tinybuilder-disposable marker")
-    revision = require(["git", "rev-parse", "HEAD"], base)
-    if require(["git", "status", "--porcelain", "--untracked-files=no"], base):
-        raise ValueError("Disposable baseline must have no tracked changes")
-    if not (base / "composer.lock").is_file():
-        raise ValueError("Disposable baseline requires composer.lock")
+    revision = validate_laravel_baseline(base, output)
     results = []
     for index, model in enumerate(models):
         root = output / f"laravel-{index}"
@@ -275,7 +321,12 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         require([php, "artisan", "key:generate", "--no-interaction"], root)
         baseline = command([php, "artisan", "test"], root)
         # Optional route variations belong only to each detached worktree, never to baseline.
-        fixture = prepare_route_variant(root, scenario=scenario, preserve_sibling_route=preserve_sibling_route)
+        paired_marker = (hmac.new(bytes.fromhex(fixture_seed),
+                                  f"sibling:{trial_number}:{index}".encode(), hashlib.sha256).hexdigest()[:32]
+                         if fixture_seed is not None else None)
+        fixture = prepare_route_variant(root, scenario=scenario,
+                                        preserve_sibling_route=preserve_sibling_route,
+                                        paired_marker=paired_marker)
         hidden_test = hidden_health_test(fixture["slug"], fixture["marker"])
         test = root / "tests/Feature/TinyBuilderHealthTest.php"
         if test.exists():
@@ -339,7 +390,8 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   scope_ok and read["final_answer"] and not read["missing_required_files"] and
                   write["write_file_called"] and write["run_command_called"] and
                   write["final_answer"] and not write["missing_required_tools"] and
-                  not write["missing_required_files"] and write.get("required_sequence_ok") is True}
+                  not write["missing_required_files"] and write.get("required_sequence_ok") is True and
+                  write.get("tests_after_last_edit") is True}
         result["failure_kind"] = (None if result["passed"] else
                                   read["failure_kind"] or write["failure_kind"] or "validation")
         results.append(result)
@@ -357,6 +409,8 @@ def main():
     parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
                         help="opt-in bounded checklist; requires constrained strict-json")
     parser.add_argument("--trials", type=int, default=1, help="1–10 independent random-name trials")
+    parser.add_argument("--fixture-seed", default=None,
+                        help="optional 32-character hex seed for matched hidden-name trials; never logged")
     parser.add_argument("--scenario", choices=("health", "repair"), default="health",
                         help="health is the measured baseline; repair is opt-in failing-test repair")
     parser.add_argument("--preserve-sibling-route", action="store_true",
@@ -371,9 +425,17 @@ def main():
         parser.error("--progress-guidance checklist requires constrained strict-json")
     if not 1 <= args.trials <= 10:
         parser.error("--trials must be between 1 and 10")
+    if args.fixture_seed is not None and (len(args.fixture_seed) != 32 or
+                                         any(c not in "0123456789abcdefABCDEF" for c in args.fixture_seed)):
+        parser.error("--fixture-seed must be exactly 32 hexadecimal characters")
     if (args.scenario != "health" or args.preserve_sibling_route) and not args.laravel:
         parser.error("--scenario repair and --preserve-sibling-route require --laravel")
     args.output = args.output.resolve()
+    if args.laravel:
+        try:
+            validate_laravel_baseline(args.laravel.resolve(), args.output)
+        except ValueError as exc:
+            parser.error(str(exc))
     args.output.mkdir(parents=True, exist_ok=False)
     all_trials = []
     report_path = args.output / "results.json"
@@ -384,12 +446,14 @@ def main():
         trial = {"trial": trial_number,
                  "smoke": smoke(trial_root / "smoke", args.models, tool_protocol=args.tool_protocol,
                                 strict_json_profile=args.strict_json_profile,
-                                progress_guidance=args.progress_guidance)}
+                                progress_guidance=args.progress_guidance,
+                                fixture_seed=args.fixture_seed, trial_number=trial_number)}
         if args.laravel:
             trial["laravel"] = laravel(args.laravel.resolve(), trial_root, args.models, args.php,
                                       tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile,
                                       progress_guidance=args.progress_guidance, scenario=args.scenario,
-                                      preserve_sibling_route=args.preserve_sibling_route)
+                                      preserve_sibling_route=args.preserve_sibling_route,
+                                      fixture_seed=args.fixture_seed, trial_number=trial_number)
         all_trials.append(trial)
         # Partial report saved after each trial; model content/hidden names are never reported.
         if args.trials == 1:
@@ -399,7 +463,9 @@ def main():
                                          "preserve_sibling_route": args.preserve_sibling_route,
                                          "tool_protocol": args.tool_protocol,
                                          "strict_json_profile": args.strict_json_profile,
-                                         "progress_guidance": args.progress_guidance},
+                                         "progress_guidance": args.progress_guidance,
+                                         "paired_fixture_id": (hashlib.sha256(bytes.fromhex(args.fixture_seed)).hexdigest()[:16]
+                                                               if args.fixture_seed else None)},
                       "trials": all_trials}
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     # No optimistic inference from model narratives. Use each task's actual verified pass signal.

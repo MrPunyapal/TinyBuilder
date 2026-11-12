@@ -133,3 +133,56 @@ the report contains the hidden package name. Do not count printed JSON as a call
 - TinyBuilder's code is MIT licensed; do not assume the
   `qwen2.5-coder:3b` model weights use MIT or Apache. Its Ollama tag advertises
   the **Qwen Research License**; check its terms before redistribution or use.
+
+## Phase 2 harness hardening: matched comparisons (opt-in)
+
+The original measured profile and its model prompt remain unchanged. A new
+`--fixture-seed` option makes the **hidden Composer package name** and, when
+`--preserve-sibling-route` is used, the **existing sibling route** identical for
+corresponding trials in separate benchmark runs. Each trial still has a different
+fixture identity; identities are never injected into prompts or saved in
+`results.json`. The seed itself is not saved, only a short SHA-256 identifier to
+check whether reports use matched fixtures. Treat the seed as a local experiment
+input, not as a training example or a secret used for authentication.
+
+From PowerShell, after selecting a clean, marked disposable `$app` as above:
+
+```powershell
+$seed = [guid]::NewGuid().ToString('N')
+$baseline = Join-Path $env:TEMP ('tinybuilder-base-' + [guid]::NewGuid().ToString('N'))
+$guided = Join-Path $env:TEMP ('tinybuilder-guided-' + [guid]::NewGuid().ToString('N'))
+$common = @('--models', 'qwen2.5-coder:3b', '--tool-protocol', 'strict-json',
+            '--strict-json-profile', 'constrained', '--trials', '3',
+            '--fixture-seed', $seed, '--laravel', $app)
+
+.\.venv\Scripts\python.exe benchmarks\evaluate.py @common --output $baseline
+.\.venv\Scripts\python.exe benchmarks\evaluate.py @common --progress-guidance checklist --output $guided
+
+# Display aggregate observed successes, not an estimate of general model accuracy.
+.\.venv\Scripts\python.exe benchmarks\compare.py `
+  --baseline (Join-Path $baseline 'results.json') `
+  --candidate (Join-Path $guided 'results.json')
+```
+
+Each evaluator command may exit 1 if **any** task fails. Continue to the next
+command to record the comparison, and inspect each trial's `failure_kind`,
+`tool_end`, `required_sequence_ok` and `tests_after_last_edit`. A test command
+before the *last* model edit is not proof of testing the final file; the
+acceptance rule now explicitly rejects that case even if an earlier
+read → write → test sequence occurred. The independent final PHPUnit checks are
+still mandatory.
+
+For a harder scenario, run a *separate matched pair* with the same seed, adding
+`--scenario repair --preserve-sibling-route` to **both** commands. The comparer
+refuses mismatched scenarios, models, trial counts or seed identifiers. Fresh
+worktree directories are still required, and do not put `--output` anywhere
+inside the disposable Laravel baseline. The preflight now refuses untracked
+source files, missing installed dependencies, nested output directories and
+non-root Git checkouts **before any model evaluation**.
+
+These comparisons control fixture differences, **not** model sampling, context
+cache state, RAM pressure or stochastic inference. Three trials are still far
+too few to claim reliable general coding. The first follow-up should repeat the
+original 3B task without checklist guidance using the same seeded fixtures and
+compare it with the opt-in checklist. No fine-tuning or weight download is
+performed by these commands.
