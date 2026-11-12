@@ -406,7 +406,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
             health_registered = False
         (output / f"phpunit-{index}.txt").write_text(validation.stdout + validation.stderr, encoding="utf-8")
         result = {"model": model, "scenario": scenario, "preserve_sibling_route": preserve_sibling_route,
-                  "baseline_commit": revision, "worktree": str(root),
+                  "baseline_commit": revision, "worktree": root.name,
                   "composer_lock_sha256": hashlib.sha256((base / "composer.lock").read_bytes()).hexdigest(),
                   "baseline_test_exit": baseline.returncode, "baseline_health_exit": negative.returncode,
                   "baseline_repair_exit": repair_negative.returncode if repair_negative else None,
