@@ -174,7 +174,7 @@ still mandatory.
 
 For a harder scenario, run a *separate matched pair* with the same seed, adding
 `--scenario repair --preserve-sibling-route` to **both** commands. The comparer
-refuses mismatched scenarios, models, trial counts or seed identifiers. Fresh
+refuses mismatched scenarios, trial counts, seed identifiers, model order,\nand Laravel baseline commit or Composer lockfile identity. The latter\nchecks prevent a shared seed from falsely labeling different Laravel inputs\nas paired. Fresh
 worktree directories are still required, and do not put `--output` anywhere
 inside the disposable Laravel baseline. The preflight now refuses untracked
 source files, missing installed dependencies, nested output directories and

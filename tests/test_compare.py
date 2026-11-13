@@ -14,7 +14,8 @@ class CompareTests(unittest.TestCase):
                "progress_guidance": guidance, "paired_fixture_id": seed}
         doc = {"configuration": cfg, "trials": [
             {"trial": i, "smoke": [{"model": "3b", "passed": success[i-1]}],
-             "laravel": [{"model": "3b", "passed": success[i-1]}]}
+             "laravel": [{"model": "3b", "passed": success[i-1],
+                          "baseline_commit": "disposable-commit", "composer_lock_sha256": "lock-sha"}]}
             for i in (1, 2)]}
         path.write_text(json.dumps(doc))
         return path

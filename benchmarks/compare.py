@@ -19,13 +19,30 @@ def _load(path):
         raise ValueError("Report is incomplete or has an invalid trial count")
     if not 2 <= requested <= 10:
         raise ValueError("Unsupported trial count")
-    for trial in trials:
-        if not isinstance(trial, dict) or not isinstance(trial.get("smoke"), list):
-            raise ValueError("Malformed trial data")
+    layout = None
+    for expected_number, trial in enumerate(trials, 1):
+        if (not isinstance(trial, dict) or trial.get("trial") != expected_number or
+                not isinstance(trial.get("smoke"), list)):
+            raise ValueError("Malformed trial data or trial identifiers")
+        current_layout = []
         for label in ("smoke", "laravel"):
+            if label in trial and not isinstance(trial[label], list):
+                raise ValueError("Malformed trial data")
+            names = []
             for item in trial.get(label, []):
-                if not isinstance(item, dict) or not isinstance(item.get("model"), str) or type(item.get("passed")) is not bool:
+                if (not isinstance(item, dict) or not isinstance(item.get("model"), str) or
+                        not item["model"] or type(item.get("passed")) is not bool):
                     raise ValueError("Malformed or missing result signal")
+                names.append(item["model"])
+            if len(names) != len(set(names)):
+                raise ValueError("Duplicate model result in trial")
+            current_layout.append(tuple(names))
+        if current_layout[1] and current_layout[0] != current_layout[1]:
+            raise ValueError("Smoke and Laravel model order differs")
+        if layout is None:
+            layout = current_layout
+        elif current_layout != layout:
+            raise ValueError("Model order differs across trials")
     return data
 
 
@@ -57,6 +74,21 @@ def compare(baseline_path, candidate_path):
     if bid and cid and bid != cid:
         raise ValueError("Paired fixture IDs differ; repeat both runs with the same --fixture-seed")
     paired = bool(bid and cid and bid == cid)
+    # Sibling route identities are derived from (seed, trial, MODEL INDEX).
+    # Sorting model sets alone would mislabel swapped model orders as paired.
+    # Likewise the same seed against different Laravel baselines is not a
+    # matched fixture comparison. Refuse both before reporting any deltas.
+    for btrial, ctrial in zip(baseline["trials"], candidate["trials"]):
+        for label in ("smoke", "laravel"):
+            bnames = [item["model"] for item in btrial.get(label, [])]
+            cnames = [item["model"] for item in ctrial.get(label, [])]
+            if bnames != cnames:
+                raise ValueError("Model order differs between reports")
+        for bitem, citem in zip(btrial.get("laravel", []), ctrial.get("laravel", [])):
+            for key in ("baseline_commit", "composer_lock_sha256"):
+                bvalue, cvalue = bitem.get(key), citem.get(key)
+                if not isinstance(bvalue, str) or not bvalue or bvalue != cvalue:
+                    raise ValueError("Laravel baseline identity missing or differs: " + key)
     delta = {model: {task: {"baseline": bcounts[model][task]["passed"],
                             "candidate": ccounts[model][task]["passed"],
                             "total": bcounts[model][task]["total"],
