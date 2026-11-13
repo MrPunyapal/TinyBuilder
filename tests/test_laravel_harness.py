@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from benchmarks.evaluate import REPAIR_TEST_PATH, laravel
+from benchmarks.evaluate import REPAIR_TEST_PATH, command, laravel
 
 FAKE_ARTISAN = r'''import json, pathlib, sys
 root = pathlib.Path.cwd()
@@ -50,6 +50,12 @@ class ScriptedModel:
 
 
 class HarnessTest(unittest.TestCase):
+    def test_evaluator_project_commands_use_shell_false(self):
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with patch("benchmarks.evaluate.subprocess.run", return_value=completed) as run:
+            command([sys.executable, "artisan", "test"], Path.cwd())
+        self.assertIs(run.call_args.kwargs["shell"], False)
+
     def seed_repo(self, home):
         home.mkdir()
         for path, text in {"artisan": FAKE_ARTISAN,

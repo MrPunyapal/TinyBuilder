@@ -26,14 +26,14 @@ VALIDATION_WRITE_TASK = (
 )
 
 BAD_ROUTE = r"""
-Route::post('/tinybuilder/contact', function (\Illuminate\Http\Request $request) {
+Route::post('/tinybuilder/contact', function () {
     return response()->json(['accepted' => true]);
 });
 """
 
 REFERENCE_ROUTE = r"""
-Route::post('/tinybuilder/contact', function (\Illuminate\Http\Request $request) {
-    $request->validate([
+Route::post('/tinybuilder/contact', function () {
+    request()->validate([
         'email' => ['required', 'email'],
         'message' => ['required', 'string', 'min:3'],
     ]);
@@ -123,9 +123,12 @@ def seed_validation(root: Path, source: str) -> str:
 
 def reference_fixed_route(seeded_source: str) -> str:
     """Pure reference fix for the evaluator's separate positive-control pass."""
-    if seeded_source.count(BAD_ROUTE) != 1:
+    newline = "\r\n" if "\r\n" in seeded_source else "\n"
+    normalized = seeded_source.replace("\r\n", "\n")
+    if normalized.count(BAD_ROUTE) != 1:
         raise ValueError("Validation seed does not contain exactly one broken endpoint")
-    return seeded_source.replace(BAD_ROUTE, REFERENCE_ROUTE, 1)
+    fixed = normalized.replace(BAD_ROUTE, REFERENCE_ROUTE, 1)
+    return fixed.replace("\n", newline)
 
 
 def hidden_validation_test(slug: str | None = None, marker: str | None = None) -> str:

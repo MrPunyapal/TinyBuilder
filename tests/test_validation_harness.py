@@ -23,7 +23,7 @@ source = (root / "routes/web.php").read_text()
 argv = sys.argv[1:]
 visible = root / "tests/Feature/TinyBuilderValidationRegressionTest.php"
 hidden = root / "tests/Feature/TinyBuilderValidationHiddenTest.php"
-fixed = "$request->validate([" in source and "'min:3'" in source and "'email'" in source
+fixed = "request()->validate([" in source and "'min:3'" in source and "'email'" in source
 if argv and argv[0] == "test":
     if (visible.exists() or hidden.exists()) and not fixed:
         sys.exit(1)

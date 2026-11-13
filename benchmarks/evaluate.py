@@ -124,7 +124,7 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
 def command(argv, root, timeout=180):
     # Resolve Windows PHP/Composer launchers without enabling a shell ourselves.
     resolved = [shutil.which(argv[0]) or argv[0], *argv[1:]]
-    return subprocess.run(resolved, cwd=root, capture_output=True, text=True,
+    return subprocess.run(resolved, cwd=root, shell=False, capture_output=True, text=True,
                           errors="replace", timeout=timeout, stdin=subprocess.DEVNULL)
 
 
@@ -430,8 +430,8 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                 raise RuntimeError("Validation seed controls failed; refusing model evaluation")
             seed_bytes = (root / "routes/web.php").read_bytes()
             try:
-                (root / "routes/web.php").write_text(
-                    reference_fixed_route(seed_bytes.decode("utf-8")), encoding="utf-8")
+                (root / "routes/web.php").write_bytes(
+                    reference_fixed_route(seed_bytes.decode("utf-8")).encode("utf-8"))
                 test.write_text(hidden_test, encoding="utf-8")
                 reference = command([php, "artisan", "test"], root)
                 reference_routes = command(

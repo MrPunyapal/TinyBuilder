@@ -23,7 +23,7 @@ class ValidationFixtureTests(unittest.TestCase):
             self.assertIn("assertUnprocessable()", (root / VALIDATION_PATH).read_text())
             fixed = reference_fixed_route(source)
             self.assertEqual(fixed, original + REFERENCE_ROUTE)
-            self.assertIn("$request->validate(", fixed)
+            self.assertIn("request()->validate(", fixed)
             self.assertIn("'required'", fixed)
             self.assertIn("'min:3'", fixed)
             self.assertNotIn(BAD_ROUTE, fixed)
@@ -50,6 +50,13 @@ class ValidationFixtureTests(unittest.TestCase):
                 reference_fixed_route("<?php\n")
             with self.assertRaisesRegex(ValueError, "marker"):
                 hidden_validation_test("sibling", None)
+
+    def test_reference_fix_preserves_windows_crlf_source(self):
+        original = "<?php\r\nRoute::get('/', fn () => view('welcome'));\r\n"
+        seeded = original + BAD_ROUTE.replace("\n", "\r\n")
+        fixed = reference_fixed_route(seeded)
+        self.assertEqual(fixed, original + REFERENCE_ROUTE.replace("\n", "\r\n"))
+        self.assertNotIn("\n", fixed.replace("\r\n", ""))
 
 
 if __name__ == "__main__":
