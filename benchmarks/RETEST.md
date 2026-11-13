@@ -189,3 +189,48 @@ too few to claim reliable general coding. The first follow-up should repeat the
 original 3B task without checklist guidance using the same seeded fixtures and
 compare it with the opt-in checklist. No fine-tuning or weight download is
 performed by these commands.
+
+## Phase 3: validation scenario — verify PHP controls before model trials
+
+This is an **opt-in, unvalidated-on-Windows scenario**. It reuses the same
+disposable Laravel baseline and strict read / write / argv safety controls. The
+separate `--controls-only` option runs *no inference*; it asserts both hidden
+and visible regression suites fail on the broken route, that the independent
+reference fix passes the full test suite and registers POST, and that the
+broken route is restored afterward. A failed control stops the evaluation.
+
+```powershell
+$app = 'C:\path\to\marked-disposable-laravel'
+$py = '.\.venv\Scripts\python.exe'
+$phpExe = php -r 'echo PHP_BINARY;'
+$env:PATH = (Split-Path $phpExe) + ';' + $env:PATH
+
+# Must succeed against actual Laravel before interpreting model results.
+$controls = Join-Path $env:TEMP ('tb-validation-controls-' + [guid]::NewGuid().ToString('N'))
+& $py benchmarks\evaluate.py --scenario validation --controls-only --laravel $app --php $phpExe --preserve-sibling-route --output $controls
+if ($LASTEXITCODE -ne 0) { throw 'Validation fixture controls failed; do not run inference.' }
+
+# Matched paired model trials, new output directories per run.
+$seed = [guid]::NewGuid().ToString('N')
+$baseline = Join-Path $env:TEMP ('tb-validation-base-' + [guid]::NewGuid().ToString('N'))
+$guided = Join-Path $env:TEMP ('tb-validation-guided-' + [guid]::NewGuid().ToString('N'))
+$common = @('--scenario', 'validation', '--preserve-sibling-route',
+    '--models', 'qwen2.5-coder:3b', '--tool-protocol', 'strict-json',
+    '--strict-json-profile', 'constrained', '--trials', '3',
+    '--fixture-seed', $seed, '--laravel', $app, '--php', $phpExe)
+
+& $py benchmarks\evaluate.py @common --output $baseline
+& $py benchmarks\evaluate.py @common --progress-guidance checklist --output $guided
+
+& $py benchmarks\compare.py --baseline (Join-Path $baseline 'results.json') --candidate (Join-Path $guided 'results.json')
+```
+
+Evaluator exit code 1 means one or more tasks failed; it is not a reason to
+discard the results. Examine the sanitized `results.json`, local PHPUnit
+output, and model diffs. The `compare.py` tool must confirm
+`"paired_inputs": true`. The random sibling route and Composer package name
+are never inserted into prompts or stored in results JSON. The reference
+implementation is only used during controls, is rolled back before model
+access, and is **never counted as model-driven success**.
+
+No new model success claims are made from deterministic harness tests alone.

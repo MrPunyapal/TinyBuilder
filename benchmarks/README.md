@@ -169,3 +169,37 @@ data. Do not train or run Soup until observed failures and evaluation data justi
 ## Expanded opt-in regression evaluation
 
 See [RETEST.md](RETEST.md) for exact PowerShell commands covering repeated randomized Composer smoke trials, an opt-in completion checklist, unrelated-route preservation, and a failing-test repair task. These additions preserve the existing acceptance assertions and do not run in CI.
+
+## Phase 3 opt-in request-validation scenario (requires local PHP verification)
+
+The new `--scenario validation` seeds a broken `POST /tinybuilder/contact`
+route and a visible failing regression test in a **marked disposable Laravel
+worktree**. Independent hidden tests check required email and message fields,
+invalid email, minimum message length, valid JSON response, original home route,
+and optional unrelated sibling-route preservation. The model must read the
+route and visible test **before its first edit**, change only `routes/web.php`,
+execute the exact allowed PHP test command after its final edit, and pass
+independent final PHPUnit and route-table checks.
+
+**Run the reference controls first, without Ollama**:
+
+```powershell
+$py = '.\.venv\Scripts\python.exe'
+$phpExe = php -r 'echo PHP_BINARY;'
+$env:PATH = (Split-Path $phpExe) + ';' + $env:PATH
+$controls = Join-Path $env:TEMP ('tb-validation-controls-' + [guid]::NewGuid().ToString('N'))
+& $py benchmarks\evaluate.py --scenario validation --controls-only --laravel $app --php $phpExe --preserve-sibling-route --output $controls
+```
+
+This command does **not** call a model. The evaluator proves the initial
+tests fail, temporarily applies an evaluator-owned reference fix, requires the
+full PHP suite and route table to pass, then restores the broken seed and
+removes the hidden test before any inference. It refuses to run the model if
+these controls fail. A fake-artisan regression test in CI checks the harness
+flow but is **not** evidence of real Laravel correctness. The scenario should
+not be counted as locally validated until the above command succeeds with
+actual PHP/Laravel.
+
+For a matched three-trial Ollama comparison after controls pass, see
+[RETEST.md](RETEST.md). No downloaded model is required for controls-only mode,
+and no new model weights or paid APIs are used automatically.
