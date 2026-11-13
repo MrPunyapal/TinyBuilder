@@ -91,13 +91,31 @@ class TinyBuilderValidationHiddenTest extends TestCase
 '''
 
 
+def fresh_fixture_path(root: Path, relative: str) -> Path:
+    """Reject existing or symlinked fixture paths before writing PHP tests."""
+    root = Path(root).resolve()
+    relative_path = Path(relative)
+    if relative_path.is_absolute() or ".." in relative_path.parts:
+        raise ValueError("Invalid evaluator fixture path")
+    target = root / relative_path
+    if target.exists() or target.is_symlink():
+        raise ValueError("Evaluator fixture path already exists or is a symlink")
+    if any(parent.is_symlink() for parent in target.parents
+           if parent != root and root in parent.parents):
+        raise ValueError("Evaluator fixture directory is a symlink")
+    if not target.resolve().is_relative_to(root):
+        raise ValueError("Evaluator fixture would escape disposable worktree")
+    return target
+
+
 def seed_validation(root: Path, source: str) -> str:
     """Add a broken endpoint and visible failing test in a disposable worktree."""
     if "'/tinybuilder/contact'" in source or '"/tinybuilder/contact"' in source:
         raise ValueError("Disposable baseline already has validation benchmark route")
     test = root / VALIDATION_PATH
-    if test.exists():
+    if test.exists() or test.is_symlink():
         raise ValueError("Disposable baseline already has validation regression test")
+    test = fresh_fixture_path(root, VALIDATION_PATH)
     test.parent.mkdir(parents=True, exist_ok=True)
     test.write_text(VISIBLE_TEST, encoding="utf-8")
     return source + BAD_ROUTE

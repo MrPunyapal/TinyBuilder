@@ -234,3 +234,13 @@ implementation is only used during controls, is rolled back before model
 access, and is **never counted as model-driven success**.
 
 No new model success claims are made from deterministic harness tests alone.
+
+## Symlink safety for disposable baselines
+
+The evaluator refuses symlinks at benchmark-sensitive paths, including
+`routes/web.php`, the `tests/Feature` fixture directory, `.env`, the marked
+baseline files, and the installed dependency directory. A clean `git status`
+**does not** prove these are safe: tracked symlinks and ignored `.env` links
+can otherwise redirect evaluator-written files outside the worktree. Use a
+standard disposable Laravel checkout with regular files and directories.
+This check is deterministic and does not imply any PHP or model validation.

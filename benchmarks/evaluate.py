@@ -25,13 +25,13 @@ if __package__:
     from .validation_case import (
         VALIDATION_HIDDEN_PATH, VALIDATION_PATH, VALIDATION_READ_TASK,
         VALIDATION_ROUTE_URI, VALIDATION_WRITE_TASK, hidden_validation_test,
-        reference_fixed_route, seed_validation,
+        reference_fixed_route, seed_validation, fresh_fixture_path,
     )
 else:
     from validation_case import (
         VALIDATION_HIDDEN_PATH, VALIDATION_PATH, VALIDATION_READ_TASK,
         VALIDATION_ROUTE_URI, VALIDATION_WRITE_TASK, hidden_validation_test,
-        reference_fixed_route, seed_validation,
+        reference_fixed_route, seed_validation, fresh_fixture_path,
     )
 
 
@@ -95,6 +95,9 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
     if scenario not in ("health", "repair", "validation"):
         raise ValueError("Unknown evaluation scenario")
     route_path = root / "routes/web.php"
+    if ((root / "routes").is_symlink() or route_path.is_symlink() or
+            not route_path.resolve().is_relative_to(root.resolve())):
+        raise ValueError("Disposable Laravel route fixture cannot be a symlink")
     previous = route_path.read_text(encoding="utf-8")
     if "'/health'" in previous or '"/health"' in previous:
         raise ValueError("Disposable baseline already has /health; use a fresh baseline")
@@ -102,9 +105,7 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
         previous = seed_validation(root, previous)
     if scenario == "repair":
         previous += "\nRoute::get('/health', fn () => response()->json(['status' => 'broken']));\n"
-        visible_path = root / REPAIR_TEST_PATH
-        if visible_path.exists():
-            raise ValueError("Repair regression fixture already exists")
+        visible_path = fresh_fixture_path(root, REPAIR_TEST_PATH)
         visible_path.parent.mkdir(parents=True, exist_ok=True)
         visible_path.write_text(REPAIR_VISIBLE_TEST, encoding="utf-8")
     marker = None
@@ -235,6 +236,16 @@ def writes_only_target_verified(operations, target):
 def validate_laravel_baseline(base: Path, output: Path):
     """Refuse unsafe benchmark locations before any model request or fixture write."""
     base, output = base.resolve(), output.resolve()
+    # Git considers tracked symlinks clean even if their targets escape the
+    # disposable checkout. Fixture writes and .env copies must never follow
+    # a symlink to an operator's unrelated files.
+    for relative in (
+        ".tinybuilder-disposable", "composer.lock", "vendor", ".env.example", ".env",
+        "routes", "routes/web.php", "bootstrap", "bootstrap/app.php",
+        "tests", "tests/Feature",
+    ):
+        if (base / relative).is_symlink():
+            raise ValueError("Disposable Laravel baseline has symlinked benchmark path: " + relative)
     if not (base / ".tinybuilder-disposable").is_file():
         raise ValueError("--laravel requires a NEW disposable Git project with .tinybuilder-disposable marker")
     if output.is_relative_to(base) or base.is_relative_to(output):
@@ -393,9 +404,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                        else hidden_health_test(fixture["slug"], fixture["marker"]))
         hidden_path = VALIDATION_HIDDEN_PATH if validation_case else "tests/Feature/TinyBuilderHealthTest.php"
         hidden_filter = "TinyBuilderValidationHiddenTest" if validation_case else "TinyBuilderHealthTest"
-        test = root / hidden_path
-        if test.exists():
-            raise ValueError("Disposable baseline already contains the evaluator's hidden test")
+        test = fresh_fixture_path(root, hidden_path)
         test.write_text(hidden_test, encoding="utf-8")
         negative = command([php, "artisan", "test", f"--filter={hidden_filter}"], root)
         negative_label = "baseline-validation-hidden" if validation_case else "baseline-health"
