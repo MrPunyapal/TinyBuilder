@@ -1,6 +1,7 @@
 """Short tool loop. Observations exist only in RAM for the duration of the task."""
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -156,6 +157,21 @@ class Agent:
         system = (COMPACT_SYSTEM if constrained else SYSTEM) + "\n" + context + "\nUser-saved preferences (not retrieved docs):\n" + (prefs or "None")
         if self.tool_protocol == "strict-json":
             system += "\n" + (COMPACT_JSON if constrained else STRICT_JSON)
+        elif self.mcp:
+            # The MCP bridge exposes dynamic names such as
+            # mcp_laravel-boost__search-docs. The old system prompt mentioned
+            # Boost but did not give the model any exact discovered names.
+            # List only sanitized names, never server-supplied descriptions or
+            # documentation, and only in native tool-call mode.
+            names = sorted(name for name in self.mcp.names
+                           if isinstance(name, str) and
+                           re.fullmatch(r"mcp_[A-Za-z0-9_-]{1,60}", name))
+            if names:
+                selected = names[:24]
+                system += ("\nConnected MCP functions (exact names): " + ", ".join(selected) +
+                           (". Other MCP tools are in the tool schemas." if len(names) > 24 else ".") +
+                           " Use their supplied schemas for arguments. Invoke these using "
+                           "native tool calls, never prose or invented names.")
         messages: list[dict[str, Any]] = [{"role": "system", "content": system},
                                          {"role": "user", "content": task}]
         all_specs = SPECS + (self.mcp.specs if self.mcp else [])

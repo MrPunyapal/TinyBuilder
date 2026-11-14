@@ -86,7 +86,7 @@ tinybuilder chat "Use Boost to inspect my Laravel version and suggest a test" \
   --mcp-config /path/to/tinybuilder/examples/mcp.json
 ```
 
-Boost typically exposes `php artisan boost:mcp`, which is registered in `examples/mcp.json`. MCP tool schemas are discovered dynamically, so the commands it supports can vary with Laravel Boost versions and project setup. MCP servers are trusted local processes; configure only servers you trust.
+Boost typically exposes `php artisan boost:mcp`, which is registered in `examples/mcp.json`. MCP tool schemas are discovered dynamically, so the commands it supports can vary with Laravel Boost versions and project setup. In native mode the agent also lists up to 24 sanitized, **exact discovered MCP tool names** in its transient task context. It does not invent a fixed Boost API, execute text pretending to be a tool call, or make MCP available in strict-JSON mode. This guidance does not prove a small model will select the tool. MCP servers are trusted local processes; configure only servers you trust.
 
 ### Allow changes or tests explicitly
 
