@@ -174,7 +174,7 @@ data. Do not train or run Soup until observed failures and evaluation data justi
 
 See [RETEST.md](RETEST.md) for exact PowerShell commands covering repeated randomized Composer smoke trials, an opt-in completion checklist, unrelated-route preservation, and a failing-test repair task. These additions preserve the existing acceptance assertions and do not run in CI.
 
-## Phase 3 opt-in request-validation scenario (requires local PHP verification)
+## Phase 3 opt-in request-validation scenario (real PHP controls previously passed)
 
 The new `--scenario validation` seeds a broken `POST /tinybuilder/contact`
 route and a visible failing regression test in a **marked disposable Laravel
@@ -200,9 +200,11 @@ tests fail, temporarily applies an evaluator-owned reference fix, requires the
 full PHP suite and route table to pass, then restores the broken seed and
 removes the hidden test before any inference. It refuses to run the model if
 these controls fail. A fake-artisan regression test in CI checks the harness
-flow but is **not** evidence of real Laravel correctness. The scenario should
-not be counted as locally validated until the above command succeeds with
-actual PHP/Laravel.
+flow but is **not** evidence of real Laravel correctness. The reference controls passed on a marked Windows disposable Laravel baseline
+in the [2026-11-13 local release validation](results/2026-11-13-local-release-validation.md).
+That result is historical, not a verification of your current checkout or a
+model success: the 3B validation edits passed 0/3 trials in each condition.
+Re-run controls on your own clean disposable baseline before model evaluation.
 
 For a matched three-trial Ollama comparison after controls pass, see
 [RETEST.md](RETEST.md). No downloaded model is required for controls-only mode,

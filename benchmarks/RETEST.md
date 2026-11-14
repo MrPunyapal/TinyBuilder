@@ -192,7 +192,10 @@ performed by these commands.
 
 ## Phase 3: validation scenario — verify PHP controls before model trials
 
-This is an **opt-in, unvalidated-on-Windows scenario**. It reuses the same
+This is an **opt-in scenario whose PHP controls passed on Windows on 2026-11-13**
+(see [local release validation](results/2026-11-13-local-release-validation.md)).
+Its measured Qwen2.5-Coder 3B model edits still failed 0/3 trials in each
+prompt condition, so the model capability is **not validated**. It reuses the same
 disposable Laravel baseline and strict read / write / argv safety controls. The
 separate `--controls-only` option runs *no inference*; it asserts both hidden
 and visible regression suites fail on the broken route, that the independent
