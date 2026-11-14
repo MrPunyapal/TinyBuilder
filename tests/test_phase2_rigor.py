@@ -106,7 +106,7 @@ class Phase2RigorTests(unittest.TestCase):
         root.mkdir()
         for name, content in {
             ".tinybuilder-disposable": "ONLY FOR BENCHMARKS", ".gitignore": "vendor/\n.env\n",
-            "composer.lock": "{}", ".env.example": "APP_KEY=\n",
+            "composer.lock": "{}", ".env.example": "APP_KEY=\n", "artisan": "<?php\n",
             "routes/web.php": "<?php\n", "bootstrap/app.php": "<?php\n"
         }.items():
             file = root / name
@@ -117,6 +117,7 @@ class Phase2RigorTests(unittest.TestCase):
         subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                         "commit", "-qm", "test fixture"], cwd=root, check=True)
         (root / "vendor").mkdir()
+        (root / "vendor/autoload.php").write_text("<?php // fake autoloader\n")
         return root
 
     def test_preflight_refuses_nested_output_untracked_and_missing_dependencies(self):
@@ -130,9 +131,52 @@ class Phase2RigorTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "untracked"):
                 validate_laravel_baseline(base, top / "separate")
             (base / "untracked.php").unlink()
+            (base / "vendor/autoload.php").unlink()
             (base / "vendor").rmdir()
             with self.assertRaisesRegex(ValueError, "vendor"):
                 validate_laravel_baseline(base, top / "separate")
+
+    def test_preflight_rejects_missing_artisan_or_composer_autoloader_before_output_or_inference(self):
+        """A clean marker + vendor directory alone is not a runnable Laravel app."""
+        for missing in ("artisan", "vendor/autoload.php"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as d:
+                top = Path(d)
+                base = self._baseline(top / "baseline")
+                (base / missing).unlink()
+                if missing == "artisan":
+                    # Even if missing artisan is *committed* (clean status),
+                    # preflight must refuse instead of creating a worktree.
+                    subprocess.run(["git", "add", "-u"], cwd=base, check=True)
+                    subprocess.run(["git", "-c", "user.name=Test",
+                                    "-c", "user.email=test@example.invalid",
+                                    "commit", "-qm", "drop artisan"], cwd=base, check=True)
+                self.assertFalse(subprocess.run(
+                    ["git", "status", "--porcelain"], cwd=base, check=True,
+                    capture_output=True, text=True).stdout)
+                output = top / "uncreated-output"
+                args = ["evaluate.py", "--scenario", "validation", "--controls-only",
+                        "--laravel", str(base), "--output", str(output)]
+                with patch("sys.argv", args), patch("benchmarks.evaluate.ChatModel") as model, \
+                     contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                    main()
+                self.assertEqual(caught.exception.code, 2)
+                self.assertFalse(output.exists())
+                model.assert_not_called()
+
+    def test_preflight_rejects_dirty_tracked_baseline_before_output_or_inference(self):
+        with tempfile.TemporaryDirectory() as d:
+            top = Path(d)
+            base = self._baseline(top / "baseline")
+            (base / "routes/web.php").write_text("<?php // dirty\n")
+            output = top / "uncreated-output"
+            with patch("sys.argv", ["evaluate.py", "--laravel", str(base),
+                                    "--output", str(output)]), \
+                 patch("benchmarks.evaluate.ChatModel") as model, \
+                 contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
+                main()
+            self.assertEqual(caught.exception.code, 2)
+            self.assertFalse(output.exists())
+            model.assert_not_called()
 
     def test_main_rejects_bad_baseline_before_model_or_output(self):
         with tempfile.TemporaryDirectory() as d:

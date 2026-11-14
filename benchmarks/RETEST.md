@@ -244,3 +244,15 @@ baseline files, and the installed dependency directory. A clean `git status`
 can otherwise redirect evaluator-written files outside the worktree. Use a
 standard disposable Laravel checkout with regular files and directories.
 This check is deterministic and does not imply any PHP or model validation.
+
+## Essential Laravel files in benchmark preflight
+
+The `--laravel` project must be a clean, marked **disposable** Git baseline with
+`artisan`, `composer.lock`, `.env.example`, `routes/web.php`,
+`bootstrap/app.php`, and Composer's `vendor/autoload.php` present.
+A `vendor/` directory alone is not an installed dependency tree. The evaluator
+refuses missing files **before** creating output or worktrees; it does not
+download dependencies, repair an existing project, or run PHP at preflight.
+PHPUnit and Laravel Boost availability still require separate local checks.
+If the previous disposable baseline is damaged or dirty, prepare a **new**
+baseline in a fresh folder rather than resetting or deleting the old one.

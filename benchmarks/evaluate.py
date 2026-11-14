@@ -240,8 +240,9 @@ def validate_laravel_baseline(base: Path, output: Path):
     # disposable checkout. Fixture writes and .env copies must never follow
     # a symlink to an operator's unrelated files.
     for relative in (
-        ".tinybuilder-disposable", "composer.lock", "vendor", ".env.example", ".env",
-        "routes", "routes/web.php", "bootstrap", "bootstrap/app.php",
+        ".tinybuilder-disposable", "composer.lock", "vendor", "vendor/autoload.php",
+        "artisan", ".env.example", ".env", "routes", "routes/web.php",
+        "bootstrap", "bootstrap/app.php",
         "tests", "tests/Feature",
     ):
         if (base / relative).is_symlink():
@@ -254,9 +255,14 @@ def validate_laravel_baseline(base: Path, output: Path):
         raise ValueError("Disposable baseline requires composer.lock")
     if not (base / "vendor").is_dir():
         raise ValueError("Disposable baseline requires installed vendor dependencies")
-    for path in ("routes/web.php", "bootstrap/app.php", ".env.example"):
+    # A nonempty vendor/ folder is not evidence of a Composer installation.
+    # Check its essential bootstrap file before creating worktrees, fixtures,
+    # or requesting inference. PHP still verifies installed packages locally.
+    if not (base / "vendor/autoload.php").is_file():
+        raise ValueError("Disposable baseline requires installed vendor/autoload.php")
+    for path in ("artisan", "routes/web.php", "bootstrap/app.php", ".env.example"):
         if not (base / path).is_file():
-            raise ValueError("Disposable baseline is missing required Laravel project files")
+            raise ValueError("Disposable baseline is missing required Laravel project files: " + path)
     revision = require(["git", "rev-parse", "HEAD"], base)
     repo_root = Path(require(["git", "rev-parse", "--show-toplevel"], base)).resolve()
     if repo_root != base:

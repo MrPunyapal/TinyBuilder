@@ -74,6 +74,7 @@ class HarnessTest(unittest.TestCase):
         subprocess.run(["git", "commit", "-qm", "disposable fixture"], cwd=home, check=True)
         (home / "vendor").mkdir()
         (home / "vendor" / "placeholder").write_text("fake PHP dependencies")
+        (home / "vendor" / "autoload.php").write_text("<?php // fake test autoloader\n")
 
     def test_repair_accepts_only_a_real_scripted_edit_and_test_order(self):
         with tempfile.TemporaryDirectory() as d:
