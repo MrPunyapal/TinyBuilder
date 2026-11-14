@@ -39,7 +39,7 @@ class ToolThenFinal:
             return {"role": "assistant", "content": None, "tool_calls": [{
                 "id": "call-1", "type": "function", "function": {
                     "name": self.name, "arguments": json.dumps(self.arguments)}}]}
-        return {"role": "assistant", "content": "Completed"
+        return {"role": "assistant", "content": "Completed"}
 
 
 class MCPTextStatusTests(unittest.TestCase):
