@@ -104,29 +104,35 @@ class Agent:
         self._event(event="tool_start", step=step, tool=label)
         started = time.monotonic()
         status, reason = "ok", "ok"
+        is_local = name in {spec["function"]["name"] for spec in SPECS}
         try:
-            if name in {spec["function"]["name"] for spec in SPECS}:
+            if is_local:
                 observation = self.local.call(name, args)
             elif self.mcp and name in self.mcp.names:
+                # MCPBridge.call raises on JSON-RPC/isError failures. Successful
+                # MCP output is arbitrary untrusted text and must not be parsed
+                # as a LocalTools error merely because it starts with a phrase
+                # such as "Permission denied:" or "Tool error:".
                 observation = self.mcp.call(name, args)
             else:
                 observation = "Unknown tool"
                 status, reason = "error", "unknown_tool"
-            if observation.startswith("Permission denied:"):
-                status, reason = "error", "permission"
-            elif observation.startswith(("Tool error:", "Tool failed:", "Invalid", "File not found",
-                                         "Directory not found", "Cannot overwrite")):
-                status, reason = "error", "execution"
-            elif name == "run_command" and observation.startswith("Exit code:"):
-                if not observation.startswith("Exit code: 0\n"):
+            if is_local:
+                if observation.startswith("Permission denied:"):
+                    status, reason = "error", "permission"
+                elif observation.startswith(("Tool error:", "Tool failed:", "Invalid", "File not found",
+                                             "Directory not found", "Cannot overwrite")):
                     status, reason = "error", "execution"
+                elif name == "run_command" and observation.startswith("Exit code:"):
+                    if not observation.startswith("Exit code: 0\n"):
+                        status, reason = "error", "execution"
         except (ValueError, TypeError, KeyError, RuntimeError, OSError) as exc:
             status, reason = "error", "execution"
             # Never reflect arbitrary exception data to the model or event log.
             observation = f"Tool failed: {type(exc).__name__}"
         self._event(event="tool_end", step=step, tool=label, status=status, reason=reason,
                     duration_seconds=round(time.monotonic() - started, 3))
-        if status == "ok" and name in {spec["function"]["name"] for spec in SPECS}:
+        if status == "ok" and is_local:
             self._successful_tools.add(name)
             if name == "read_file":
                 self._successful_reads.add(str(self.local._path(args["path"])))
