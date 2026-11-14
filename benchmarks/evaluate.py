@@ -397,6 +397,9 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         shutil.copytree(base / "vendor", root / "vendor")
         shutil.copyfile(root / ".env.example", root / ".env")
         require([php, "artisan", "key:generate", "--no-interaction"], root)
+        # Git ignores .env; an allowed test can still change it as a side effect.
+        # Capture the evaluator-generated file without persisting its contents.
+        protected_env = (root / ".env").read_bytes()
         baseline = command([php, "artisan", "test"], root)
         # Optional route variations belong only to each detached worktree, never to baseline.
         paired_marker = (hmac.new(bytes.fromhex(fixture_seed),
@@ -463,6 +466,10 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                        "reference_passed": reference_passed,
                        "passed": baseline.returncode == 0 and negative.returncode == 1 and
                        visible_negative.returncode == 1 and reference_passed is True}
+            control["protected_env_unchanged"] = (
+                not (root / ".env").is_symlink() and (root / ".env").is_file() and
+                (root / ".env").read_bytes() == protected_env)
+            control["passed"] = control["passed"] and control["protected_env_unchanged"]
             results.append(control)
             continue
 
@@ -504,6 +511,11 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         route_verb = "POST" if validation_case else "GET"
         routes = command([php, "artisan", "route:list", f"--path={route_uri}", "--json"], root)
         health_registered = route_registered(routes, route_uri, route_verb)
+        # Check after every allowed and evaluator-owned test command. Git status
+        # cannot detect indirect changes to .env because it is ignored.
+        protected_env_unchanged = (
+            not (root / ".env").is_symlink() and (root / ".env").is_file() and
+            (root / ".env").read_bytes() == protected_env)
         (output / f"phpunit-{index}.txt").write_text(validation.stdout + validation.stderr, encoding="utf-8")
         result = {"model": model, "scenario": scenario, "preserve_sibling_route": preserve_sibling_route,
                   "baseline_commit": revision, "worktree": root.name,
@@ -517,7 +529,8 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   "route_registered": health_registered, "model_changed_route": model_changed_route,
                   "change_scope_ok": scope_ok, "validation_test_exit": validation.returncode,
                   "model_write_scope_ok": write.get("model_write_scope_ok"),
-                  "passed": baseline.returncode == 0 and negative.returncode == 1 and
+                  "protected_env_unchanged": protected_env_unchanged,
+                  "passed": protected_env_unchanged and baseline.returncode == 0 and negative.returncode == 1 and
                   (visible_negative is None or visible_negative.returncode == 1) and
                   reference_passed is not False and validation.returncode == 0 and health_registered and bool(diff) and model_changed_route and
                   scope_ok and read["final_answer"] and not read["missing_required_files"] and

@@ -145,6 +145,10 @@ ensure `php` names a real executable. The Python harness itself is cross-platfor
   `diff-N.patch`, `baseline-health-N.txt` and `phpunit-N.txt` contain the local
   route diff and evaluator test output. Model answers and tool/MCP observations
   are never saved by the harness. No SQLite memory store is used.
+- The evaluator snapshots the disposable worktree's ignored `.env` after key
+  generation and rejects a trial if it changes, including changes caused
+  indirectly by a permitted test command. Reports store only a boolean, never
+  the contents of the environment file.
 - Worktrees and fixtures are retained for review. Inspect them with `git diff`;
   remove only these disposable worktrees with `git worktree remove` when done.
   No cleanup, recursive deletion or download occurs implicitly.
