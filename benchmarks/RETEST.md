@@ -256,3 +256,15 @@ download dependencies, repair an existing project, or run PHP at preflight.
 PHPUnit and Laravel Boost availability still require separate local checks.
 If the previous disposable baseline is damaged or dirty, prepare a **new**
 baseline in a fresh folder rather than resetting or deleting the old one.
+
+## Opt-in validation retry budget
+
+The default eight tool rounds are unchanged. `--max-steps 12` allows up to
+twelve model/tool rounds in one task; 4–20 is the accepted range. This affects
+neither the strict-json profile, permission flags, exact argv allowlist, hidden
+tests nor write scope. Longer runs consume more resources and may still fail.
+
+Add `'--max-steps', '12'` to the `$common` array in **both** arms of
+the matched validation experiment above. Use a new shared fixture seed and
+fresh output directories. The comparer refuses different budgets to avoid
+misleading paired comparisons; old reports implicitly used eight rounds.

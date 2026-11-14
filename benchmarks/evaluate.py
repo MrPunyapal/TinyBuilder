@@ -298,7 +298,7 @@ def route_registered(result, uri, verb):
 
 def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
          required_tools=(), strict_json_profile="prompt", required_files=(),
-         progress_guidance="off", required_sequence=()):
+         progress_guidance="off", required_sequence=(), max_steps=8):
     if expected:
         required_tools = (*required_tools, "read_file")
         required_files = (*required_files, "composer.json")
@@ -311,7 +311,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     answer, error, error_kind = "", None, None
     try:
         answer = Agent(ChatModel("http://127.0.0.1:11434/v1", model_name), local,
-                       max_steps=8, on_event=events.append, tool_protocol=tool_protocol,
+                       max_steps=max_steps, on_event=events.append, tool_protocol=tool_protocol,
                        strict_json_profile=strict_json_profile,
                        progress_guidance=progress_guidance,
                        required_reads=required_files if progress_guidance == "checklist" else (),
@@ -365,7 +365,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
 
 
 def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", progress_guidance="off",
-          fixture_seed=None, trial_number=1):
+          fixture_seed=None, trial_number=1, max_steps=8):
     root.mkdir()
     # A shared, operator-owned seed permits matched inputs across separate
     # baseline/guided runs. This value and the generated identity are never
@@ -381,12 +381,13 @@ def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", pr
     (root / "app").mkdir()
     (root / "app/Example.php").write_text("<?php\nnamespace App;\nclass Example {}\n", encoding="utf-8")
     return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol,
-                 strict_json_profile=strict_json_profile, progress_guidance=progress_guidance) for model in models]
+                 strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
+                  max_steps=max_steps) for model in models]
 
 
 def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt",
             progress_guidance="off", scenario="health", preserve_sibling_route=False,
-            fixture_seed=None, trial_number=1, controls_only=False):
+            fixture_seed=None, trial_number=1, controls_only=False, max_steps=8):
     # Never execute tests or install dependencies inside an arbitrary user's project.
     revision = validate_laravel_baseline(base, output)
     results = []
@@ -477,7 +478,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         read_prompt = VALIDATION_READ_TASK if validation_case else ROUTE_TASK
         read = task(model, root, read_prompt, tool_protocol=tool_protocol, required_tools=("read_file",),
                     strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
-                    required_files=("routes/web.php", "bootstrap/app.php"))
+                    required_files=("routes/web.php", "bootstrap/app.php"), max_steps=max_steps)
         write_prompt = (VALIDATION_WRITE_TASK if validation_case else
                         REPAIR_TASK if scenario == "repair" else WRITE_TASK)
         write_prompt = write_prompt.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
@@ -488,7 +489,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                      required_files=required,
                      required_sequence=(("read_file", root / "routes/web.php"),
                                         ("write_file", root / "routes/web.php"),
-                                        ("run_command", (php, "artisan", "test"))))
+                                        ("run_command", (php, "artisan", "test"))), max_steps=max_steps)
         # This model delta excludes any evaluator-seeded route (including intentionally broken one).
         current_route = (root / "routes/web.php").read_text(encoding="utf-8")
         model_changed_route = current_route != fixture["initial_route"]
@@ -557,6 +558,8 @@ def main():
     parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
                         help="opt-in bounded checklist; requires constrained strict-json")
     parser.add_argument("--trials", type=int, default=1, help="1–10 independent random-name trials")
+    parser.add_argument("--max-steps", type=int, default=8,
+                        help="opt-in tool-round budget from 4 to 20 (default 8)")
     parser.add_argument("--fixture-seed", default=None,
                         help="optional 32-character hex seed for matched hidden-name trials; never logged")
     parser.add_argument("--scenario", choices=("health", "repair", "validation"), default="health",
@@ -575,6 +578,8 @@ def main():
         parser.error("--progress-guidance checklist requires constrained strict-json")
     if not 1 <= args.trials <= 10:
         parser.error("--trials must be between 1 and 10")
+    if not 4 <= args.max_steps <= 20:
+        parser.error("--max-steps must be between 4 and 20")
     if args.fixture_seed is not None and (len(args.fixture_seed) != 32 or
                                          any(c not in "0123456789abcdefABCDEF" for c in args.fixture_seed)):
         parser.error("--fixture-seed must be exactly 32 hexadecimal characters")
@@ -593,7 +598,8 @@ def main():
         controls = laravel(args.laravel.resolve(), args.output, ["reference-control"],
                           args.php, scenario="validation",
                           preserve_sibling_route=args.preserve_sibling_route,
-                          fixture_seed=args.fixture_seed, controls_only=True)
+                          fixture_seed=args.fixture_seed, controls_only=True,
+                           max_steps=args.max_steps)
         (args.output / "results.json").write_text(
             json.dumps({"scenario": "validation", "controls_only": True, "controls": controls},
                        indent=2), encoding="utf-8")
@@ -608,13 +614,15 @@ def main():
                  "smoke": smoke(trial_root / "smoke", args.models, tool_protocol=args.tool_protocol,
                                 strict_json_profile=args.strict_json_profile,
                                 progress_guidance=args.progress_guidance,
-                                fixture_seed=args.fixture_seed, trial_number=trial_number)}
+                                fixture_seed=args.fixture_seed, trial_number=trial_number,
+                                 max_steps=args.max_steps)}
         if args.laravel:
             trial["laravel"] = laravel(args.laravel.resolve(), trial_root, args.models, args.php,
                                       tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile,
                                       progress_guidance=args.progress_guidance, scenario=args.scenario,
                                       preserve_sibling_route=args.preserve_sibling_route,
-                                      fixture_seed=args.fixture_seed, trial_number=trial_number)
+                                      fixture_seed=args.fixture_seed, trial_number=trial_number,
+                                       max_steps=args.max_steps)
         all_trials.append(trial)
         # Partial report saved after each trial; model content/hidden names are never reported.
         if args.trials == 1:
@@ -625,6 +633,7 @@ def main():
                                          "tool_protocol": args.tool_protocol,
                                          "strict_json_profile": args.strict_json_profile,
                                          "progress_guidance": args.progress_guidance,
+                                         "max_steps": args.max_steps,
                                          "paired_fixture_id": (hashlib.sha256(bytes.fromhex(args.fixture_seed)).hexdigest()[:16]
                                                                if args.fixture_seed else None)},
                       "trials": all_trials}

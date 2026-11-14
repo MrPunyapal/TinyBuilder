@@ -63,6 +63,9 @@ def compare(baseline_path, candidate_path):
     for key in ("trials_requested", "scenario", "preserve_sibling_route", "tool_protocol", "strict_json_profile"):
         if bcfg.get(key) != ccfg.get(key):
             raise ValueError("Cannot compare mismatched configuration: " + key)
+    # Reports created before the flag all used eight tool rounds.
+    if bcfg.get("max_steps", 8) != ccfg.get("max_steps", 8):
+        raise ValueError("Cannot compare mismatched configuration: max_steps")
     bcounts, ccounts = _counts(baseline), _counts(candidate)
     if set(bcounts) != set(ccounts):
         raise ValueError("Model sets differ")
