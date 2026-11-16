@@ -10,10 +10,24 @@ Install Python 3.10+, Git, and Ollama first. Ollama must already have a model
 you chose to download; TinyBuilder never downloads weights automatically.
 PHP, Composer, and Laravel are optional for general use.
 
-From a fresh clone of TinyBuilder:
+Clone the repository, then create an environment:
 
 ```powershell
+git clone https://github.com/MrPunyapal/TinyBuilder.git
+Set-Location TinyBuilder
 py -3 -m venv .venv
+```
+
+If `py` is unavailable, use `python -m venv .venv`. If `python` opens the
+Microsoft Store, use your installed Python executable's full path:
+
+```powershell
+& 'C:\path\to\python.exe' -m venv .venv
+```
+
+Continue without activating the environment:
+
+```powershell
 $py = '.\.venv\Scripts\python.exe'
 & $py -m pip install -e .
 & $py -m tinybuilder --help
@@ -49,6 +63,14 @@ Use a marked disposable Laravel project, not a production or personal project.
 An allowed executable can have indirect side effects; exact argv is **not**
 an OS sandbox. On Windows, Python subprocesses need the real `php.exe`; a
 `php.bat` wrapper may not launch with shell-free execution.
+
+Resolve it and prepend its directory to the current PowerShell session's PATH
+before using the Laravel example:
+
+```powershell
+$phpExe = php -r 'echo PHP_BINARY;'
+$env:PATH = (Split-Path $phpExe) + ';' + $env:PATH
+```
 
 ## Troubleshooting
 

@@ -47,6 +47,28 @@ jobs:
                   raise SystemExit("Forbidden distribution path: " + name)
           print("Release distributions checked for sensitive paths")
           PY
+      - name: Test the extracted source distribution
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+          import tarfile
+
+          temporary = Path(os.environ["RUNNER_TEMP"])
+          destination = temporary / "tinybuilder-source"
+          destination.mkdir()
+          archive = next((temporary / "tinybuilder-dist").glob("*.tar.gz"))
+          with tarfile.open(archive, "r:gz") as source:
+              source.extractall(destination, filter="data")
+          root = next(destination.iterdir())
+          for relative in ("benchmarks/evaluate.py", "benchmarks/validation_case.py",
+                           "docs/QUICKSTART.md", "docs/SECURITY.md", "examples/mcp.json"):
+              assert (root / relative).is_file(), "Missing source distribution file: " + relative
+          subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
+                         cwd=root, check=True)
+          PY
       - name: Install built wheel into a fresh venv and smoke-test CLI
         run: |
           python -m venv "$RUNNER_TEMP/tinybuilder-fresh"
