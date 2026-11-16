@@ -4,6 +4,10 @@
 
 > Status: v0.1 research prototype, not a trained model or a proven replacement for frontier coding agents. A 0.5B model may fail at tool calling and multi-step edits even when tools provide good information. Evaluate before relying on it.
 
+**Start here:** [Quick start](docs/QUICKSTART.md) · [Security boundaries](docs/SECURITY.md) · [Public-preview checklist](docs/RELEASE_CHECKLIST.md).
+
+The [November 15 local validation report](benchmarks/results/2026-11-15-local-codex-validation.md) observed genuine read-tool calls, but **no passing model-generated Laravel validation edits** in either completed twelve-round condition. Python CI is not proof of autonomous coding reliability.
+
 ## Architecture
 
 ```
