@@ -16,9 +16,9 @@ class Handler(BaseHTTPRequestHandler):
         Handler.seen.append(body)
         assert self.path == "/v1/chat/completions"
         assert body["model"] == "fake-model"
-        if self.mode == "bad_http":
+        if self.mode in ("bad_http", "missing_model"):
             data = b'private-secret-content-should-not-be-shown'
-            status = 400
+            status = 404 if self.mode == "missing_model" else 400
         elif self.mode == "bad_calls":
             data = json.dumps({"choices": [{"message": {"role": "assistant", "content": None,
                                                          "tool_calls": "not-an-array"}}]}).encode()
@@ -87,4 +87,16 @@ class TestModel(unittest.TestCase):
         with self.assertRaises(ModelError) as err:
             self.model.complete([], [])
         self.assertEqual(err.exception.kind, "http")
+        self.assertNotIn("private-secret", str(err.exception))
+        self.assertTrue(err.exception.__cause__.closed,
+                        "HTTP errors must release their response stream")
+
+    def test_http_404_gives_recovery_hint_without_server_body(self):
+        Handler.mode = "missing_model"
+        with self.assertRaises(ModelError) as err:
+            self.model.complete([], [])
+        self.assertEqual(err.exception.kind, "http")
+        self.assertIn("HTTP 404", str(err.exception))
+        self.assertIn("model name", str(err.exception))
+        self.assertIn("API base URL", str(err.exception))
         self.assertNotIn("private-secret", str(err.exception))

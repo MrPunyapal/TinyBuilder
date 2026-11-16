@@ -37,7 +37,13 @@ class ChatModel:
                 data = json.load(response)
         except urllib.error.HTTPError as exc:
             # HTTP error bodies may echo prompts, source contents and credentials.
-            raise ModelError(f"Model server HTTP {exc.code}", "http") from exc
+            message = f"Model server HTTP {exc.code}"
+            if exc.code == 404:
+                message += "; check the installed model name and API base URL"
+            # urlopen raises before its response context manager is entered.
+            # Close the unread error stream without exposing the server body.
+            exc.close()
+            raise ModelError(message, "http") from exc
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             raise ModelError("Cannot reach the configured model server", "connectivity") from exc
         except (json.JSONDecodeError, UnicodeError) as exc:
