@@ -65,9 +65,11 @@ Ollama/PHP test evidence.
 
 ## Additional scenario verification
 
-The route-parameter benchmark is a newly added fourth opt-in Laravel edit
-scenario. Its deterministic Python and fake-artisan regression checks are not
-proof of real PHP semantics. Before treating it as a meaningful model task,
-run the manual real-Laravel reference workflow and/or local
-`--scenario parameter --controls-only` first, then independent Ollama trials.
-Do not retroactively change the recorded 2026-11-16 model pass counts.
+The [focused parameter follow-up](../benchmarks/results/2026-11-16-parameter-followup.md)
+verified real reference controls on Windows and the manual GitHub PHP workflow.
+It corrected missing integer-format assertions that had allowed false positives.
+Fresh 3B parameter edits passed **0/3** against the corrected oracle, despite valid
+PHP and successful model-visible tests. Fresh Composer inspections passed 2/3
+with actual reads in all three, and the targeted native MCP experiment made no
+model-selected call (0/1). These observations preserve the experimental-only
+classification; earlier benchmark reports and their historical counts are unchanged.

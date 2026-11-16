@@ -10,7 +10,7 @@ occur in reviewable increments with deterministic fixtures and negative controls
 | Health route | Add GET /health without changing existing routes | Hidden PHPUnit endpoint/home/sibling assertions | In-scope edit, reads, allowed tests after edit, full suite/route |
 | Health repair | Fix seeded broken route and visible failing regression | Visible failure plus hidden endpoint/home/sibling assertions | Source/test reads before edit; no test edits; successful PHP suite |
 | Contact validation | POST contact: required email and minimum-length message, JSON 422 | Failing visible/hidden tests and independently passing reference | Independent Laravel validation/route assertions and safe tool chronology |
-| Route parameter (NEW) | GET items/{id}: positive decimal integer -> exact JSON ID; otherwise 404 | Failing visible/hidden tests and independently passing reference | Model must fix route only and pass independent PHP assertions |
+| Route parameter | GET items/{id}: positive decimal integer -> exact JSON ID; otherwise 404 | Failing visible/hidden tests, including fractional/exponent rejection, and independently passing reference | Model must fix route only and pass independent PHP assertions |
 
 Current Laravel pin used in the recorded Windows baseline and in the
 optional manually-triggered reference workflow: application template
@@ -18,12 +18,14 @@ optional manually-triggered reference workflow: application template
 Transient dependencies still require the **generated composer.lock** identity
 and committed baseline SHA for exact pairing within each campaign.
 
-The route-parameter task is newly added and has deterministic Python/fake-artisan
-tests; **no actual Laravel or Ollama pass has yet been established**.
-The [manual PHP reference workflow](../.github/workflows/laravel-controls.yml)
-can verify its evaluator-owned reference controls on a fresh disposable app.
-Only actual Ollama trials on a separately marked Laravel baseline establish
-whether a model can perform the edit.
+Real route-parameter reference controls have now passed on Windows and in the
+[manual PHP reference workflow](../.github/workflows/laravel-controls.yml).
+The [focused local follow-up](results/2026-11-16-parameter-followup.md) records actual
+Ollama trials and a corrected false-positive oracle: accepting general numeric
+strings is insufficient for the existing integer-only contract. Reference-control
+passes do not count as model-generated task successes. The fresh corrected-oracle
+3B parameter campaign passed 0/3 edits; the accompanying Composer smoke tasks
+passed 2/3 with actual reads in all three.
 
 No hidden tests, reference answers, model responses, or full project source
 are embedded in public result summaries. The reference code lives in fixture
