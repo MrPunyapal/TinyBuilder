@@ -23,9 +23,15 @@ class MCPServer:
         self.pending: queue.Queue[str | None] = queue.Queue()
         self.counter = 0
         threading.Thread(target=self._reader, daemon=True).start()
-        self._request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
-                                     "clientInfo": {"name": "tinybuilder", "version": "0.1.0"}})
-        self._send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        try:
+            self._request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
+                                         "clientInfo": {"name": "tinybuilder", "version": "0.1.0"}})
+            self._send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        except Exception:
+            # The bridge has not registered this server yet; terminate its
+            # subprocess here rather than leaving a failed startup running.
+            self.close()
+            raise
 
     def _reader(self):
         assert self.proc.stdout is not None
@@ -54,11 +60,16 @@ class MCPServer:
                 response = json.loads(line)
             except ValueError:
                 continue
-            if response.get("id") != ident:
+            if not isinstance(response, dict) or response.get("id") != ident:
                 continue
             if "error" in response:
-                raise MCPError(f"MCP {self.name}: {response['error']}")
-            return response.get("result", {})
+                # The server-provided error may contain private source, paths,
+                # or MCP output. Never echo it into an exception or CLI log.
+                raise MCPError(f"MCP {self.name}: server reported an error during {method}")
+            result = response.get("result", {})
+            if not isinstance(result, dict):
+                raise MCPError(f"MCP {self.name}: invalid result from {method}")
+            return result
         raise MCPError(f"MCP {self.name}: too many unsolicited messages")
 
     def tools(self) -> list[dict]:
@@ -81,10 +92,13 @@ class MCPServer:
             except subprocess.TimeoutExpired:
                 self.proc.kill()
                 self.proc.wait()
-        if self.proc.stdin is not None:
-            self.proc.stdin.close()
-        if self.proc.stdout is not None:
-            self.proc.stdout.close()
+        for stream in (self.proc.stdin, self.proc.stdout):
+            if stream is not None:
+                try:
+                    stream.close()
+                except OSError:
+                    # The child may have closed a pipe before shutdown.
+                    pass
 
 
 class MCPBridge:

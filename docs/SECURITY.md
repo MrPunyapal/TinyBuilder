@@ -14,6 +14,8 @@
   model endpoints accordingly.
 - A configured MCP server is a separately trusted subprocess and may have
   capabilities beyond the local file/command flags. Strict-JSON mode has no MCP.
+  Remote JSON-RPC error payloads are not copied into CLI exception messages;
+  failed MCP handshakes should terminate the started child process.
 - Structured actions are validated. Prose, fenced JSON, malformed or unknown
   tools must never become executable actions.
 - Persistent SQLite memory contains only explicit user-owned preferences
