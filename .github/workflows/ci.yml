@@ -65,7 +65,8 @@ jobs:
           root = next(destination.iterdir())
           for relative in ("benchmarks/evaluate.py", "benchmarks/validation_case.py",
                            "docs/QUICKSTART.md", "docs/SECURITY.md", "examples/mcp.json",
-                           "benchmarks/TASKS.md", ".github/workflows/laravel-controls.yml"):
+                           "benchmarks/TASKS.md", "benchmarks/LOCAL_NEXT.md",
+                           ".github/workflows/laravel-controls.yml"):
               assert (root / relative).is_file(), "Missing source distribution file: " + relative
           subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
                          cwd=root, check=True)

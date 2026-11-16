@@ -223,3 +223,10 @@ workflow uses Composer and genuine PHP/Laravel in an isolated, marked
 disposable application. It must be **manually** triggered and tests only the
 evaluator's negative and reference fixtures: it cannot establish real model
 tool use or edit capability. The baseline Python CI remains model-free.
+
+## Focused Windows follow-up
+
+[LOCAL_NEXT.md](LOCAL_NEXT.md) limits the remaining local runs to the newly
+added route-parameter task, optional fresh diagnostic signals, and one
+read-only native MCP observation. Do not repeat the completed November 16
+campaign without a specific changed hypothesis.

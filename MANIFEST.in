@@ -4,3 +4,4 @@ recursive-include docs *.md
 include examples/mcp.json
 include benchmarks/TASKS.md
 include .github/workflows/laravel-controls.yml
+include benchmarks/LOCAL_NEXT.md
