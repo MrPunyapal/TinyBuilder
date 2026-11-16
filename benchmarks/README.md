@@ -209,3 +209,17 @@ Re-run controls on your own clean disposable baseline before model evaluation.
 For a matched three-trial Ollama comparison after controls pass, see
 [RETEST.md](RETEST.md). No downloaded model is required for controls-only mode,
 and no new model weights or paid APIs are used automatically.
+
+## Pinned task inventory and manual PHP controls
+
+[benchmarks/TASKS.md](TASKS.md) lists each actual task family and distinguishes
+negative/reference controls from model-generated success. The opt-in
+`--scenario parameter` adds the fourth Laravel edit family, with
+`--scenario parameter --controls-only` to check reference behavior before
+model inference.
+
+The separate `Laravel PHP reference controls (manual)` GitHub Actions
+workflow uses Composer and genuine PHP/Laravel in an isolated, marked
+disposable application. It must be **manually** triggered and tests only the
+evaluator's negative and reference fixtures: it cannot establish real model
+tool use or edit capability. The baseline Python CI remains model-free.

@@ -62,3 +62,12 @@ three-trial task results do not establish broad autonomous coding reliability.
 For local retesting, follow [RETEST.md](../benchmarks/RETEST.md) using a fresh
 marked disposable Laravel baseline, fresh output directories, and real
 Ollama/PHP test evidence.
+
+## Additional scenario verification
+
+The route-parameter benchmark is a newly added fourth opt-in Laravel edit
+scenario. Its deterministic Python and fake-artisan regression checks are not
+proof of real PHP semantics. Before treating it as a meaningful model task,
+run the manual real-Laravel reference workflow and/or local
+`--scenario parameter --controls-only` first, then independent Ollama trials.
+Do not retroactively change the recorded 2026-11-16 model pass counts.

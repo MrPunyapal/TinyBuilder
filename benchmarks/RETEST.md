@@ -271,3 +271,42 @@ Add `'--max-steps', '12'` to the `$common` array in **both** arms of
 the matched validation experiment above. Use a new shared fixture seed and
 fresh output directories. The comparer refuses different budgets to avoid
 misleading paired comparisons; old reports implicitly used eight rounds.
+
+## Fourth opt-in Laravel task: integer route parameter
+
+A new independent route-parameter task seeds a deliberately wrong
+`GET /tinybuilder/items/{id}` response and a visible regression.
+Hidden tests separately verify IDs 1 and 42, HTTP 404 for alphabetic/zero
+IDs, the original home route, and an optional random sibling route.
+Only `routes/web.php` may be edited, and the allowed test command remains
+exactly `["php","artisan","test"]`.
+
+On your **clean, marked, disposable** `$app`, run negative/reference
+controls first without Ollama:
+
+```powershell
+$py = '.\.venv\Scripts\python.exe'
+$phpExe = php -r 'echo PHP_BINARY;'
+$env:PATH = (Split-Path $phpExe) + ';' + $env:PATH
+$controls = Join-Path $env:TEMP ('tb-parameter-controls-' + [guid]::NewGuid().ToString('N'))
+& $py benchmarks\evaluate.py --scenario parameter --controls-only --laravel $app --php $phpExe --preserve-sibling-route --output $controls
+if ($LASTEXITCODE -ne 0) { throw 'Route-parameter controls failed; do not run inference' }
+```
+
+Then, **only if controls pass**, an optional fresh local model trial:
+
+```powershell
+$trial = Join-Path $env:TEMP ('tb-parameter-model-' + [guid]::NewGuid().ToString('N'))
+& $py benchmarks\evaluate.py --scenario parameter --preserve-sibling-route --models qwen2.5-coder:3b --tool-protocol strict-json --strict-json-profile constrained --progress-guidance checklist --trials 3 --laravel $app --php $phpExe --output $trial
+```
+
+Exit 1 from a complete report can mean actual model failure. Do not count a
+scripted reference edit as model success. Historical outcomes remain unchanged.
+
+A separate **manual-only** GitHub Actions workflow named
+`Laravel PHP reference controls (manual)` builds a fresh disposable
+Laravel application and checks both validation and parameter reference
+controls using **real PHP**. The workflow is not triggered by a normal push,
+downloads no models, runs no inference, and publishes no private worktrees.
+Click **Actions → Laravel PHP reference controls (manual) → Run workflow**
+to request this independent PHP check.

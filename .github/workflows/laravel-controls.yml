@@ -1,0 +1,93 @@
+name: Laravel PHP reference controls (manual)
+
+# This workflow deliberately does not run for pushes or pull requests. It may
+# download Composer PHP dependencies but never downloads weights or uses Ollama.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-php-reference-controls:
+    name: Disposable Laravel 13 reference controls (no inference)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl
+          tools: composer:v2
+          coverage: none
+      - name: Install TinyBuilder without model dependencies
+        run: python -m pip install -e .
+      - name: Build a fresh, marked, committed disposable Laravel baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/laravel-reference"
+          composer create-project laravel/laravel "$APP" 13.11.0 --no-install --no-interaction
+          cd "$APP"
+          composer config optimize-autoloader false
+          composer require laravel/framework:13.42.0 --no-update --no-interaction
+          composer install --prefer-dist --no-interaction --no-progress
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+          php artisan test
+          git init -q --initial-branch=main
+          git config user.name "TinyBuilder CI fixture"
+          git config user.email "ci@example.invalid"
+          printf 'Disposable Laravel reference controls only\n' > .tinybuilder-disposable
+          git add -A
+          git commit -qm 'Disposable Laravel reference baseline'
+          test -f composer.lock
+          test -f vendor/autoload.php
+          test -f .tinybuilder-disposable
+          test -z "$(git status --porcelain)"
+      - name: Verify real validation negative and reference controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python benchmarks/evaluate.py \
+            --scenario validation --controls-only \
+            --laravel "$RUNNER_TEMP/laravel-reference" \
+            --php "$(command -v php)" --preserve-sibling-route \
+            --output "$RUNNER_TEMP/validation-reference"
+      - name: Verify real route-parameter negative and reference controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python benchmarks/evaluate.py \
+            --scenario parameter --controls-only \
+            --laravel "$RUNNER_TEMP/laravel-reference" \
+            --php "$(command -v php)" --preserve-sibling-route \
+            --output "$RUNNER_TEMP/parameter-reference"
+      - name: Summarize reference controls without uploading private artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          for scenario in ("validation", "parameter"):
+              path = Path(os.environ["RUNNER_TEMP"]) / f"{scenario}-reference/results.json"
+              data = json.loads(path.read_text(encoding="utf-8"))
+              assert data["scenario"] == scenario
+              assert data["controls_only"] is True
+              assert len(data["controls"]) == 1
+              control = data["controls"][0]
+              assert control["passed"] is True
+              assert control["negative_hidden_exit"] == 1
+              assert control["negative_visible_exit"] == 1
+              assert control["reference_passed"] is True
+              assert control["protected_env_unchanged"] is True
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+                  out.write(f"- {scenario}: real Laravel negative/reference controls PASS; no model used\n")
+          PY
