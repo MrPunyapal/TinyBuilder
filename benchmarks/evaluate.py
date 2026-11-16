@@ -27,11 +27,21 @@ if __package__:
         VALIDATION_ROUTE_URI, VALIDATION_WRITE_TASK, hidden_validation_test,
         reference_fixed_route, seed_validation, fresh_fixture_path,
     )
+    from .parameter_case import (
+        PARAMETER_HIDDEN_PATH, PARAMETER_PATH, PARAMETER_READ_TASK,
+        PARAMETER_ROUTE_URI, PARAMETER_WRITE_TASK,
+        hidden_parameter_test, reference_fixed_parameter, seed_parameter,
+    )
 else:
     from validation_case import (
         VALIDATION_HIDDEN_PATH, VALIDATION_PATH, VALIDATION_READ_TASK,
         VALIDATION_ROUTE_URI, VALIDATION_WRITE_TASK, hidden_validation_test,
         reference_fixed_route, seed_validation, fresh_fixture_path,
+    )
+    from parameter_case import (
+        PARAMETER_HIDDEN_PATH, PARAMETER_PATH, PARAMETER_READ_TASK,
+        PARAMETER_ROUTE_URI, PARAMETER_WRITE_TASK,
+        hidden_parameter_test, reference_fixed_parameter, seed_parameter,
     )
 
 
@@ -92,7 +102,7 @@ def hidden_health_test(preserved_slug: str | None = None, marker: str | None = N
 def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling_route: bool = False,
                           paired_marker: str | None = None):
     """Seed only disposable worktrees, never the original Laravel baseline."""
-    if scenario not in ("health", "repair", "validation"):
+    if scenario not in ("health", "repair", "validation", "parameter"):
         raise ValueError("Unknown evaluation scenario")
     route_path = root / "routes/web.php"
     if ((root / "routes").is_symlink() or route_path.is_symlink() or
@@ -103,6 +113,8 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
         raise ValueError("Disposable baseline already has /health; use a fresh baseline")
     if scenario == "validation":
         previous = seed_validation(root, previous)
+    if scenario == "parameter":
+        previous = seed_parameter(root, previous)
     if scenario == "repair":
         previous += "\nRoute::get('/health', fn () => response()->json(['status' => 'broken']));\n"
         visible_path = fresh_fixture_path(root, REPAIR_TEST_PATH)
@@ -116,7 +128,7 @@ def prepare_route_variant(root: Path, scenario: str = "health", preserve_sibling
         previous += (f"\nRoute::get('/{slug}', fn () => response()->json("
                      f"['marker' => '{marker}']));\n")
     # No rewrite in the measured default scenario (preserves Windows line endings).
-    if scenario in ("repair", "validation") or preserve_sibling_route:
+    if scenario in ("repair", "validation", "parameter") or preserve_sibling_route:
         route_path.write_text(previous, encoding="utf-8")
     return {"initial_route": previous, "slug": slug, "marker": marker}
 
@@ -284,7 +296,8 @@ def validate_laravel_baseline(base: Path, output: Path):
 def change_scope_verified(paths, model_changed_route, scenario, visible_intact):
     """Exclude an evaluator-owned visible test only if the model left it byte-identical."""
     visible_path = (REPAIR_TEST_PATH if scenario == "repair" else
-                    VALIDATION_PATH if scenario == "validation" else None)
+                    VALIDATION_PATH if scenario == "validation" else
+                    PARAMETER_PATH if scenario == "parameter" else None)
     ignored = {visible_path} if visible_path and visible_intact else set()
     return (set(paths) - ignored == {"routes/web.php"} and visible_intact and model_changed_route)
 
@@ -446,22 +459,32 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                                         preserve_sibling_route=preserve_sibling_route,
                                         paired_marker=paired_marker)
         validation_case = scenario == "validation"
-        hidden_test = (hidden_validation_test(fixture["slug"], fixture["marker"]) if validation_case
+        parameter_case = scenario == "parameter"
+        controlled_case = validation_case or parameter_case
+        hidden_test = (hidden_parameter_test(fixture["slug"], fixture["marker"]) if parameter_case
+                       else hidden_validation_test(fixture["slug"], fixture["marker"]) if validation_case
                        else hidden_health_test(fixture["slug"], fixture["marker"]))
-        hidden_path = VALIDATION_HIDDEN_PATH if validation_case else "tests/Feature/TinyBuilderHealthTest.php"
-        hidden_filter = "TinyBuilderValidationHiddenTest" if validation_case else "TinyBuilderHealthTest"
+        hidden_path = (PARAMETER_HIDDEN_PATH if parameter_case else
+                       VALIDATION_HIDDEN_PATH if validation_case else
+                       "tests/Feature/TinyBuilderHealthTest.php")
+        hidden_filter = ("TinyBuilderParameterHiddenTest" if parameter_case else
+                         "TinyBuilderValidationHiddenTest" if validation_case else
+                         "TinyBuilderHealthTest")
         test = fresh_fixture_path(root, hidden_path)
         test.write_text(hidden_test, encoding="utf-8")
         negative = command([php, "artisan", "test", f"--filter={hidden_filter}"], root)
-        negative_label = "baseline-validation-hidden" if validation_case else "baseline-health"
+        negative_label = ("baseline-parameter-hidden" if parameter_case else
+                          "baseline-validation-hidden" if validation_case else "baseline-health")
         (output / f"{negative_label}-{index}.txt").write_text(
             negative.stdout + negative.stderr, encoding="utf-8")
         test.unlink()  # Never let model read the hidden assertions.
-        visible_path = (VALIDATION_PATH if validation_case else
+        visible_path = (PARAMETER_PATH if parameter_case else
+                        VALIDATION_PATH if validation_case else
                         REPAIR_TEST_PATH if scenario == "repair" else None)
         visible_test = root / visible_path if visible_path else None
         visible_before = visible_test.read_bytes() if visible_test else None
-        visible_filter = ("TinyBuilderValidationRegressionTest" if validation_case else
+        visible_filter = ("TinyBuilderParameterRegressionTest" if parameter_case else
+                          "TinyBuilderValidationRegressionTest" if validation_case else
                           "TinyBuilderRepairRegressionTest")
         visible_negative = (command([php, "artisan", "test", f"--filter={visible_filter}"], root)
                             if visible_test else None)
@@ -470,29 +493,34 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         # The reference patch exists in RAM/on disk solely while evaluator tests
         # run; it is reverted and the hidden test is removed BEFORE model access.
         reference_passed = None
-        if validation_case:
+        if controlled_case:
             if (baseline.returncode != 0 or negative.returncode != 1 or
                     visible_negative.returncode != 1):
-                raise RuntimeError("Validation seed controls failed; refusing model evaluation")
+                raise RuntimeError("Scenario seed controls failed; refusing model evaluation")
             seed_bytes = (root / "routes/web.php").read_bytes()
             try:
                 (root / "routes/web.php").write_bytes(
-                    reference_fixed_route(seed_bytes.decode("utf-8")).encode("utf-8"))
+                    (reference_fixed_parameter(seed_bytes.decode("utf-8")) if parameter_case
+                     else reference_fixed_route(seed_bytes.decode("utf-8"))).encode("utf-8"))
                 test.write_text(hidden_test, encoding="utf-8")
                 reference = command([php, "artisan", "test"], root)
                 reference_routes = command(
-                    [php, "artisan", "route:list", f"--path={VALIDATION_ROUTE_URI}", "--json"], root)
+                    [php, "artisan", "route:list",
+                     f"--path={PARAMETER_ROUTE_URI if parameter_case else VALIDATION_ROUTE_URI}",
+                     "--json"], root)
                 reference_passed = (reference.returncode == 0 and
-                                    route_registered(reference_routes, VALIDATION_ROUTE_URI, "POST"))
+                                    route_registered(reference_routes,
+                                                     PARAMETER_ROUTE_URI if parameter_case else VALIDATION_ROUTE_URI,
+                                                     "GET" if parameter_case else "POST"))
             finally:
                 (root / "routes/web.php").write_bytes(seed_bytes)
                 if test.exists():
                     test.unlink()
             if not reference_passed or (root / "routes/web.php").read_bytes() != seed_bytes:
-                raise RuntimeError("Validation reference controls failed; refusing model evaluation")
+                raise RuntimeError("Scenario reference controls failed; refusing model evaluation")
             # A passing reference must not leave the broken seed accidentally fixed.
             if command([php, "artisan", "test", f"--filter={visible_filter}"], root).returncode != 1:
-                raise RuntimeError("Validation seed was not restored after reference control")
+                raise RuntimeError("Scenario seed was not restored after reference control")
 
         if controls_only:
             control = {"model": "reference-control", "scenario": scenario,
@@ -511,11 +539,13 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
             continue
 
         # No hidden tests and no answer content are persisted by the agent.
-        read_prompt = VALIDATION_READ_TASK if validation_case else ROUTE_TASK
+        read_prompt = (PARAMETER_READ_TASK if parameter_case else
+                       VALIDATION_READ_TASK if validation_case else ROUTE_TASK)
         read = task(model, root, read_prompt, tool_protocol=tool_protocol, required_tools=("read_file",),
                     strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
                     required_files=("routes/web.php", "bootstrap/app.php"), max_steps=max_steps)
-        write_prompt = (VALIDATION_WRITE_TASK if validation_case else
+        write_prompt = (PARAMETER_WRITE_TASK if parameter_case else
+                        VALIDATION_WRITE_TASK if validation_case else
                         REPAIR_TASK if scenario == "repair" else WRITE_TASK)
         write_prompt = write_prompt.replace('["php","artisan","test"]', json.dumps([php, "artisan", "test"]))
         required = (("routes/web.php", visible_path) if visible_path else ("routes/web.php",))
@@ -544,7 +574,8 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         scope_ok = change_scope_verified(paths, model_changed_route, scenario, visible_intact)
         test.write_text(hidden_test, encoding="utf-8")
         validation = command([php, "artisan", "test"], root)
-        route_uri = VALIDATION_ROUTE_URI if validation_case else "health"
+        route_uri = (PARAMETER_ROUTE_URI if parameter_case else
+                     VALIDATION_ROUTE_URI if validation_case else "health")
         route_verb = "POST" if validation_case else "GET"
         routes = command([php, "artisan", "route:list", f"--path={route_uri}", "--json"], root)
         health_registered = route_registered(routes, route_uri, route_verb)
@@ -564,7 +595,9 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   "baseline_health_exit": negative.returncode if not validation_case else None,
                   "baseline_repair_exit": (visible_negative.returncode if scenario == "repair" else None),
                   "baseline_validation_exit": (visible_negative.returncode if validation_case else None),
-                  "validation_reference_passed": reference_passed,
+                  "baseline_parameter_exit": (visible_negative.returncode if parameter_case else None),
+                  "validation_reference_passed": (reference_passed if validation_case else None),
+                  "parameter_reference_passed": (reference_passed if parameter_case else None),
                   "read": read, "write": write, "changed_path_count": len(paths),
                   "route_registered": health_registered, "model_changed_route": model_changed_route,
                   "change_scope_ok": scope_ok, "validation_test_exit": validation.returncode,
@@ -606,10 +639,10 @@ def main():
                         help="opt-in tool-round budget from 4 to 20 (default 8)")
     parser.add_argument("--fixture-seed", default=None,
                         help="optional 32-character hex seed for matched hidden-name trials; never logged")
-    parser.add_argument("--scenario", choices=("health", "repair", "validation"), default="health",
-                        help="health is the measured baseline; repair and validation are opt-in")
+    parser.add_argument("--scenario", choices=("health", "repair", "validation", "parameter"), default="health",
+                        help="health is the measured baseline; other scenarios are opt-in")
     parser.add_argument("--controls-only", action="store_true",
-                        help="Check validation negative/reference PHP controls in a disposable worktree, without Ollama")
+                        help="Check validation/parameter negative and reference controls without Ollama")
     parser.add_argument("--preserve-sibling-route", action="store_true",
                         help="seed a random unrelated route and assert it survives (opt-in)")
     parser.add_argument("--output", type=Path, required=True, help="New directory for disposable fixtures and metadata")
@@ -629,8 +662,9 @@ def main():
         parser.error("--fixture-seed must be exactly 32 hexadecimal characters")
     if (args.scenario != "health" or args.preserve_sibling_route) and not args.laravel:
         parser.error("Non-default scenarios and sibling preservation require --laravel")
-    if args.controls_only and (args.scenario != "validation" or not args.laravel or args.trials != 1):
-        parser.error("--controls-only requires --scenario validation --laravel and --trials 1")
+    if args.controls_only and (args.scenario not in ("validation", "parameter") or
+                               not args.laravel or args.trials != 1):
+        parser.error("--controls-only requires --scenario validation/parameter --laravel and --trials 1")
     args.output = args.output.resolve()
     if args.laravel:
         try:
@@ -640,12 +674,12 @@ def main():
     args.output.mkdir(parents=True, exist_ok=False)
     if args.controls_only:
         controls = laravel(args.laravel.resolve(), args.output, ["reference-control"],
-                          args.php, scenario="validation",
+                          args.php, scenario=args.scenario,
                           preserve_sibling_route=args.preserve_sibling_route,
                           fixture_seed=args.fixture_seed, controls_only=True,
                            max_steps=args.max_steps)
         (args.output / "results.json").write_text(
-            json.dumps({"scenario": "validation", "controls_only": True, "controls": controls},
+            json.dumps({"scenario": args.scenario, "controls_only": True, "controls": controls},
                        indent=2), encoding="utf-8")
         return 0 if all(item["passed"] for item in controls) else 1
     all_trials = []
