@@ -2,3 +2,5 @@ include benchmarks/*.py
 include benchmarks/README.md benchmarks/RETEST.md
 recursive-include docs *.md
 include examples/mcp.json
+include benchmarks/TASKS.md
+include .github/workflows/laravel-controls.yml
