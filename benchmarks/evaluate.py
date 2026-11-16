@@ -373,7 +373,9 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
                 event.get("reason", "").startswith("argument_")
                 for event in events if event["event"] == "protocol_error"):
             error_kind = "argument"
-        print(f"{model_name}: {exc}", file=sys.stderr, flush=True)
+        # Exception messages can contain model responses, tool arguments,
+        # credentials or local source paths. Print only fixed categories.
+        print(f"Model task failed: {error_kind}", file=sys.stderr, flush=True)
     calls = [event for event in events if event["event"] == "tool_end"]
     result = {"model": model_name, "tool_protocol": tool_protocol,
               "strict_json_profile": strict_json_profile, "progress_guidance": progress_guidance,
