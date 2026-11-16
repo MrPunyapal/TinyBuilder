@@ -166,6 +166,8 @@ def _failure_kind(result: dict, expected: bool = False) -> str | None:
             result.get("tests_after_last_edit") is False or
             result.get("required_reads_before_edit") is False):
         return "tool_order"
+    if result.get("round_exhausted") is True:
+        return "round_exhausted"
     if not result["final_answer"]:
         return "incomplete"
     if expected and not result.get("facts_correct", False):
@@ -180,6 +182,7 @@ class EvaluationTools(LocalTools):
         super().__init__(*args, **kwargs)
         self.files_read = set()
         self.operations = []  # Transient local-only sequence; not included in results.json.
+        self.test_command_nonzero_count = 0
 
     def call(self, name, args):
         output = super().call(name, args)
@@ -189,8 +192,12 @@ class EvaluationTools(LocalTools):
             self.operations.append(("read_file", path))
         elif name == "write_file" and output.startswith("Wrote "):
             self.operations.append(("write_file", self._path(args["path"])))
-        elif name == "run_command" and output.startswith("Exit code: 0\n"):
-            self.operations.append(("run_command", tuple(args["argv"])))
+        elif name == "run_command" and output.startswith("Exit code: "):
+            # Count only actually executed allowed commands; never store output/argv.
+            if output.startswith("Exit code: 0\n"):
+                self.operations.append(("run_command", tuple(args["argv"])))
+            else:
+                self.test_command_nonzero_count += 1
         return output
 
 
@@ -296,6 +303,33 @@ def route_registered(result, uri, verb):
         return False
 
 
+def route_php_lint_exit(php: str, root: Path) -> int | None:
+    """Source-free PHP lint result; a scripted Python artisan is not PHP."""
+    if Path(php).name.lower() not in ("php", "php.exe"):
+        return None
+    return command([php, "-l", "routes/web.php"], root).returncode
+
+
+def laravel_diagnostics(write: dict, lint_exit: int | None, final_test_exit: int) -> dict:
+    """Independent sanitized failure signals; concurrent causes remain visible."""
+    events = write["events"]
+    return {
+        "php_lint_checked": lint_exit is not None,
+        "php_parse_error": lint_exit is not None and lint_exit != 0,
+        "final_php_tests_failed": final_test_exit != 0,
+        "model_test_nonzero_count": write.get("test_command_nonzero_count", 0),
+        "denied_argv_count": sum(ev.get("event") == "tool_end" and
+                                 ev.get("tool") == "run_command" and
+                                 ev.get("reason") == "permission" for ev in events),
+        "invalid_argument_count": sum(ev.get("event") == "protocol_error" and
+                                      ev.get("failure_class") == "argument" for ev in events),
+        "missing_pre_edit_reads": write.get("required_reads_before_edit") is False,
+        "missing_post_edit_test": write.get("tests_after_last_edit") is False,
+        "premature_final_deferred": any(ev.get("event") == "final_deferred" for ev in events),
+        "round_exhausted": write.get("round_exhausted") is True,
+    }
+
+
 def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
          required_tools=(), strict_json_profile="prompt", required_files=(),
          progress_guidance="off", required_sequence=(), max_steps=8):
@@ -336,7 +370,9 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
               "read_file_called": any(event["tool"] == "read_file" and event["status"] == "ok" for event in calls),
               "write_file_called": any(event["tool"] == "write_file" and event["status"] == "ok" for event in calls),
               "run_command_called": any(event["tool"] == "run_command" and event["status"] == "ok" for event in calls),
-              "final_answer": bool(answer) and not answer.startswith("Stopped after")}
+              "final_answer": bool(answer) and not answer.startswith("Stopped after"),
+               "round_exhausted": any(ev.get("event") == "round_exhausted" for ev in events),
+               "test_command_nonzero_count": local.test_command_nonzero_count}
     result["missing_required_tools"] = [name for name in required_tools if not any(
         event["tool"] == name and event["status"] == "ok" for event in calls)]
     # Only evaluator-supplied public fixture names appear in metadata, never arbitrary paths.
@@ -512,6 +548,9 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         route_verb = "POST" if validation_case else "GET"
         routes = command([php, "artisan", "route:list", f"--path={route_uri}", "--json"], root)
         health_registered = route_registered(routes, route_uri, route_verb)
+        # Never save PHP lint output, which could contain source lines.
+        lint_exit = route_php_lint_exit(php, root)
+        diagnostics = laravel_diagnostics(write, lint_exit, validation.returncode)
         # Check after every allowed and evaluator-owned test command. Git status
         # cannot detect indirect changes to .env because it is ignored.
         protected_env_unchanged = (
@@ -531,6 +570,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   "change_scope_ok": scope_ok, "validation_test_exit": validation.returncode,
                   "model_write_scope_ok": write.get("model_write_scope_ok"),
                   "protected_env_unchanged": protected_env_unchanged,
+                   "php_lint_exit": lint_exit, "diagnostics": diagnostics,
                   "passed": protected_env_unchanged and baseline.returncode == 0 and negative.returncode == 1 and
                   (visible_negative is None or visible_negative.returncode == 1) and
                   reference_passed is not False and validation.returncode == 0 and health_registered and bool(diff) and model_changed_route and
@@ -542,7 +582,11 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   write.get("required_reads_before_edit") is True and
                   write.get("model_write_scope_ok") is True}
         result["failure_kind"] = (None if result["passed"] else
-                                  read["failure_kind"] or write["failure_kind"] or "validation")
+                                  "php_parse" if diagnostics["php_parse_error"] else
+                                  "denied_argv" if diagnostics["denied_argv_count"] else
+                                  "invalid_arguments" if diagnostics["invalid_argument_count"] else
+                                  read["failure_kind"] or write["failure_kind"] or
+                                  ("php_tests" if diagnostics["final_php_tests_failed"] else "validation"))
         results.append(result)
         print(json.dumps({"laravel_result": result}), flush=True)
     return results

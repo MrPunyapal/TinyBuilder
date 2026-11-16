@@ -264,4 +264,5 @@ class Agent:
                 args = json.loads(call["function"]["arguments"])
                 observation = self._execute(name, args, step, known)
                 messages.append({"role": "tool", "tool_call_id": call["id"], "content": observation})
+        self._event(event="round_exhausted", step=self.max_steps)
         return f"Stopped after {self.max_steps} tool rounds without a final answer. No further actions taken."
