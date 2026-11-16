@@ -34,6 +34,13 @@ class ParameterFixtureTests(unittest.TestCase):
         self.assertEqual(reference_fixed_parameter(seeded),
                          previous + REFERENCE_PARAMETER_ROUTE.replace("\n", "\r\n"))
 
+    def test_integer_contract_rejects_other_numeric_string_forms(self):
+        # is_numeric() accepts fractions/exponents, although neither is an
+        # integer route identifier. Both need independent negative assertions.
+        for invalid in ("7.5", "1e2"):
+            self.assertIn(f"getJson('/tinybuilder/items/{invalid}')->assertNotFound()",
+                          HIDDEN_PARAMETER_TEST)
+
     def test_independent_hidden_assertions_and_private_sibling_marker(self):
         hidden = hidden_parameter_test("tinybuilder-preserve-abcd", "private-marker")
         for needle in ("test_positive_id_one", "test_positive_id_forty_two",

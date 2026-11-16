@@ -72,6 +72,14 @@ class TinyBuilderParameterHiddenTest extends TestCase
     {
         $this->getJson('/tinybuilder/items/0')->assertNotFound();
     }
+    public function test_fractional_id_returns_404(): void
+    {
+        $this->getJson('/tinybuilder/items/7.5')->assertNotFound();
+    }
+    public function test_exponent_id_returns_404(): void
+    {
+        $this->getJson('/tinybuilder/items/1e2')->assertNotFound();
+    }
     public function test_home_route_survives(): void
     {
         $this->get('/')->assertOk();
