@@ -16,3 +16,40 @@ jobs:
       - run: python -m pip install -e .
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q tinybuilder benchmarks
+      - name: Build wheel and source distribution
+        run: |
+          python -m pip install build
+          python -m build --sdist --wheel --outdir "$RUNNER_TEMP/tinybuilder-dist"
+      - name: Inspect distribution contents
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path, PurePosixPath
+          import tarfile
+          import zipfile
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "tinybuilder-dist"
+          wheels, sources = list(root.glob("*.whl")), list(root.glob("*.tar.gz"))
+          assert len(wheels) == len(sources) == 1, "Expected one wheel and one sdist"
+          with zipfile.ZipFile(wheels[0]) as archive:
+              wheel_names = archive.namelist()
+          with tarfile.open(sources[0], "r:gz") as archive:
+              source_names = archive.getnames()
+          for names in (wheel_names, source_names):
+              assert any(name.endswith("tinybuilder/cli.py") for name in names)
+          bad_parts = {".git", ".venv", "__pycache__", "vendor", "node_modules"}
+          bad_suffixes = (".sqlite", ".sqlite3", ".gguf", ".safetensors", ".pem", ".p12")
+          for name in (*wheel_names, *source_names):
+              parts = PurePosixPath(name).parts
+              if (any(part in bad_parts for part in parts)
+                      or any(part == ".env" or (part.startswith(".env.") and part != ".env.example") for part in parts)
+                      or name.endswith(bad_suffixes)):
+                  raise SystemExit("Forbidden distribution path: " + name)
+          print("Release distributions checked for sensitive paths")
+          PY
+      - name: Install built wheel into a fresh venv and smoke-test CLI
+        run: |
+          python -m venv "$RUNNER_TEMP/tinybuilder-fresh"
+          "$RUNNER_TEMP/tinybuilder-fresh/bin/python" -m pip install --no-deps "$RUNNER_TEMP"/tinybuilder-dist/*.whl
+          "$RUNNER_TEMP/tinybuilder-fresh/bin/tinybuilder" --help
+          "$RUNNER_TEMP/tinybuilder-fresh/bin/tinybuilder" doctor --project .
