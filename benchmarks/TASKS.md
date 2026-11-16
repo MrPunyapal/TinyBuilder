@@ -29,3 +29,9 @@ No hidden tests, reference answers, model responses, or full project source
 are embedded in public result summaries. The reference code lives in fixture
 modules and is removed from each detached inference worktree before model
 access. Never weaken independent acceptance to make a model pass.
+
+Reference-only reports now include `baseline_commit` and
+`composer_lock_sha256` metadata. The manually triggered PHP workflow displays
+short fingerprints for cross-run comparison, not lockfile contents. This does
+not make unpinned transitive dependency resolution deterministic; retain full
+lockfile hashes for strict experiment pairing.

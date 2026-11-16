@@ -2,6 +2,7 @@
 import contextlib
 import io
 import json
+import hashlib
 import subprocess
 import sys
 import tempfile
@@ -67,6 +68,8 @@ class ParameterHarnessTests(unittest.TestCase):
             self.assertEqual(report["scenario"], "parameter")
             self.assertTrue(control["passed"])
             self.assertTrue(control["reference_passed"])
+            self.assertEqual(control["composer_lock_sha256"],
+                             hashlib.sha256((home / "composer.lock").read_bytes()).hexdigest())
             self.assertEqual(control["negative_visible_exit"], 1)
             self.assertEqual(control["negative_hidden_exit"], 1)
             self.assertFalse((output / "laravel-0" / PARAMETER_HIDDEN_PATH).exists())

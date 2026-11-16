@@ -88,6 +88,10 @@ jobs:
               assert control["negative_visible_exit"] == 1
               assert control["reference_passed"] is True
               assert control["protected_env_unchanged"] is True
+              assert len(control["baseline_commit"]) == 40
+              assert len(control["composer_lock_sha256"]) == 64
               with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
-                  out.write(f"- {scenario}: real Laravel negative/reference controls PASS; no model used\n")
+                  out.write(f"- {scenario}: real Laravel negative/reference controls PASS; "
+                            f"baseline {control['baseline_commit'][:12]}, "
+                            f"lock SHA-256 {control['composer_lock_sha256'][:16]}; no model used\n")
           PY

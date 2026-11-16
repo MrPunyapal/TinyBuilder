@@ -6,7 +6,7 @@
 
 **Start here:** [Quick start](docs/QUICKSTART.md) · [Security boundaries](docs/SECURITY.md) · [Public-preview checklist](docs/RELEASE_CHECKLIST.md).
 
-The [November 15 local validation report](benchmarks/results/2026-11-15-local-codex-validation.md) observed genuine read-tool calls, but **no passing model-generated Laravel validation edits** in either completed twelve-round condition. Python CI is not proof of autonomous coding reliability.
+The [November 16 Windows validation](benchmarks/results/2026-11-16-windows-preview-validation.md) observed **18/18 factual read inspections**, **3/3 health edits**, and **3/3 route repairs** using an installed Qwen2.5-Coder 3B model with opt-in constrained JSON. All **12 request-validation edits failed PHP parsing**, and model-selected Boost MCP calls remained **0/3**. These small task samples support a *public experimental preview*, not reliable autonomous coding or a stable release. Python CI cannot validate Ollama inference.
 
 ## Architecture
 
@@ -25,23 +25,25 @@ All runtime Python dependencies are from the standard library. **No subscription
 
 ## Get started
 
-Requires Python 3.10+ and a running local OpenAI-compatible model server. On a machine with Ollama:
+Requires Python 3.10+ and a running local OpenAI-compatible model server.
+**Install model weights separately, by choice**; TinyBuilder does not download
+models. For a read-only example against TinyBuilder's own source, with
+`qwen2.5-coder:3b` already installed in Ollama:
 
 ```bash
-# Download a small baseline (you can try a larger model to compare quality)
-ollama pull qwen2.5-coder:0.5b
-
-# Install the CLI from this repository
 python -m pip install -e .
-
-# Non-mutating diagnostics
-tinybuilder doctor --project /path/to/laravel-app
-
-# Read-only coding task (command execution and file changes are blocked)
-tinybuilder chat "Inspect my routes and suggest a simple health endpoint" \
-  --project /path/to/laravel-app \
-  --model qwen2.5-coder:0.5b
+ollama list
+tinybuilder doctor --project .
+tinybuilder chat "Use read_file to inspect pyproject.toml and report the exact project name." \
+  --project . --model qwen2.5-coder:3b \
+  --tool-protocol strict-json --strict-json-profile constrained --verbose
 ```
+
+Look for a successful `read_file` `tool_end` event and verify the reported
+name against the file. A model's claim to have read it is insufficient.
+**Native tool calling remains the default**; this particular profile is
+experimental and opt-in because the recorded 3B native-model attempts produced
+no actual tool calls.
 
 By default TinyBuilder calls `http://127.0.0.1:11434/v1/chat/completions`, the Ollama OpenAI-compatible endpoint. For llama.cpp, pass `--base-url http://127.0.0.1:8080/v1` and your model name. Ollama must be running; Python alone does not run the model.
 
@@ -51,7 +53,7 @@ For an isolated Windows PowerShell install (Python 3.10+):
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e .
 .\.venv\Scripts\python.exe -m tinybuilder doctor --project .
-ollama pull qwen2.5-coder:1.5b
+ollama list
 ```
 
 If `python` opens the Microsoft Store, use the absolute path to an installed Python

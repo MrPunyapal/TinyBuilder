@@ -527,6 +527,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         if controls_only:
             control = {"model": "reference-control", "scenario": scenario,
                        "worktree": root.name, "baseline_commit": revision,
+                       "composer_lock_sha256": hashlib.sha256((base / "composer.lock").read_bytes()).hexdigest(),
                        "baseline_test_exit": baseline.returncode,
                        "negative_hidden_exit": negative.returncode,
                        "negative_visible_exit": visible_negative.returncode,
