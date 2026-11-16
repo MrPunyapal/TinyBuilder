@@ -31,7 +31,8 @@ jobs:
         run: |
           set -euo pipefail
           APP="$RUNNER_TEMP/laravel-reference"
-          composer create-project laravel/laravel "$APP" 13.11.0 --no-install --no-interaction
+          # Laravel's post-create scripts require the not-yet-installed autoloader.
+          composer create-project laravel/laravel "$APP" 13.11.0 --no-install --no-scripts --no-interaction
           cd "$APP"
           composer config optimize-autoloader false
           composer require laravel/framework:13.42.0 --no-update --no-interaction
