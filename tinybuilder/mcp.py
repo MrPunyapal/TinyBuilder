@@ -107,22 +107,42 @@ class MCPBridge:
         self.specs: list[dict] = []
         self.names: dict[str, tuple[MCPServer, str]] = {}
         data = json.loads(config_path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict) or not isinstance(data.get("mcpServers", {}), dict):
+            raise MCPError("Invalid MCP server configuration structure")
         try:
             for server_name, spec in data.get("mcpServers", {}).items():
-                if not isinstance(spec, dict) or not isinstance(spec.get("command"), str):
-                    raise MCPError(f"Invalid MCP server config: {server_name}")
+                if (not isinstance(spec, dict) or
+                        not isinstance(spec.get("command"), str) or not spec["command"].strip() or
+                        not isinstance(spec.get("args", []), list) or
+                        len(spec.get("args", [])) > 32 or
+                        not all(isinstance(arg, str) and arg for arg in spec.get("args", []))):
+                    raise MCPError("Invalid MCP server launch configuration")
                 server = MCPServer(server_name, spec["command"], spec.get("args", []), root)
                 self.servers.append(server)
-                for item in server.tools():
-                    original = item["name"]
+                catalog = server.tools()
+                if not isinstance(catalog, list) or len(catalog) > 128:
+                    raise MCPError("Invalid MCP tool catalog")
+                for item in catalog:
+                    if not isinstance(item, dict):
+                        raise MCPError("Invalid MCP tool description")
+                    original = item.get("name")
+                    if not isinstance(original, str) or not original.strip() or len(original) > 200:
+                        raise MCPError("Invalid MCP tool name")
+                    schema = item.get("inputSchema") or {"type": "object", "properties": {}}
+                    if (not isinstance(schema, dict) or schema.get("type") != "object" or
+                            not isinstance(schema.get("properties", {}), dict) or
+                            len(json.dumps(schema, ensure_ascii=False).encode("utf-8")) > 64_000):
+                        raise MCPError("Invalid MCP tool input schema")
+                    description = item.get("description")
+                    if not isinstance(description, str) or not description.strip():
+                        description = f"MCP {server_name}: {original}"
                     clean = re.sub(r"[^a-zA-Z0-9_-]", "_", f"mcp_{server_name}__{original}")[:64]
                     if clean in self.names:
-                        raise MCPError(f"Duplicate MCP tool name: {clean}")
+                        raise MCPError("Duplicate normalized MCP tool name")
                     self.names[clean] = (server, original)
                     self.specs.append({"type": "function", "function": {
-                        "name": clean,
-                        "description": (item.get("description") or f"MCP {server_name}: {original}")[:800],
-                        "parameters": item.get("inputSchema") or {"type": "object", "properties": {}}
+                        "name": clean, "description": description[:800],
+                        "parameters": schema
                     }})
         except Exception:
             self.close()
