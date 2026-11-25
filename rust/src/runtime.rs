@@ -135,6 +135,7 @@ pub fn model_path(path: &Path) -> Result<PathBuf> {
 pub struct Runtime {
     child: Owned,
     base: String,
+    port: u16,
     alias: String,
     key: String,
 }
@@ -183,7 +184,7 @@ impl Runtime {
         #[cfg(target_os = "linux")]
         command.env("LD_LIBRARY_PATH", dir);
         let child = Owned::spawn(&mut command).map_err(|_| anyhow::anyhow!("Runtime spawn failed"))?;
-        let mut runtime = Self { child, base: format!("http://127.0.0.1:{port}"), alias, key };
+        let mut runtime = Self { child, base: format!("http://127.0.0.1:{port}"), port, alias, key };
         runtime.ready()?;
         Ok(runtime)
     }
@@ -194,12 +195,15 @@ impl Runtime {
             ensure!(self.child.try_wait()?.is_none(), "Runtime exited before readiness");
             match status(http.get(&format!("{}/health", self.base)).call()) {
                 Some(200) => {
+                    ensure!(self.child.listener_owned(self.port)?, "Unexpected loopback listener owner");
                     let url = format!("{}/props", self.base);
                     ensure!(matches!(status(http.get(&url).call()), Some(401 | 403)), "Runtime accepted missing authentication");
                     ensure!(matches!(status(http.get(&url).set("Authorization", "Bearer invalid-session").call()), Some(401 | 403)), "Runtime accepted invalid authentication");
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
                     ensure!(status(http.get(&url).set("Authorization", &format!("Bearer {}", self.key)).call()) == Some(200), "Runtime authentication failed");
                     // b12359 protects /v1/models; b6500 accepts authenticated
                     // access too. Require the random session alias after auth.
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
                     let models = http.get(&format!("{}/v1/models", self.base))
                         .set("Authorization", &format!("Bearer {}", self.key)).call()
                         .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
@@ -215,6 +219,7 @@ impl Runtime {
         bail!("Runtime startup timed out")
     }
     pub fn complete(&self, mut payload: Value) -> Result<Value> {
+        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         payload["model"] = Value::String(self.alias.clone());
         let response = client(Duration::from_secs(120))
             .post(&format!("{}/v1/chat/completions", self.base))
@@ -224,6 +229,7 @@ impl Runtime {
                 ureq::Error::Status(code, _) => anyhow::anyhow!("Model HTTP status {code}"),
                 _ => anyhow::anyhow!("Local model transport failed"),
             })?;
+        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         let response = bounded_json(response)?;
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
