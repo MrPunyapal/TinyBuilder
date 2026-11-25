@@ -57,6 +57,13 @@ class ModelSelection:
 
 
 @dataclass(frozen=True)
+class ModelOffer:
+    """Display-only description; download() does not accept this type."""
+    entry: CatalogEntry
+    destination: Path
+
+
+@dataclass(frozen=True)
 class DownloadRequest:
     entry: CatalogEntry
     destination: Path
@@ -349,7 +356,7 @@ class ModelManager:
     def download_offer(self, model_id):
         """Full immutable identity for display; no writes or network."""
         self._check_root()
-        return DownloadRequest(self._entry(model_id), self.destination(model_id))
+        return ModelOffer(self._entry(model_id), self.destination(model_id))
 
     def request_download(self, model_id, *, consent=False, expected=None):
         if consent is not True:
@@ -357,7 +364,7 @@ class ModelManager:
         request = self.download_offer(model_id)
         if expected is not None and expected != request:
             raise ModelError("Catalog or destination changed; obtain fresh consent")
-        return request
+        return DownloadRequest(request.entry, request.destination)
 
     def download(self, request, *, progress=None, cancellation=None, retries=2):
         if (not isinstance(request, DownloadRequest) or

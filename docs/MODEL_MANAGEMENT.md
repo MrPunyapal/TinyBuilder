@@ -31,7 +31,9 @@ CI metadata are made here.
 - check_space(model_id): SpaceCheck(required_bytes, free_bytes, sufficient);
   conservative full-size estimate, no mutation. The actual transfer checks
   remaining space and checks full space if the server restarts.
-- download_offer(model_id): immutable full CatalogEntry and destination, no writes or network.
+- download_offer(model_id): immutable ModelOffer containing full CatalogEntry and
+  destination, no writes or network. This display-only type cannot be passed
+  directly to download().
 - request_download(model_id, consent=True, expected=offer): bind the displayed identity after explicit consent; a mismatch requires fresh consent. Show model ID, revision, filename, source URL, exact bytes, license, digest and destination. The expected argument is optional for adapters independently comparing every field; download validates the full request again.
 - download(request, progress=callback, cancellation=token, retries=2):
   synchronous worker operation; callback receives DownloadProgress with
@@ -78,10 +80,12 @@ atomically without clobbering: Windows rename, Linux renameat2 with
 RENAME_NOREPLACE, macOS renamex_np with RENAME_EXCL. If the POSIX exclusive
 rename primitive is unavailable, hard link then unlink is the fallback.
 Volumes that support neither fail closed; external GGUF reuse still works.
-A crash between fallback link and unlink can require manual recovery after
-verifying the digest. Native primitive references:
+A crash between fallback link and unlink can be recovered explicitly using
+recover_publication after full verification. Native primitive references:
 https://man7.org/linux/man-pages/man2/renameat2.2.html
-https://developer.apple.com/documentation/foundation/urlresourcekey/volumesupportsexclusiverenamingkey The directory is trusted user-controlled storage, not an OS sandbox;
+https://developer.apple.com/documentation/foundation/urlresourcekey/volumesupportsexclusiverenamingkey
+
+The directory is trusted user-controlled storage, not an OS sandbox;
 hostile concurrent directory replacement by the same local account cannot
 be fully prevented by portable path checks.
 

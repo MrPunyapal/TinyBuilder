@@ -47,7 +47,10 @@ class ModelManagerTests(unittest.TestCase):
                     body = body[:-1] + b"!"
                 self.send_response(206 if offset else 200)
                 self.send_header("ETag", '"changed"' if mode in {"changed", "restart"} else '"v1"')
-                self.send_header("Content-Length", str(len(body)))
+                if mode == "overlong":
+                    body += b"extra"
+                else:
+                    self.send_header("Content-Length", str(len(body)))
                 if offset:
                     start = offset + 1 if mode == "bad-range" else offset
                     self.send_header("Content-Range", "bytes %d-%d/%d" %
@@ -175,9 +178,22 @@ class ModelManagerTests(unittest.TestCase):
         self.download()
         self.assertEqual(self.final.read_bytes(), DATA)
 
+    def test_overlong_unknown_length_never_promoted_on_retry(self):
+        self.mode = "overlong"
+        with self.assertRaisesRegex(ModelError, "exceeds declared length"):
+            self.download()
+        self.assertFalse(self.part.exists())
+        self.assertFalse(self.final.exists())
+        self.mode = "ok"
+        self.download()
+        self.assertEqual(self.requests[-1], (None, None))
+        self.assertEqual(self.final.read_bytes(), DATA)
+
     def test_full_offer_identity_and_stale_consent(self):
         offer = self.manager.download_offer("fixture")
-        self.assertEqual(offer, self.request)
+        self.assertEqual((offer.entry, offer.destination), (self.request.entry, self.request.destination))
+        with self.assertRaises(ModelError):
+            self.manager.download(offer)
         self.assertFalse(self.root.exists())
         for field, value in (
             ("revision", "b" * 40), ("filename", "other.gguf"),
@@ -194,11 +210,11 @@ class ModelManagerTests(unittest.TestCase):
             with self.assertRaisesRegex(ModelError, "fresh consent"):
                 self.manager.request_download("fixture", consent=True, expected=stale)
             with self.assertRaises(ModelError):
-                self.manager.download(stale)
+                self.manager.download(replace(self.request, entry=changed))
         stale = replace(offer, destination=self.root / "elsewhere.gguf")
         with self.assertRaises(ModelError):
             self.manager.request_download("fixture", consent=True, expected=stale)
-        self.assertEqual(self.manager.request_download("fixture", consent=True, expected=offer), offer)
+        self.assertEqual(self.manager.request_download("fixture", consent=True, expected=offer), self.request)
         self.assertEqual(self.requests, [])
 
     def test_forced_exit_releases_lock_and_resumes(self):
