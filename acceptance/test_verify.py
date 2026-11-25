@@ -61,6 +61,11 @@ class VerificationTests(unittest.TestCase):
                 inspect(root, "x64", [])
             self.assertEqual(inspect(root, "x64", [], allow_contained_links=True)["links"], {"alias": "actual"})
             (root / "alias").unlink()
+            (root / "directory").mkdir()
+            (root / "alias").symlink_to("directory", target_is_directory=True)
+            with self.assertRaises(ValueError):
+                inspect(root, "x64", [], allow_contained_links=True)
+            (root / "alias").unlink()
             (root / "alias").symlink_to("../outside")
             with self.assertRaises(ValueError):
                 inspect(root, "x64", [], allow_contained_links=True)

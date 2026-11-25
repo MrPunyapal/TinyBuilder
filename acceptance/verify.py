@@ -54,8 +54,8 @@ def inspect(root, expected, required, *, allow_contained_links=False):
                 resolved = path.resolve(strict=True).relative_to(root)
             except (OSError, RuntimeError, ValueError):
                 raise ValueError("Broken or escaping symlink") from None
-            if resolved == Path(".") or forbidden(resolved) or path.parent.is_relative_to(root / resolved):
-                raise ValueError("Forbidden or cyclic symlink target")
+            if resolved == Path(".") or forbidden(resolved) or not (root / resolved).is_file():
+                raise ValueError("Forbidden or non-file symlink target")
             links[relative.as_posix()] = resolved.as_posix()
             continue
         if path.is_dir():
