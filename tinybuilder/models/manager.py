@@ -36,6 +36,10 @@ class _Interrupted(ModelError):
     pass
 
 
+class _InvalidResponse(ModelError):
+    pass
+
+
 class ModelStatus(str, Enum):
     MISSING = "missing"
     PARTIAL = "partial"
@@ -87,7 +91,7 @@ class CancellationToken:
             raise DownloadCancelled("Model download cancelled")
 
 
-def _info(path, *, directory=False, missing=False):
+def _info(path, *, directory=False, missing=False, links=1):
     try:
         info = path.lstat()
     except FileNotFoundError:
@@ -97,19 +101,20 @@ def _info(path, *, directory=False, missing=False):
     if (stat.S_ISLNK(info.st_mode) or
             getattr(info, "st_file_attributes", 0) & 0x400 or
             not (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)) or
-            (not directory and info.st_nlink != 1)):
+            (not directory and info.st_nlink != links)):
         raise ModelError("Unsafe managed filesystem path")
     return info
 
 
-def _open(path, flags, mode):
+def _open(path, flags, mode, *, links=1):
     """Check the opened object as well as the path; never truncate on open."""
-    _info(path, missing=True)
+    _info(path, missing=True, links=links)
     fd = os.open(path, flags | getattr(os, "O_NOFOLLOW", 0) |
                  getattr(os, "O_BINARY", 0), 0o600)
     try:
-        info = _info(path)
-        if not os.path.samestat(info, os.fstat(fd)):
+        info = _info(path, links=links)
+        opened = os.fstat(fd)
+        if not os.path.samestat(info, opened) or opened.st_nlink != links:
             raise ModelError("Managed path changed during open")
         return os.fdopen(fd, mode)
     except BaseException:
@@ -210,12 +215,12 @@ class _Redirects(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def _matches(path, entry, token=None, *, external=False):
-    info = path.stat() if external else _info(path)
+def _matches(path, entry, token=None, *, external=False, links=1):
+    info = path.stat() if external else _info(path, links=links)
     if info.st_size != entry.size_bytes:
         return False
     digest = hashlib.sha256()
-    with (path.open("rb") if external else _open(path, os.O_RDONLY, "rb")) as stream:
+    with (path.open("rb") if external else _open(path, os.O_RDONLY, "rb", links=links)) as stream:
         if stream.read(4) != b"GGUF":
             return False
         stream.seek(0)
@@ -341,11 +346,18 @@ class ModelManager:
         # Conservative full-size estimate; resumption checks remaining bytes again.
         return SpaceCheck(entry.size_bytes, shutil.disk_usage(ancestor).free)
 
-    def request_download(self, model_id, *, consent=False):
+    def download_offer(self, model_id):
+        """Full immutable identity for display; no writes or network."""
+        self._check_root()
+        return DownloadRequest(self._entry(model_id), self.destination(model_id))
+
+    def request_download(self, model_id, *, consent=False, expected=None):
         if consent is not True:
             raise ModelError("Explicit model download consent required")
-        entry = self._entry(model_id)
-        return DownloadRequest(entry, self.destination(model_id))
+        request = self.download_offer(model_id)
+        if expected is not None and expected != request:
+            raise ModelError("Catalog or destination changed; obtain fresh consent")
+        return request
 
     def download(self, request, *, progress=None, cancellation=None, retries=2):
         if (not isinstance(request, DownloadRequest) or
@@ -365,6 +377,7 @@ class ModelManager:
         part = directory / "download.part"
         meta = directory / "download.json"
         with _lock(directory / "operation.lock"):
+            self._check_root()
             if _info(final, missing=True) is not None:
                 if not _matches(final, entry, token):
                     raise ModelError("Existing model is invalid; refusing overwrite")
@@ -376,6 +389,10 @@ class ModelManager:
                 except _Interrupted:
                     if attempt == retries:
                         raise
+                except _InvalidResponse:
+                    _unlink(part)
+                    _unlink(meta)
+                    raise
             token.check()
             notify(DownloadProgress(entry.size_bytes, entry.size_bytes, "verifying"))
             if not _matches(part, entry, token):
@@ -391,6 +408,7 @@ class ModelManager:
 
     def _transfer(self, entry, part, meta, token, notify):
         token.check()
+        self._check_root()
         info = _info(part, missing=True)
         offset = info.st_size if info else 0
         identity = None
@@ -420,6 +438,8 @@ class ModelManager:
         except (URLError, TimeoutError, http.client.HTTPException):
             raise _Interrupted("Model connection failed") from None
         with response:
+            token.check()
+            self._check_root()
             if not _allowed_url(response.geturl(), self._loopback):
                 raise ModelError("Unsafe model response URL")
             if response.headers.get("Content-Encoding", "identity").lower() != "identity":
@@ -464,14 +484,42 @@ class ModelManager:
                         stream.write(block)
                         received += len(block)
                         notify(DownloadProgress(received, entry.size_bytes, "downloading"))
+                    token.check()
                     try:
                         if response.read(1):
-                            raise ModelError("Model response exceeds declared length")
+                            raise _InvalidResponse("Model response exceeds declared length")
                     except (OSError, http.client.HTTPException):
-                        raise _Interrupted("Model response did not finish") from None
+                        raise _InvalidResponse("Model response did not finish") from None
                 finally:
                     stream.flush()
                     os.fsync(stream.fileno())
+
+    def recover_publication(self, model_id, *, consent=False):
+        """Repair only a verified two-link fallback publication after a crash."""
+        if consent is not True:
+            raise ModelError("Explicit publication recovery consent required")
+        entry = self._entry(model_id)
+        directory = self._directory(entry)
+        if directory is None:
+            return False
+        with _lock(directory / "operation.lock"):
+            self._check_root()
+            final, part = directory / entry.filename, directory / "download.part"
+            meta = directory / "download.json"
+            a = _info(final, missing=True, links=2)
+            b = _info(part, missing=True, links=2)
+            if a is None or b is None or not os.path.samestat(a, b):
+                raise ModelError("No matching interrupted fallback publication")
+            _info(meta, missing=True)
+            if not _matches(final, entry, links=2):
+                raise ModelError("Interrupted publication failed verification")
+            self._check_root()
+            if not (os.path.samestat(a, _info(final, links=2)) and
+                    os.path.samestat(b, _info(part, links=2))):
+                raise ModelError("Publication paths changed")
+            part.unlink()
+            _unlink(meta)
+            return True
 
     def discard_partial(self, model_id, *, consent=False):
         """Explicitly reset an interrupted transfer without touching final files."""
@@ -482,6 +530,7 @@ class ModelManager:
         if directory is None:
             return False
         with _lock(directory / "operation.lock"):
+            self._check_root()
             part, meta = directory / "download.part", directory / "download.json"
             part_info = _info(part, missing=True)
             meta_info = _info(meta, missing=True)
@@ -497,6 +546,7 @@ class ModelManager:
         if directory is None:
             return False
         with _lock(directory / "operation.lock"):
+            self._check_root()
             final = directory / entry.filename
             if _info(final, missing=True) is None:
                 return False

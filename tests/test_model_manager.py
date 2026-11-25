@@ -3,6 +3,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
 import socket
+import os
+import subprocess
+import sys
+import time
 import tempfile
 import threading
 import unittest
@@ -170,6 +174,82 @@ class ModelManagerTests(unittest.TestCase):
         self.mode = "ok"
         self.download()
         self.assertEqual(self.final.read_bytes(), DATA)
+
+    def test_full_offer_identity_and_stale_consent(self):
+        offer = self.manager.download_offer("fixture")
+        self.assertEqual(offer, self.request)
+        self.assertFalse(self.root.exists())
+        for field, value in (
+            ("revision", "b" * 40), ("filename", "other.gguf"),
+            ("source_url", self.entry.source_url.replace("127.0.0.1", "localhost")),
+            ("size_bytes", len(DATA) + 1), ("sha256", "b" * 64),
+            ("license", "Apache-2.0"),
+        ):
+            if field == "revision":
+                changed = replace(self.entry, revision=value,
+                                  source_url=self.entry.source_url.replace(REVISION, value))
+            else:
+                changed = replace(self.entry, **{field: value})
+            stale = replace(offer, entry=changed)
+            with self.assertRaisesRegex(ModelError, "fresh consent"):
+                self.manager.request_download("fixture", consent=True, expected=stale)
+            with self.assertRaises(ModelError):
+                self.manager.download(stale)
+        stale = replace(offer, destination=self.root / "elsewhere.gguf")
+        with self.assertRaises(ModelError):
+            self.manager.request_download("fixture", consent=True, expected=stale)
+        self.assertEqual(self.manager.request_download("fixture", consent=True, expected=offer), offer)
+        self.assertEqual(self.requests, [])
+
+    def test_forced_exit_releases_lock_and_resumes(self):
+        self.interrupt()
+        ready = Path(self.temp.name) / "lock-ready"
+        script = (
+            "import sys,time; from pathlib import Path; "
+            "from tinybuilder.models.manager import _lock\n"
+            "with _lock(Path(sys.argv[1])):\n"
+            " Path(sys.argv[2]).touch()\n"
+            " time.sleep(60)\n"
+        )
+        child = subprocess.Popen([sys.executable, "-c", script,
+                                  str(self.final.parent / "operation.lock"), str(ready)])
+        try:
+            deadline = time.monotonic() + 10
+            while not ready.exists() and child.poll() is None and time.monotonic() < deadline:
+                time.sleep(0.02)
+            self.assertTrue(ready.exists(), "Child did not acquire native lock")
+            self.mode = "ok"
+            with self.assertRaisesRegex(ModelError, "operation already active"):
+                self.download()
+            self.assertFalse(self.final.exists())
+        finally:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=10)
+        self.download()
+        self.assertEqual(self.requests[-1], ("bytes=4096-", '"v1"'))
+        self.assertEqual(self.final.read_bytes(), DATA)
+
+    def test_fallback_publication_recovery_and_external_alias(self):
+        self.interrupt()
+        self.part.write_bytes(DATA)
+        try:
+            os.link(self.part, self.final)
+        except (OSError, NotImplementedError):
+            self.skipTest("Native hard links unavailable")
+        external = Path(self.temp.name) / "external.gguf"
+        os.link(self.final, external)
+        with self.assertRaises(ModelError):
+            self.manager.recover_publication("fixture", consent=True)
+        self.assertEqual(external.read_bytes(), DATA)
+        external.unlink()
+        with self.assertRaises(ModelError):
+            self.manager.recover_publication("fixture")
+        self.assertEqual(self.manager.status("fixture"), ModelStatus.INVALID)
+        self.assertTrue(self.manager.recover_publication("fixture", consent=True))
+        self.assertFalse(self.part.exists())
+        self.assertEqual(self.manager.verified_path("fixture"), self.final)
+        self.assertEqual(len(self.requests), 1)
 
     def test_cancel_before_network_and_mid_transfer(self):
         token = CancellationToken()

@@ -31,8 +31,8 @@ CI metadata are made here.
 - check_space(model_id): SpaceCheck(required_bytes, free_bytes, sufficient);
   conservative full-size estimate, no mutation. The actual transfer checks
   remaining space and checks full space if the server restarts.
-- request_download(model_id, consent=True): construct the request only after
-  showing source, license, exact bytes and destination and obtaining consent.
+- download_offer(model_id): immutable full CatalogEntry and destination, no writes or network.
+- request_download(model_id, consent=True, expected=offer): bind the displayed identity after explicit consent; a mismatch requires fresh consent. Show model ID, revision, filename, source URL, exact bytes, license, digest and destination. The expected argument is optional for adapters independently comparing every field; download validates the full request again.
 - download(request, progress=callback, cancellation=token, retries=2):
   synchronous worker operation; callback receives DownloadProgress with
   received_bytes, total_bytes and phase (downloading/verifying/complete).
@@ -105,3 +105,23 @@ Run python -m unittest discover -s tests -p test_model_manager.py -v and
 python -m unittest discover -s tests -v. Fixtures are small and use only
 loopback HTTP. Native Windows/macOS/Linux filesystems and actual external
 volumes still need acceptance checks; baseline CI is Linux only.
+
+## HQ review follow-up
+
+- recover_publication(model_id, consent=True): offline repair of an interrupted
+  fallback hard-link publication. The final and partial must be exactly two
+  regular links to the same inode and the full digest and length must match.
+  No directory or final file is deleted. External third links are rejected.
+- download_offer returns a description, not a security capability. The TUI
+  must obtain consent; request_download accepts expected=offer and download
+  revalidates all fields. The existing PR #3 adapter at b5aa4bc44f45aaacb86cb4c12d492c0f8510cc90
+  has compatible check()-only cancellation and received_bytes/total_bytes
+  progress, but must expose and bind source, revision and filename too.
+- Known invalid HTTP completion is discarded instead of promoted on retry.
+  Storage identity is rechecked before operations and after network response.
+  Publication is a commit point; cancellation afterward does not undo it.
+- The new forced-exit test kills a subprocess holding the actual OS lock,
+  then resumes the partial. Native matrix owner PR #6 should run the model
+  suite on Windows x64, macOS ARM64 and Linux x64 from combined checkout;
+  report skips separately. Physical removable-volume tests are still needed.
+  No default until PR #9 qualifies a candidate.
