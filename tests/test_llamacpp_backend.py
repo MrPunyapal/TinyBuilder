@@ -1,3 +1,4 @@
+import http.client
 import json
 import os
 import threading
@@ -163,3 +164,51 @@ class BackendTests(unittest.TestCase):
         del self.reply["choices"][0]["finish_reason"]
         with self.assertRaisesRegex(ModelError, "finish reason"):
             self.model.complete([], [])
+
+    def test_cancel_during_body_read_never_dispatches_strict_action(self):
+        cancel = threading.Event()
+        self.reply["choices"][0]["message"] = {"content": json.dumps({
+            "type": "tool", "name": "read_file", "arguments": {"path": "fact.txt"}})}
+        original = http.client.HTTPResponse.read1
+        def read_and_cancel(response, n):
+            data = original(response, n)
+            cancel.set()
+            return data
+        model = self.model
+        class TaskModel:
+            def complete(self, messages, tools, response_format=None):
+                return model.complete(messages, tools, response_format, cancel_event=cancel)
+        with tempfile.TemporaryDirectory() as directory:
+            local = LocalTools(Path(directory))
+            with patch.object(http.client.HTTPResponse, "read1", read_and_cancel), \
+                 patch.object(local, "call", wraps=local.call) as call:
+                with self.assertRaises(ModelError) as err:
+                    Agent(TaskModel(), local, tool_protocol="strict-json",
+                          strict_json_profile="constrained").run("Read fact.txt")
+                self.assertEqual(err.exception.kind, "cancelled")
+                call.assert_not_called()
+
+    def test_timeout_and_cancelled_error_are_sanitized(self):
+        with patch.object(self.model._opener, "open", side_effect=TimeoutError("session-secret")):
+            with self.assertRaises(ModelError) as err:
+                self.model.complete([], [])
+            self.assertEqual(err.exception.kind, "timeout")
+            self.assertNotIn("session-secret", str(err.exception))
+        cancel = threading.Event()
+        def cancelled_open(*args, **kwargs):
+            cancel.set()
+            raise TimeoutError("session-secret")
+        with patch.object(self.model._opener, "open", side_effect=cancelled_open):
+            with self.assertRaises(ModelError) as err:
+                self.model.complete([], [], cancel_event=cancel)
+            self.assertEqual(err.exception.kind, "cancelled")
+
+    def test_managed_rejects_flat_schema_and_mixed_tools(self):
+        for schema, tools in [
+            ({"type": "json_schema", "schema": strict_response_format()["json_schema"]["schema"]}, []),
+            (strict_response_format(), [{"type": "function"}]),
+        ]:
+            with self.assertRaises(ModelError) as err:
+                self.model.complete([], tools, schema)
+            self.assertEqual(err.exception.kind, "configuration")
+        self.assertFalse(self.seen)

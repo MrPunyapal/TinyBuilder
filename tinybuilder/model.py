@@ -91,9 +91,7 @@ class ChatModel:
                     raise ModelError("Invalid constrained schema envelope", "configuration")
                 # b6500 tools/server/utils.hpp reads json_schema.schema, despite
                 # the conflicting flat-envelope example in its README.
-                payload["response_format"] = response_format
-            else:
-                payload["response_format"] = response_format
+            payload["response_format"] = response_format
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
@@ -115,6 +113,7 @@ class ChatModel:
         # a stalled open/read may wait for its socket timeout. No partial action
         # can be returned; the application must also guard tool dispatch.
         try:
+            checkpoint()
             with self._opener.open(request, timeout=self.timeout) as response:
                 chunks = bytearray()
                 checkpoint()
@@ -162,6 +161,7 @@ class ChatModel:
             checkpoint()
             raise ModelError("Cannot reach the configured model server", "connectivity") from None
         except (ValueError, UnicodeError, RecursionError):
+            checkpoint()
             raise ModelError("Model server returned invalid JSON", "response_protocol") from None
         if cancel_event is not None and cancel_event.is_set():
             raise ModelError("Generation cancelled", "cancelled")

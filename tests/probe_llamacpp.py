@@ -22,15 +22,23 @@ def main():
         if response.get("tool_calls"):
             raise ProtocolError("mixed_native_action")
         action = parse_strict_action(response.get("content"))
-        print("valid strict action:", action["type"] == "final" and action["content"] == "ready")
+        print("valid strict action: True")
+        print("expected final:", action["type"] == "final" and action["content"] == "ready")
     except (ModelError, ProtocolError) as exc:
         print("constrained probe failure:", exc.kind if isinstance(exc, ModelError) else exc.code)
     for protocol in ("native", "strict-json"):
         events = []
         fact = secrets.token_hex(12)
+        exact_reads = []
+        class ProbeTools(LocalTools):
+            def call(self, name, args):
+                observation = super().call(name, args)
+                if name == "read_file" and args.get("path") == "fact.txt" and observation == fact:
+                    exact_reads.append(True)
+                return observation
         with tempfile.TemporaryDirectory() as root:
             (Path(root) / "fact.txt").write_text(fact, encoding="utf-8")
-            agent = Agent(model, LocalTools(Path(root)), tool_protocol=protocol,
+            agent = Agent(model, ProbeTools(Path(root)), tool_protocol=protocol,
                           strict_json_profile="constrained" if protocol == "strict-json" else "prompt",
                           on_event=events.append)
             answer = None
@@ -41,7 +49,8 @@ def main():
             reads = sum(e.get("event") == "tool_end" and e.get("tool") == "read_file"
                         and e.get("status") == "ok" for e in events)
             print(protocol, "successful reads:", reads, "exact fact:", answer == fact,
-                  "task success:", reads > 0 and answer == fact)
+                  "required file reads:", len(exact_reads),
+                  "task success:", reads > 0 and bool(exact_reads) and answer == fact)
 
 
 if __name__ == "__main__":
