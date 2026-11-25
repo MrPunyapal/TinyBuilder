@@ -45,3 +45,8 @@ jobs:
           "$binary" doctor --project .
           "$binary" read Cargo.toml --project .
           "$binary" search 'tinybuilder' --project .
+      - name: Model-free file operation benchmark
+        if: runner.os == 'Linux'
+        run: |
+          cargo build --release --locked --example file_bench --target ${{ matrix.target }}
+          python3 benchmarks/compare_files.py target/${{ matrix.target }}/release/examples/file_bench
