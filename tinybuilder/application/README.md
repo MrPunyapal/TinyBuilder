@@ -29,7 +29,13 @@ stored by the service.
 Permissions are explicitly set by the user for the next task, then reset on
 dispatch; use LocalTools exact argv allowlist (not a sandbox). Project switching
 requires stopping the owned backend first and revokes permissions and protocol
-selection. Per-action file previews/approvals still need agent/tool integration.
+selection. ApprovedTools adds per-action approval to the existing LocalTools without
+changing legacy CLI behavior. It requires task permission AND explicit approval,
+rejects oversized previews, and checks for file changes during approval. Its
+callback runs on the worker: frontend must render untrusted text safely and
+unblock the request on cancellation. The underlying filesystem and subprocess
+operations are not atomic or sandboxed. Agent adapter must construct this gate
+for each task; no production adapter has been connected yet.
 
 PR 3 backend exposes ChatModel.from_managed and a cancel_event argument but
 currently checks cancellation around a blocking request; an agent adapter must
