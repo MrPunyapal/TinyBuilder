@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 import stat
 import struct
+import os
 import subprocess
+import tempfile
 
 
 def architecture(path):
@@ -33,14 +35,29 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def inspect(root, expected, required):
-    if not root.is_dir() or root.is_symlink():
+def inspect(root, expected, required, *, allow_contained_links=False):
+    if not root.is_dir() or root.is_symlink() or root.is_junction():
         raise ValueError("Expected extracted directory")
-    records = {}
+    root = root.resolve(strict=True)
+    records, links = {}, {}
     for path in sorted(root.rglob("*")):
         relative = path.relative_to(root)
-        if forbidden(relative) or path.is_symlink():
-            raise ValueError("Forbidden path or symlink in distribution")
+        if forbidden(relative) or path.is_junction():
+            raise ValueError("Forbidden path or junction in distribution")
+        if path.is_symlink():
+            if not allow_contained_links:
+                raise ValueError("Symlink requires explicit contained-link policy")
+            target = Path(os.readlink(path))
+            if target.is_absolute() or target.drive:
+                raise ValueError("Absolute symlink")
+            try:
+                resolved = path.resolve(strict=True).relative_to(root)
+            except (OSError, RuntimeError, ValueError):
+                raise ValueError("Broken or escaping symlink") from None
+            if resolved == Path(".") or forbidden(resolved) or path.parent.is_relative_to(root / resolved):
+                raise ValueError("Forbidden or cyclic symlink target")
+            links[relative.as_posix()] = resolved.as_posix()
+            continue
         if path.is_dir():
             continue
         if not stat.S_ISREG(path.stat().st_mode):
@@ -49,11 +66,42 @@ def inspect(root, expected, required):
             header = stream.read(32)
         if header.startswith((b"GGUF", b"SQLite format 3\0")):
             raise ValueError("Forbidden model/database content")
+        arch = architecture(path)
+        if arch is not None and arch != expected:
+            raise ValueError("Unexpected native binary architecture")
         records[relative.as_posix()] = {"bytes": path.stat().st_size, "sha256": digest(path)}
+        if arch is not None:
+            records[relative.as_posix()]["architecture"] = arch
     for name in required:
         if name not in records:
             raise ValueError("Required file missing")
-    return {"installed_file_bytes": sum(v["bytes"] for v in records.values()), "files": records, "expected_arch": expected}
+    return {"installed_file_bytes": sum(v["bytes"] for v in records.values()), "files": records, "links": links, "expected_arch": expected}
+
+
+def smoke(root, app, server):
+    """Explicit trusted-binary smoke only; no model or first-launch claim."""
+    root = root.resolve(strict=True)
+    with tempfile.TemporaryDirectory(prefix="tinybuilder-smoke-") as tmp:
+        home = Path(tmp)
+        project = home / "project"
+        project.mkdir()
+        # Retain only system environment necessary to start a native process.
+        allowed = {"SYSTEMROOT", "WINDIR", "COMSPEC", "PATH", "PATHEXT", "TEMP", "TMP", "TMPDIR", "LANG"}
+        env = {key: value for key, value in os.environ.items() if key.upper() in allowed}
+        env.update(HOME=tmp, USERPROFILE=tmp, LOCALAPPDATA=tmp, APPDATA=tmp,
+                   XDG_DATA_HOME=tmp, XDG_CONFIG_HOME=tmp, XDG_CACHE_HOME=tmp)
+        checks = {"app_help": [root / app, "--help"],
+                  "app_doctor": [root / app, "doctor", "--project", project],
+                  "server_version": [root / server, "--version"],
+                  "server_help": [root / server, "--help"]}
+        for label, command in checks.items():
+            try:
+                subprocess.run([str(arg) for arg in command], cwd=project, env=env,
+                               stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, shell=False, timeout=30, check=True)
+            except (OSError, subprocess.SubprocessError):
+                raise ValueError("Smoke check failed: " + label) from None
+        return {label: "pass" for label in checks}
 
 
 def main():
@@ -67,14 +115,26 @@ def main():
     parser.add_argument("--sbom", required=True)
     parser.add_argument("--artifact", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expected-artifact-sha256", help="Independently trusted artifact digest")
+    parser.add_argument("--allow-contained-links", action="store_true")
+    parser.add_argument("--smoke", action="store_true", help="Execute trusted binaries only")
     args = parser.parse_args()
-    report = inspect(args.root, args.arch, [args.app, args.server, args.license, args.notices, args.sbom])
+    if args.output.resolve().is_relative_to(args.root.resolve()):
+        parser.error("Output must be outside the distribution")
+    report = inspect(args.root, args.arch, [args.app, args.server, args.license, args.notices, args.sbom], allow_contained_links=args.allow_contained_links)
     for name in (args.app, args.server):
         if architecture(args.root / name) != args.arch:
             raise ValueError("Unexpected executable architecture")
     report["compressed_bytes"] = args.artifact.stat().st_size
     report["artifact_sha256"] = digest(args.artifact)
-    report["qualification"] = "static-only; gates A/B/C not tested"
+    if args.expected_artifact_sha256 is not None and report["artifact_sha256"] != args.expected_artifact_sha256.lower():
+        raise ValueError("Artifact digest mismatch")
+    report["trusted_artifact_digest_checked"] = args.expected_artifact_sha256 is not None
+    if args.smoke:
+        if args.expected_artifact_sha256 is None:
+            parser.error("Smoke requires an independently trusted artifact digest")
+        report["smoke"] = smoke(args.root, args.app, args.server)
+    report["qualification"] = "static or explicit smoke only; gates A/B/C not tested"
     args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
 
