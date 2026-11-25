@@ -85,6 +85,44 @@ def stage(archive, target, runtime):
     return digest(runtime / "runtime-manifest.json")
 
 
+def dependency_notices(target, root):
+    """Inventory locked crate notices; legal completeness still needs review."""
+    metadata = json.loads(subprocess.check_output(
+        ["cargo", "metadata", "--locked", "--filter-platform", target, "--format-version", "1"],
+        cwd=ROOT / "rust", encoding="utf-8", timeout=120))
+    directory = root / "crate-notices"
+    directory.mkdir()
+    records = []
+    for pkg in sorted(metadata["packages"], key=lambda p: (p["name"], p["version"])):
+        if pkg["source"] is None:
+            continue
+        source = Path(pkg["manifest_path"]).parent
+        dest = directory / (pkg["name"] + "-" + pkg["version"])
+        names = set()
+        for p in source.iterdir():
+            if p.is_file() and not p.is_symlink() and p.name.upper().startswith(
+                    ("LICENSE", "LICENCE", "COPYING", "NOTICE", "COPYRIGHT")):
+                names.add(p.name)
+        declared = pkg.get("license_file")
+        if declared and Path(declared).name == declared:
+            names.add(declared)
+        copied = []
+        for name in sorted(names):
+            p = source / name
+            if not p.is_file() or p.is_symlink():
+                continue
+            dest.mkdir(exist_ok=True)
+            shutil.copyfile(p, dest / name)
+            copied.append(name)
+        records.append({"name": pkg["name"], "version": pkg["version"],
+                        "source": pkg["source"], "license": pkg.get("license"),
+                        "declared_license_file": declared, "copied_notice_files": copied})
+    write_json(directory / "inventory.json", {
+        "status": "locked dependency notice inventory; not legal clearance",
+        "target": target, "packages": records,
+    })
+
+
 def build(target, source_commit, output):
     actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     if actual != source_commit or not re.fullmatch(r"[0-9a-f]{40}", source_commit):
@@ -107,6 +145,7 @@ def build(target, source_commit, output):
         shutil.copy2(ROOT / "rust" / "target" / target / "release" / binary, root / binary)
         shutil.copy2(ROOT / "LICENSE", root / "LICENSE")
         shutil.copy2(ROOT / "docs" / "CANDIDATE_QUICKSTART.md", root / "README.md")
+        dependency_notices(target, root)
         with tempfile.TemporaryDirectory(prefix="tinybuilder smoke ") as project:
             project = Path(project)
             (project / "probe.txt").write_text("candidate-smoke-fact", encoding="utf-8")
