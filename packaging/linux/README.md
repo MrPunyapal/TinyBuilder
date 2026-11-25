@@ -16,7 +16,7 @@ coreutils, gzip and tar. From repository root:
     source /tmp/tinybuilder-linux-build/bin/activate
     python -m pip install 'pyinstaller==6.15.0'
     python -m pip install .
-    bash packaging/linux/build.sh /absolute/verified-runtime /absolute/runtime-SHA256SUMS /tmp/tinybuilder-linux-output /absolute/llama-b6500-bin-ubuntu-x64.zip
+    bash packaging/linux/build.sh /absolute/verified-runtime /absolute/runtime-SHA256SUMS /tmp/tinybuilder-linux-output /absolute/llama-b6500-bin-ubuntu-x64.zip /absolute/reviewed-notices
 
 The runtime directory must be a flat payload containing llama-server, LICENSE,
 required native libraries and their notices (only llama-server, lib*.so[.N...],
@@ -39,6 +39,11 @@ script). Guided startup, runtime discovery and XDG paths are integration gates.
 No packaging code creates or deletes user model/preferences directories.
 Update by extracting to a new directory; remove only the old extracted folder.
 No automated cleanup of user data.
+The launcher resolves symlinks and preserves cwd, arguments, exit status and
+caller LD_LIBRARY_PATH; it clears stale LD_LIBRARY_PATH_ORIG before bootloader
+startup. It requires GNU realpath. The frozen executable is app/tinybuilder;
+its sibling installation runtime is ../runtime relative to its directory.
+PR #3 must publish guided entry/discovery; do not derive runtime from project cwd.
 
 The PyInstaller bootloader modifies LD_LIBRARY_PATH; shared subprocess owners
 must restore LD_LIBRARY_PATH_ORIG (or unset LD_LIBRARY_PATH when absent) for
@@ -55,9 +60,22 @@ Run smoke.sh against the extracted archive on a clean Ubuntu 24.04 x64 image
 without Python, Git or Ollama installed, with networking disabled.
 PATH isolation in smoke.sh is not proof of package absence. Record OS, CPU,
 glibc, output checksums, exact build inputs, compressed and extracted bytes.
-Check all redistributable libraries and include their actual license texts,
-including CPython, PyInstaller bootloader and system-derived libraries before
-release. Current license collection is incomplete; no publication authorized.
+The fifth build argument is a reviewed-notices directory containing actual
+redistribution texts named CPython.txt, PyInstaller.txt, llama.cpp.txt (exactly
+matching runtime/LICENSE), and additional *.txt notices for all collected
+components. Include elf-notices.json: a JSON object keyed by each regular ELF
+file relative to the bundle, e.g. {"app/tinybuilder":["PyInstaller.txt"],
+"runtime/llama-server":["llama.cpp.txt"]}. These are examples, not a complete
+inventory. Every ELF must map to one or more included notice filenames. Obtain
+actual license texts and review source/redistribution obligations for CPython,
+PyInstaller, llama.cpp, system-derived libraries and Python dependencies;
+notices alone do not establish legal compliance. The build fails before archive
+creation if the inventory is missing or incomplete. Inspect the retained staged
+bundle and elf-audit.txt after a failed notice gate to assemble the exact reviewed
+inventory, then rerun with a fresh output directory. No publication authorized.
+The actual upstream payload and complete reviewed notice texts remain unverified.
+The successful build records compressed, installed, application and runtime byte
+counts in sizes.txt; no model weights are included.
 Archive timestamps and ownership are normalized; dependency lock, builder
 image digest and bit-for-bit reproducibility remain unverified.
 Real model loading, offline inference and randomized tool inspection are

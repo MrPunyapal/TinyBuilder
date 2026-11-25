@@ -4,11 +4,13 @@ set -euo pipefail
 export LC_ALL=C
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo=$(cd "$here/../.." && pwd)
-[[ $# == 4 ]] || { echo "usage: $0 VERIFIED_RUNTIME_DIR SHA256SUMS NEW_OUTPUT_DIR PINNED_UPSTREAM_ZIP" >&2; exit 2; }
+[[ $# == 5 ]] || { echo "usage: $0 VERIFIED_RUNTIME_DIR SHA256SUMS NEW_OUTPUT_DIR PINNED_UPSTREAM_ZIP REVIEWED_NOTICES_DIR" >&2; exit 2; }
 runtime=$(realpath "$1")
 sums=$(realpath "$2")
 out=$(realpath -m "$3")
 archive=$(realpath "$4")
+notices=$(realpath -e "$5")
+[[ -d "$notices" ]]
 # The shared runtime must be integrated before a distribution can be built.
 [[ -f "$repo/tinybuilder/runtime/catalog.py" && -f "$repo/tinybuilder/runtime/manifest.py" ]] || { echo "shared runtime integration missing" >&2; exit 1; }
 [[ $(uname -m) == x86_64 && $(getconf GNU_LIBC_VERSION) == 'glibc 2.39' ]]
@@ -36,14 +38,19 @@ chmod 755 "$bundle/runtime/llama-server"
 python "$here/prepare_manifest.py" "$bundle/runtime" "$sums" "$archive"
 cp "$repo/LICENSE" "$bundle/licenses/TinyBuilder.txt"
 cp "$here/README.md" "$bundle/README.md"
-# Preserve upstream notices, including Python and all collected libraries.
+# Record the independently reviewed runtime inventory and build metadata.
 cp "$sums" "$bundle/licenses/runtime-SHA256SUMS"
 python -m pip show pyinstaller > "$bundle/licenses/pyinstaller-build-metadata.txt"
 "$here/audit.sh" "$bundle" > "$out/elf-audit.txt"
+python "$here/stage_notices.py" "$bundle" "$notices"
 "$here/smoke.sh" "$bundle"
 epoch=${SOURCE_DATE_EPOCH:-0}
 tar --sort=name --mtime="@$epoch" --owner=0 --group=0 --numeric-owner \
   -C "$out" -cf - TinyBuilder-linux-x64 | gzip -n > "$out/TinyBuilder-linux-x64.tar.gz"
 (cd "$out" && sha256sum TinyBuilder-linux-x64.tar.gz > SHA256SUMS)
-stat -c 'compressed_bytes=%s' "$out/TinyBuilder-linux-x64.tar.gz"
-du -sb "$bundle"
+{
+  stat -c 'compressed_bytes=%s' "$out/TinyBuilder-linux-x64.tar.gz"
+  printf 'installed_bytes=%s\n' "$(du -sb "$bundle" | cut -f1)"
+  printf 'app_bytes=%s\n' "$(du -sb "$bundle/app" | cut -f1)"
+  printf 'runtime_bytes=%s\n' "$(du -sb "$bundle/runtime" | cut -f1)"
+} | tee "$out/sizes.txt"

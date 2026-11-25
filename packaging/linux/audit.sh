@@ -8,6 +8,7 @@ for required in app/tinybuilder runtime/llama-server; do
   [[ -f "$root/$required" && ! -L "$root/$required" ]] || exit 1
 done
 while IFS= read -r -d '' link; do
+  [[ $(readlink "$link") != /* ]] || { echo "absolute bundle link: $link" >&2; exit 1; }
   target=$(realpath -e "$link")
   [[ "$target" == "$root/"* ]] || { echo "escaping bundle link: $link" >&2; exit 1; }
 done < <(find "$root" -type l -print0)
@@ -17,6 +18,7 @@ while IFS= read -r -d '' f; do
   header=$(readelf -h "$f")
   grep -q 'ELF64' <<< "$header"
   grep -q 'Advanced Micro Devices X86-64' <<< "$header"
+  readelf -l -n "$f"
   dynamic=$(readelf -d "$f")
   printf '%s\n' "$dynamic"
   # Reject non-relocatable or cwd-dependent ELF search paths.
