@@ -86,7 +86,15 @@ pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
     let manifest_path = root.join("runtime-manifest.json");
     regular(&manifest_path)?;
     ensure!(manifest_path.metadata()?.len() <= 1024 * 1024, "Oversized runtime manifest");
-    let data: Manifest = serde_json::from_reader(File::open(manifest_path)?)?;
+    // Candidate builds bind the full runtime inventory to the executable.
+    // Unpinned source/lab builds still require a separately trusted root.
+    let bytes = fs::read(&manifest_path)?;
+    ensure!(bytes.len() <= 1024 * 1024, "Oversized runtime manifest");
+    if let Some(expected) = option_env!("TINYBUILDER_RUNTIME_MANIFEST_SHA256") {
+        ensure!(format!("{:x}", Sha256::digest(&bytes)) == expected,
+            "Packaged runtime manifest authentication failed");
+    }
+    let data: Manifest = serde_json::from_slice(&bytes)?;
     let (os, arch, archive, sha) = pin(&data.revision)?;
     let exe = if os == "windows" { "llama-server.exe" } else { "llama-server" };
     ensure!(data.schema == 1 && data.os == os
