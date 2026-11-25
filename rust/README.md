@@ -114,3 +114,20 @@ not a demonstrated improvement. After diagnostic evidence, run qualify_read
 with --engine split-plain or --engine split-json on ten new fixtures. The exact
 same task, oracle, required read and 10/10 threshold apply; the baseline remains
 the default. Do not select the best of repeated qualification campaigns.
+
+## Context-first natural-language workbench (experimental)
+
+    cargo build --manifest-path rust/Cargo.toml --release --locked --example grounded_lab
+    grounded_lab --project DISPOSABLE_PROJECT --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF ask "Locate and explain compute_total"
+    grounded_lab --project DISPOSABLE_PROJECT --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF edit --allow-write "Fix compute_total to include tax"
+
+The lexical retriever ranks filenames and bounded literal-search results,
+reads up to four files, and flags incomplete evidence. There is no persistent
+index and large files currently provide only a prefix. The ask path is
+read-only, one completion with evidence; deterministic retrieval does NOT count
+as a model-selected read qualification. The edit path accepts exactly one
+model-generated replacement in a fully read file, validates stale context and
+uses the existing diff/approval/patch engine. It never runs commands and does
+not guarantee that a model proposal is semantically correct. Use disposable
+projects only; ACL and extended attribute preservation remain unqualified.
+No default CLI behavior changed. No real model trials were performed remotely.
