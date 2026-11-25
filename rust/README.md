@@ -165,3 +165,13 @@ incomplete on failure. Callback errors stop consumption at chunk boundaries;
 Ctrl+C exits the session and relies on owned-runtime cleanup. Immediate
 in-flight cancellation without exiting, native tool streaming and real-engine
 stream compatibility are still unqualified. No streamed output is executed.
+
+New files can be proposed at an explicit human-selected relative path:
+
+    tinybuilder create src/new.rs "Implement a helper" --project DISPOSABLE_PROJECT --runtime RUNTIME --model MODEL --strict-json
+
+The destination's parent must exist. The generated text is previewed as a diff;
+only --allow-write plus explicit approval permits atomic no-clobber creation.
+This is not an OS sandbox: use trusted disposable project trees. Directory
+creation, overwrite, arbitrary paths and generated command execution are not
+supported by this operation. See [1.0 readiness gates](../docs/RUST_1_0_READINESS.md).

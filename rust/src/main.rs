@@ -41,6 +41,16 @@ enum Command {
         #[arg(long, requires="propose")] allow_write: bool,
         #[arg(long, conflicts_with="propose")] stream: bool,
     },
+    /// Propose one new file at an explicitly selected path; never overwrite.
+    Create {
+        path:String,
+        task:String,
+        #[arg(long,default_value=".")] project:PathBuf,
+        #[arg(long)] runtime:PathBuf,
+        #[arg(long)] model:PathBuf,
+        #[arg(long)] strict_json:bool,
+        #[arg(long)] allow_write:bool,
+    },
     Read {
         path: String,
         #[arg(long, default_value=".")] project: PathBuf,
@@ -233,6 +243,26 @@ fn run() -> Result<()> {
             let project=Project::new(&project)?;
             let server=Runtime::start(&runtime,&model)?;
             if stream {streamed_task(&project,&server,&text)}else{grounded_task(&project,&server,&text,propose,allow_write)}
+        }
+        Command::Create {path,task:text,project,runtime,model,strict_json,allow_write} => {
+            ensure!(strict_json,"Explicit strict JSON consent required");
+            let project=Project::new(&project)?;
+            // Validate before loading the runtime; this proposal is discarded.
+            project.propose_create(&path,"validation only")?;
+            // Context is optional for a new file, including empty projects.
+            let context=workbench::collect(&project,&text).ok();
+            if let Some(c)=&context{show_context(c);}
+            let evidence=context.as_ref().map(|c|c.files.as_slice()).unwrap_or(&[]);
+            let request=tinybuilder::grounded::creation_request(&text,&path,evidence)?;
+            let server=Runtime::start(&runtime,&model)?;
+            let proposal=tinybuilder::grounded::prepare_creation(&project,&path,&server.complete(request)?)?;
+            println!("Proposed new file: {}",terminal(proposal.path()));
+            show(&proposal.diff);
+            if allow_write&&yes("Create this exact file in the disposable project? Type yes: "){
+                project.apply_create(proposal,true)?;
+                println!("Approved file created. Independent validation still required.");
+            }else{println!("Proposal only; no file created.");}
+            Ok(())
         }
         Command::Read {path,project} => {
             let result = Project::new(&project)?.read(&path)?;

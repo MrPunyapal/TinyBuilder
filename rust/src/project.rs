@@ -32,6 +32,14 @@ pub struct ContextExcerpt {
     pub first_line: usize,
     pub last_line: usize,
 }
+pub struct NewFile {
+    path: String,
+    text: String,
+    pub diff: String,
+}
+impl NewFile {
+    pub fn path(&self)->&str {&self.path}
+}
 pub struct Patch {
     path: String,
     original_hash: [u8; 32],
@@ -322,6 +330,40 @@ impl Project {
 
     // Existing text files only; exact unique replacement avoids model-generated
     // whole-file rewrites. Review is separate from commit.
+    // Creation is a distinct operation, restricted to an existing validated
+    // directory. It must never overwrite a file that appears during review.
+    fn new_destination(&self, relative:&str)->Result<PathBuf> {
+        ensure!(!relative.is_empty()&&relative.len()<=4096,"Invalid destination");
+        let rel=Path::new(relative);
+        let name=rel.file_name().and_then(|n|n.to_str()).context("Missing filename")?;
+        ensure!(!forbidden_name(name)&&!name.starts_with('.'),"Restricted destination");
+        ensure!(rel.components().all(|c|matches!(c,Component::Normal(_)|Component::CurDir)),"Only project-relative destinations");
+        let parent=rel.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+        let dir=self.resolve(parent.to_str().context("Invalid parent path")?)?;
+        ensure!(dir.is_dir(),"Destination directory must exist");
+        let path=dir.join(name);
+        match fs::symlink_metadata(&path) {
+            Err(e) if e.kind()==std::io::ErrorKind::NotFound=>Ok(path),
+            _=>bail!("Destination exists or cannot be inspected")
+        }
+    }
+    pub fn propose_create(&self,relative:&str,text:&str)->Result<NewFile>{
+        ensure!(!text.trim().is_empty()&&text.len()<=32*1024&&!text.contains('\0'),"Invalid new text");
+        let path=self.new_destination(relative)?;
+        let diff=TextDiff::from_lines("",text).unified_diff().header("/dev/null","new file").to_string();
+        ensure!(diff.len()<=64*1024,"Diff too large to review");
+        Ok(NewFile{path:self.relative(&path)?,text:text.to_owned(),diff})
+    }
+    pub fn apply_create(&self,proposal:NewFile,approved:bool)->Result<()>{
+        ensure!(approved,"Permission denied");
+        let path=self.new_destination(&proposal.path)?;
+        let mut tmp=NamedTempFile::new_in(path.parent().context("Missing parent")?)?;
+        tmp.write_all(proposal.text.as_bytes())?;
+        tmp.as_file().sync_all()?;
+        ensure!(self.new_destination(&proposal.path)?==path,"Destination changed");
+        tmp.persist_noclobber(&path).map_err(|_|anyhow::anyhow!("Destination exists or atomic creation failed"))?;
+        Ok(())
+    }
     pub fn propose(&self, path: &str, old: &str, new: &str) -> Result<Patch> {
         self.propose_checked(path, old, new, None)
     }
@@ -428,6 +470,23 @@ mod tests {
         assert!(p.propose("a.txt", "aaa", "b").is_err());
         assert_eq!(fs::read_to_string(&a).unwrap(), "aaa");
         assert_eq!(fs::read_to_string(&b).unwrap(), "aaa");
+    }
+    #[test]
+    fn creation_is_explicit_and_never_overwrites() {
+        let dir=tempfile::tempdir().unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        assert!(p.propose_create("../escape.rs","x").is_err());
+        assert!(p.propose_create(".env","x").is_err());
+        assert!(p.propose_create("missing/file.rs","x").is_err());
+        assert!(p.apply_create(p.propose_create("new.rs","fn main() {}\n").unwrap(),false).is_err());
+        assert!(!dir.path().join("new.rs").exists());
+        let proposal=p.propose_create("new.rs","fn main() {}\n").unwrap();
+        fs::write(dir.path().join("new.rs"),"external").unwrap();
+        assert!(p.apply_create(proposal,true).is_err());
+        assert_eq!(fs::read_to_string(dir.path().join("new.rs")).unwrap(),"external");
+        let proposal=p.propose_create("other.rs","fn main() {}\n").unwrap();
+        p.apply_create(proposal,true).unwrap();
+        assert_eq!(p.read("other.rs").unwrap().text,"fn main() {}\n");
     }
     #[test]
     fn excerpt_includes_deep_match_and_cannot_be_patched() {
