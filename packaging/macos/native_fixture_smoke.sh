@@ -19,11 +19,15 @@ codesign --force --sign - "$TMP/runtime/llama-server"
 printf '%s\n' 'Test-only executable, not llama.cpp. No third-party runtime shipped.' > "$TMP/runtime/NOTICE"
 (cd "$TMP/runtime" && shasum -a 256 llama-server NOTICE > SHA256SUMS)
 digest="$(shasum -a 256 "$TMP/runtime/SHA256SUMS" | awk '{print $1}')"
-bash "$HERE/build.sh" "$TMP/runtime" "$digest" "$TMP/output"
+bash "$HERE/build.sh" --fixture "$TMP/runtime" "$digest" "$TMP/output"
 (cd "$TMP/output" && shasum -a 256 -c SHA256SUMS)
 grep -Fxq TINYBUILDER_PACKAGING_FIXTURE_NOT_LLAMA_CPP "$TMP/output/runtime-version.txt"
-/usr/bin/hdiutil attach -readonly -nobrowse -mountpoint "$MOUNT" "$TMP/output/TinyBuilder-arm64-development.dmg"
+/usr/bin/hdiutil attach -readonly -nobrowse -mountpoint "$MOUNT" "$TMP/output/TinyBuilder-arm64-fixture.dmg"
 mounted=1
+# Launcher must work from a read-only mounted image without writing beside it.
+env -i HOME="$TMP/home" PATH=/usr/bin:/bin "$MOUNT/TinyBuilder/TinyBuilder.command" --help
+env -i HOME="$TMP/home" PATH=/usr/bin:/bin "$MOUNT/TinyBuilder/TinyBuilder.command" doctor --project "$TMP/project"
+test -f "$MOUNT/TinyBuilder/FIXTURE-ONLY.txt"
 INSTALLED="$TMP/installed space é"
 ditto "$MOUNT/TinyBuilder" "$INSTALLED"
 /usr/bin/hdiutil detach "$MOUNT"
