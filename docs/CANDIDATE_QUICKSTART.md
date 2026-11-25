@@ -10,9 +10,12 @@ tinybuilder). Verify the archive SHA-256 against artifact.json from trusted CI.
 Open a terminal in that directory. On Windows use .\tinybuilder.exe; on
 macOS/Linux use ./tinybuilder. Run --version and doctor --project PATH.
 Use read FILE --project PATH, search TEXT --project PATH or inspect QUESTION
---project PATH without a model. Run app to select a project and an existing
-compatible GGUF; the bundled runtime is selected automatically. No downloads
-are performed. Ask a question or use /cat, /search, /ask, /help, /quit.
+--project PATH without a model. Run app (or launch the executable with no arguments), select a project folder,
+and press Enter at the GGUF prompt for model-free mode. Use /cat, /search,
+and /inspect immediately, or /model to choose an existing GGUF later. Paths
+with surrounding double quotes are accepted. The bundled runtime is selected
+automatically for AI; no downloads are performed. Use /ask for AI questions,
+/help for commands and /quit to exit.
 Model quality is not qualified; verify all responses. No file editing or
 command execution. Do not bypass OS security warnings; unsigned packages
 are for controlled development testing only.
