@@ -34,13 +34,14 @@ class Guided:
         last_approval = None
         cancelled = False
         while True:
+            # Never swallow an interrupt after consuming the one-shot result.
+            result = self.worker.take_result()
+            if result is not None:
+                state = self.session.snapshot()
+                if result.error or state.error:
+                    self.write(plain(state.error or result.error))
+                return None if cancelled else result.value
             try:
-                result = self.worker.take_result()
-                if result is not None:
-                    state = self.session.snapshot()
-                    if result.error or state.error:
-                        self.write(plain(state.error or result.error))
-                    return None if cancelled else result.value
                 state = self.session.snapshot()
                 status = (state.phase, state.progress, state.activity)
                 if status != previous:
@@ -158,9 +159,15 @@ class Guided:
                 self.session.select_backend("cpu")
                 while True:
                     self.worker.start(services.start)
-                    self.await_result()
+                    started = self.await_result()
                     if self.session.snapshot().phase == "ready":
-                        break
+                        if started is True:
+                            break
+                        # Cancellation may have arrived after startup completed.
+                        # Stop the late-ready backend before permitting a retry.
+                        self.worker.stop()
+                        if self.await_result() is not True:
+                            raise RuntimeError("cleanup required")
                     if self.session.snapshot().phase == "cleanup_failed":
                         raise RuntimeError("cleanup required")
                     if not self.yes("Retry model startup"):

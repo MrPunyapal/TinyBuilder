@@ -9,6 +9,9 @@ from unittest.mock import patch
 from contextlib import redirect_stdout
 
 from tinybuilder.application.install import runtime_root
+from tinybuilder.application.agent_backend import AgentBackend
+from tinybuilder.tools import LocalTools
+from tinybuilder.mcp import MCPServer
 from tinybuilder.application.session import DownloadOffer
 from tinybuilder.cli import main
 from tinybuilder.external_env import external_env
@@ -102,3 +105,48 @@ class LauncherTests(unittest.TestCase):
                 self.assertEqual(os.environ["LD_LIBRARY_PATH"], "/bundle")
         with patch.object(sys, "frozen", False, create=True):
             self.assertEqual(external_env(), {})
+
+    def test_renderer_approval_denial_and_cancel(self):
+        model = self.root / "test.gguf"
+        model.write_bytes(b"GGUF0000")
+        for decision in ("no", "interrupt"):
+            with self.subTest(decision=decision):
+                calls, output = [], []
+                class Model:
+                    def complete(self, messages, tools, response_format=None, *, cancel_event):
+                        if any(message.get("role") == "tool" for message in messages):
+                            return {"content": "done"}
+                        return {"content": None, "tool_calls": [{"id": "call_1", "type": "function",
+                            "function": {"name": "write_file", "arguments": '{"path":"new.txt","content":"test"}'}}]}
+                def factory(root, approve, storage):
+                    return NS(inspect_model=lambda path: NS(path=model, provenance="user-provided-unverified"),
+                              start=lambda *args: AgentBackend(Model(), lambda: calls.append("closed"), approve))
+                entries = iter([str(self.root), "", "1", str(model), "yes", "/settings", "yes",
+                                "", "no", "write", decision, "/quit"])
+                def read(prompt):
+                    value = next(entries)
+                    if value == "interrupt":
+                        raise KeyboardInterrupt()
+                    return value
+                app = Guided(self.runtime, read=read, write=output.append, service_factory=factory)
+                self.assertEqual(app.run(), 0)
+                self.assertIn("Proposed action: write_file", output)
+                self.assertIn("Path: new.txt", output)
+                self.assertFalse((self.root / "new.txt").exists())
+                self.assertEqual(calls, ["closed"])
+                if decision == "interrupt":
+                    self.assertTrue(any("Cancellation requested" in line for line in output))
+
+    def test_frozen_linux_external_tool_call_sites(self):
+        with patch.object(sys, "frozen", True, create=True), patch.object(sys, "platform", "linux"), \
+                patch.dict(os.environ, {"LD_LIBRARY_PATH": "/bundle", "LD_LIBRARY_PATH_ORIG": "/user"}, clear=True):
+            with patch("tinybuilder.tools.subprocess.run") as run:
+                run.return_value = NS(returncode=0, stdout="ok", stderr="")
+                self.assertIn("Exit code: 0", LocalTools(self.root, allow_exec=True,
+                              exec_commands=[["echo", "ok"]]).call("run_command", {"argv": ["echo", "ok"]}))
+                self.assertEqual(run.call_args.kwargs["env"]["LD_LIBRARY_PATH"], "/user")
+            with patch("tinybuilder.mcp.subprocess.Popen") as popen, \
+                    patch.object(MCPServer, "_reader"), patch.object(MCPServer, "_request"), patch.object(MCPServer, "_send"):
+                MCPServer("fixture", "echo", [], self.root)
+                self.assertEqual(popen.call_args.kwargs["env"]["LD_LIBRARY_PATH"], "/user")
+            self.assertEqual(os.environ["LD_LIBRARY_PATH"], "/bundle")
