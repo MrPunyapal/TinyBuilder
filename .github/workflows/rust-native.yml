@@ -49,3 +49,30 @@ jobs:
         run: |
           cargo build --release --locked --example file_bench --target ${{ matrix.target }}
           python3 benchmarks/compare_files.py target/${{ matrix.target }}/release/examples/file_bench
+      - name: Build offline qualification executable
+        run: cargo build --release --locked --example qualify_read --target ${{ matrix.target }}
+      - name: Stage hashed lab binaries (no runtime or models)
+        shell: pwsh
+        env:
+          TB_TARGET: ${{ matrix.target }}
+          TB_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ext = if ($IsWindows) { '.exe' } else { '' }
+          $release = "target/$env:TB_TARGET/release"
+          $dir = Join-Path (Get-Location) 'lab-binaries'
+          New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null
+          Copy-Item "$release/tinybuilder$ext" $dir
+          Copy-Item "$release/examples/qualify_read$ext" $dir
+          $files = @(Get-ChildItem -File $dir | Sort-Object Name | ForEach-Object {
+            @{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant() }
+          })
+          @{ source_commit = $env:TB_SHA; target = $env:TB_TARGET; status = 'lab only; no runtime, model or installer'; files = $files } |
+            ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $dir 'build.json')
+      - name: Retain lab binaries
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tinybuilder-rust-lab-${{ matrix.target }}-${{ github.sha }}
+          path: rust/lab-binaries/
+          if-no-files-found: error
+          retention-days: 14

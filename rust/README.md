@@ -84,3 +84,12 @@ scores. No retries after a failed trial and no downloads. Exit 1 means failure.
 
 On Windows use qualify_read.exe. Existing research-license models are lab only.
 A passed campaign is not installer, license, edit, or general coding qualification.
+
+## CI lab binaries
+
+The Rust native workflow retains platform-specific lab binaries and build.json
+with the tested checkout SHA, byte sizes and SHA-256 hashes. Verify both binary
+hashes before using them. They are not signed installers, do not include a model
+or llama.cpp, and are not public-preview qualification. Use only a trusted
+existing staged runtime with a reviewed manifest. The PR workflow's checkout
+may be a merge test SHA; use a branch push run to obtain the exact branch head.
