@@ -78,3 +78,9 @@ release/0.1 head, PR and CI; never assume another commit's tests apply.
 Update this knowledge base with dated evidence as gates clear. Preserve main,
 PR #14 and local unpublished work. Prioritize a working first release over
 new agent features. Original full research remains in the project conversation.
+
+## Continuation — 2026-11-26
+
+- PR #15 verified open, draft, mergeable, targeting main from release/0.1. Initial head `76ae0c414d5233084b28c1d909bb507387642b45`: [Python](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45707609817), [native](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45707609806), [Rust](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45707609860) all in progress when inspected; no pass claimed.
+- [11aa834](https://github.com/MrPunyapal/TinyBuilder/commit/11aa8343b2b2e77e1c1e20b1606f36019c53a405) extends pinned b6500 runtime archive inspection to release/0.1 and relevant PRs, retaining per-platform JSON inventory artifacts. This is input provenance only, not staged runtime authenticity or qualification. CI execution not yet verified.
+- Runtime review confirms an unresolved bind/drop/spawn race: readiness sends the bearer key before proving listener ownership. Windows job assignment still occurs after spawn. Both remain release blockers. Native CI currently stages lab binaries, not standalone product packages. No model weights downloaded, no oracle changes, no release or merge, no PR #14 changes.
