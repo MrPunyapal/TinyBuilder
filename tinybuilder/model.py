@@ -1,12 +1,20 @@
 """Minimal OpenAI-compatible chat client. No third-party Python dependencies."""
 
+import http.client
+import io
 import json
 import ipaddress
+import math
+import re
+import time
 from dataclasses import dataclass, field
 from urllib.parse import urlsplit
 import urllib.error
 import urllib.request
 from typing import Any
+
+
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
 
 class ModelError(RuntimeError):
@@ -33,14 +41,23 @@ class ChatModel:
         if backend not in ("openai", "llamacpp"):
             raise ValueError("Unknown inference backend")
         try:
+            if (not isinstance(base_url, str) or any(ord(c) <= 32 or ord(c) == 127 for c in base_url)
+                    or "\\" in base_url or not isinstance(api_key, str)
+                    or (api_key and not re.fullmatch(r"[!-~]+", api_key))
+                    or not isinstance(model, str) or not model.strip()
+                    or not isinstance(timeout, (int, float)) or not math.isfinite(timeout)
+                    or timeout <= 0):
+                raise ValueError
             parsed = urlsplit(base_url)
+            port = parsed.port  # Validate even for external endpoints.
             if (parsed.scheme not in ("http", "https") or not parsed.hostname
                     or parsed.username is not None or parsed.password is not None
                     or parsed.query or parsed.fragment):
                 raise ValueError
-            if managed and (not ipaddress.ip_address(parsed.hostname).is_loopback
-                            or not parsed.port or not api_key or not model
-                            or parsed.path.rstrip("/") not in ("", "/v1")):
+            if managed and (parsed.scheme != "http" or "%" in parsed.hostname
+                            or not ipaddress.ip_address(parsed.hostname).is_loopback
+                            or not port or not api_key
+                            or parsed.path not in ("", "/", "/v1", "/v1/")):
                 raise ValueError
         except ValueError:
             raise ModelError("Invalid model server URL or managed credentials", "configuration") from None
@@ -55,6 +72,7 @@ class ChatModel:
 
     @classmethod
     def from_managed(cls, connection: ManagedConnection, timeout: int = 120):
+        """Accept the runtime owner's structural descriptor (no import dependency)."""
         return cls(connection.base_url, connection.model_alias, connection.api_key,
                    timeout, backend="llamacpp", managed=True)
 
@@ -71,7 +89,9 @@ class ChatModel:
                 envelope = response_format.get("json_schema")
                 if not isinstance(envelope, dict) or not isinstance(envelope.get("schema"), dict):
                     raise ModelError("Invalid constrained schema envelope", "configuration")
-                payload["response_format"] = {"type": "json_schema", "schema": envelope["schema"]}
+                # b6500 tools/server/utils.hpp reads json_schema.schema, despite
+                # the conflicting flat-envelope example in its README.
+                payload["response_format"] = response_format
             else:
                 payload["response_format"] = response_format
         if tools:
@@ -82,9 +102,34 @@ class ChatModel:
         if self.api_key:
             headers["Authorization"] = "Bearer " + self.api_key
         request = urllib.request.Request(url, data=json.dumps(payload).encode(), headers=headers)
+        deadline = time.monotonic() + self.timeout
+
+        def checkpoint():
+            if cancel_event is not None and cancel_event.is_set():
+                raise ModelError("Generation cancelled", "cancelled")
+            if time.monotonic() >= deadline:
+                raise ModelError("Model server request timed out", "timeout")
+
+        # Socket timeout bounds inactivity, not an absolute wall-clock deadline
+        # during HTTP header parsing. Cancellation is cooperative at checkpoints;
+        # a stalled open/read may wait for its socket timeout. No partial action
+        # can be returned; the application must also guard tool dispatch.
         try:
             with self._opener.open(request, timeout=self.timeout) as response:
-                data = json.load(response)
+                chunks = bytearray()
+                checkpoint()
+                while True:
+                    chunk = response.read1(min(65536, MAX_RESPONSE_BYTES + 1 - len(chunks)))
+                    checkpoint()
+                    if not chunk:
+                        if response.length not in (None, 0):
+                            raise ModelError("Incomplete model response")
+                        break
+                    chunks.extend(chunk)
+                    if len(chunks) > MAX_RESPONSE_BYTES:
+                        raise ModelError("Model response exceeds byte limit")
+                data = json.loads(chunks)
+                checkpoint()
         except urllib.error.HTTPError as exc:
             # HTTP error bodies may echo prompts, source contents and credentials.
             message = f"Model server HTTP {exc.code}"
@@ -93,19 +138,30 @@ class ChatModel:
             # urlopen raises before its response context manager is entered.
             # Close the unread error stream without exposing the server body.
             exc.close()
+            checkpoint()
+            # Preserve the legacy closed HTTPError cause without reflecting the
+            # untrusted reason phrase, headers, body, or request URL.
+            safe_cause = urllib.error.HTTPError("", exc.code, "Model server error", {}, io.BytesIO())
+            safe_cause.close()
             kind = "authentication" if exc.code in (401, 403) else "http"
             if self.backend == "llamacpp" and response_format is not None and exc.code in (400, 422):
                 message += "; constrained request rejected (schema or other request parameters)"
-            raise ModelError(message, kind) from exc
+            raise ModelError(message, kind) from safe_cause
         except TimeoutError:
+            checkpoint()
             raise ModelError("Model server request timed out", "timeout") from None
         except urllib.error.URLError as exc:
+            checkpoint()
             if isinstance(exc.reason, TimeoutError):
                 raise ModelError("Model server request timed out", "timeout") from None
             raise ModelError("Cannot reach the configured model server", "connectivity") from None
-        except OSError as exc:
+        except http.client.HTTPException:
+            checkpoint()
+            raise ModelError("Incomplete or invalid HTTP response") from None
+        except OSError:
+            checkpoint()
             raise ModelError("Cannot reach the configured model server", "connectivity") from None
-        except (json.JSONDecodeError, UnicodeError) as exc:
+        except (ValueError, UnicodeError, RecursionError):
             raise ModelError("Model server returned invalid JSON", "response_protocol") from None
         if cancel_event is not None and cancel_event.is_set():
             raise ModelError("Generation cancelled", "cancelled")
@@ -113,6 +169,8 @@ class ChatModel:
             choice = data["choices"][0]
             message = choice["message"]
             finish = choice.get("finish_reason")
+            if self.backend == "llamacpp" and finish is None:
+                raise ModelError("Missing generation finish reason")
             if finish == "length":
                 raise ModelError("Generation truncated by token or context limit", "generation_limit")
             if finish not in (None, "stop", "tool_calls", "function_call"):
@@ -125,4 +183,5 @@ class ChatModel:
             raise ModelError("Model message content must be text or null")
         if "tool_calls" in message and message["tool_calls"] is not None and not isinstance(message["tool_calls"], list):
             raise ModelError("Model tool_calls field must be a list")
+        checkpoint()
         return message
