@@ -135,10 +135,7 @@ pub fn prepare_edit(project: &Project, evidence: &[ReadResult], message: &Value)
         .map_err(|_|anyhow::anyhow!("Invalid model patch proposal"))?;
     let source=evidence.iter().find(|r|r.path==replacement.path && !r.truncated)
         .ok_or_else(||anyhow::anyhow!("Patch target not in complete evidence"))?;
-    let current=project.read(&source.path)?;
-    ensure!(!current.truncated && current.path==source.path && current.text==source.text,
-        "File changed since context selection");
-    let patch=project.propose(&source.path,&replacement.old,&replacement.new)?;
+    let patch=project.propose_from_read(source,&replacement.old,&replacement.new)?;
     Ok(ProposedEdit{path:source.path.clone(),patch})
 }
 

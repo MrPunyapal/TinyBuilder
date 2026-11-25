@@ -48,7 +48,7 @@ downloads, persistent explicit preferences, MCP and approved exact-argv command
 execution, creation of new files, installer packaging, and independent Rust
 benchmark/clean-machine acceptance. No training or weights are downloaded.
 Writes are existing text files only; this is not an OS sandbox, filesystem
-operations are not race-proof, and metadata/ACL preservation requires native review. Hard-linked updates are rejected; Unix ownership changes and special mode bits are rejected. The current Rust app deliberately does not replace the Python
+operations are not race-proof, and metadata/ACL preservation requires native review. Hard-linked reads and updates are rejected; Unix ownership changes and special mode bits are rejected. The current Rust app deliberately does not replace the Python
 installer or claim compatibility with the unpublished Windows prototype.
 
 Native tool arguments require a single OpenAI string-shaped call per round.
@@ -88,8 +88,7 @@ A passed campaign is not installer, license, edit, or general coding qualificati
 ## CI lab binaries
 
 The Rust native workflow retains platform-specific lab binaries and build.json
-with the tested checkout SHA, byte sizes and SHA-256 hashes. Verify both binary
-hashes before using them. They are not signed installers, do not include a model
+with the tested checkout SHA, byte sizes and SHA-256 hashes. Verify all binary hashes before using them. They are not signed installers, do not include a model
 or llama.cpp, and are not public-preview qualification. Use only a trusted
 existing staged runtime with a reviewed manifest. The PR workflow's checkout
 may be a merge test SHA; use a branch push run to obtain the exact branch head.
@@ -121,13 +120,11 @@ the default. Do not select the best of repeated qualification campaigns.
     grounded_lab --project DISPOSABLE_PROJECT --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF ask "Locate and explain compute_total"
     grounded_lab --project DISPOSABLE_PROJECT --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF edit --allow-write "Fix compute_total to include tax"
 
-The lexical retriever ranks filenames and bounded literal-search results,
-reads up to four files, and flags incomplete evidence. There is no persistent
+The lexical retriever ranks filenames and up to four literal terms in one bounded traversal, reads up to four files, and flags incomplete evidence. There is no persistent
 index and large files currently provide only a prefix. The ask path is
 read-only, one completion with evidence; deterministic retrieval does NOT count
 as a model-selected read qualification. The edit path accepts exactly one
-model-generated replacement in a fully read file, validates stale context and
-uses the existing diff/approval/patch engine. It never runs commands and does
+model-generated replacement in a fully read file, binds proposals to the exact source hash and uses the existing diff/approval/patch engine. It never runs commands and does
 not guarantee that a model proposal is semantically correct. Use disposable
 projects only; ACL and extended attribute preservation remain unqualified.
 No default CLI behavior changed. No real model trials were performed remotely.

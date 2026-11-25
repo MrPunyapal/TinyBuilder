@@ -25,23 +25,8 @@ fn terms(task: &str) -> Vec<String> {
 pub fn retrieve(project: &Project, task: &str) -> Result<Context> {
     ensure!(!task.trim().is_empty() && task.len()<=8192, "Invalid task");
     let words = terms(task);
-    let listing = project.list(".")?;
-    let mut incomplete = listing.lines().any(|line| line.starts_with("[Listing incomplete"));
-    let mut ranks: BTreeMap<String,u32> = BTreeMap::new();
-    let lower_task = task.to_ascii_lowercase();
-    for path in listing.lines().filter(|s|!s.is_empty()&&!s.starts_with("[Listing incomplete")) {
-        let lower = path.to_ascii_lowercase();
-        let basename = lower.rsplit('/').next().unwrap_or(&lower);
-        let mut rank = 0;
-        if lower_task.contains(&lower) {rank += 100;}
-        for word in &words {
-            if lower.contains(&word.to_ascii_lowercase()) {rank += 10;}
-        }
-        if matches!(basename,"readme.md"|"cargo.toml"|"pyproject.toml"|"composer.json"|"package.json"|"go.mod") {
-            rank += 2;
-        }
-        if rank > 0 {ranks.insert(path.to_owned(),rank);}
-    }
+    let (ranked, mut incomplete) = project.ranked_candidates(&words,task)?;
+    let mut ranks: BTreeMap<String,u32> = ranked.into_iter().collect();
     // Explicit file paths can lie beyond the bounded listing. Project::read
     // validates every candidate independently.
     for word in task.split_whitespace().take(128) {
@@ -49,19 +34,6 @@ pub fn retrieve(project: &Project, task: &str) -> Result<Context> {
         if path.contains('.') && path.len()<=4096 {
             if let Ok(r) = project.read(path) {
                 ranks.insert(r.path,150);
-            }
-        }
-    }
-    for term in &words {
-        let hits = project.search(term)?;
-        incomplete |= hits.lines().any(|l| l.starts_with("[Search incomplete"));
-        let mut seen = BTreeSet::new();
-        for line in hits.lines() {
-            if let Some((path,rest))=line.split_once(':') {
-                if rest.split_once(':').is_some_and(|(n,_)|n.parse::<usize>().is_ok())
-                    && seen.insert(path) {
-                    *ranks.entry(path.to_owned()).or_default() += 5;
-                }
             }
         }
     }
@@ -105,6 +77,7 @@ mod tests {
         let c=retrieve(&p,"Locate and explain compute_total").unwrap();
         assert_eq!(c.files[0].path,"alpha.rs");
         assert!(c.files.iter().all(|r|!r.path.starts_with("vendor/")));
+        assert!(c.files.iter().all(|r|r.path!="beta.rs"));
     }
     #[test]
     fn missing_evidence_is_not_a_guess() {

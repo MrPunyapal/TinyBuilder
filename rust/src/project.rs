@@ -63,7 +63,12 @@ fn forbidden_name(name: &str) -> bool {
 
 fn read_bounded(path: &Path, max: usize) -> Result<(Vec<u8>, bool)> {
     let mut bytes = Vec::new();
-    File::open(path)?.take(max as u64 + 1).read_to_end(&mut bytes)?;
+    let file = File::open(path)?;
+    ensure!(file.metadata()?.is_file(), "Not a regular file");
+    // A hard link can expose a file outside the selected project without
+    // traversing a symlink. Conservatively reject it for reads and edits.
+    ensure_single_link(&file)?;
+    file.take(max as u64 + 1).read_to_end(&mut bytes)?;
     let truncated = bytes.len() > max;
     bytes.truncate(max);
     Ok((bytes, truncated))
@@ -223,14 +228,53 @@ impl Project {
         Ok(out.join("\n"))
     }
 
+    /// Typed lexical ranking for context retrieval; scan each candidate once.
+    /// Unlike parsing formatted search output, paths and scores stay separate.
+    pub(crate) fn ranked_candidates(&self, terms: &[String], task: &str) -> Result<(Vec<(String,u32)>, bool)> {
+        ensure!(terms.len()<=4 && terms.iter().all(|t|!t.is_empty() && t.len()<=80), "Invalid ranking terms");
+        let (files, limited) = self.candidates(".")?;
+        let lower_task = task.to_ascii_lowercase();
+        let rows: Vec<(String,u32,bool)> = files.par_iter().map(|rel| {
+            let lower = rel.to_ascii_lowercase();
+            let basename = lower.rsplit('/').next().unwrap_or(&lower);
+            let mut score = if lower_task.contains(&lower) {100} else {0};
+            for term in terms {
+                if lower.contains(&term.to_ascii_lowercase()) {score+=10;}
+            }
+            if matches!(basename,"readme.md"|"cargo.toml"|"pyproject.toml"|"composer.json"|"package.json"|"go.mod") {score+=2;}
+            let scan = (|| -> Result<(u32,bool)> {
+                if terms.is_empty() {return Ok((0,false));}
+                let path=self.resolve(rel)?;
+                ensure!(path.is_file(),"Not a file");
+                let (bytes,truncated)=read_bounded(&path,SEARCH_MAX)?;
+                let text=utf8(&bytes,truncated)?;
+                let hits=terms.iter().filter(|t|text.contains(t.as_str())).count();
+                Ok((hits as u32*5,truncated))
+            })();
+            let (hits,partial)=scan.unwrap_or((0,true));
+            (rel.clone(),score+hits,partial)
+        }).collect();
+        let incomplete = limited || rows.iter().any(|r|r.2);
+        Ok((rows.into_iter().filter(|r|r.1>0).map(|(path,score,_)|(path,score)).collect(),incomplete))
+    }
+
     // Existing text files only; exact unique replacement avoids model-generated
     // whole-file rewrites. Review is separate from commit.
     pub fn propose(&self, path: &str, old: &str, new: &str) -> Result<Patch> {
-        ensure!(!old.is_empty() && old.len() <= PATCH_MAX && new.len() <= PATCH_MAX, "Invalid replacement");
+        self.propose_checked(path, old, new, None)
+    }
+    /// Bind the proposal to the exact complete evidence supplied to the model.
+    pub fn propose_from_read(&self, read: &ReadResult, old: &str, new: &str) -> Result<Patch> {
+        ensure!(!read.truncated,"Cannot patch truncated evidence");
+        self.propose_checked(&read.path,old,new,Some(hash(read.text.as_bytes())))
+    }
+    fn propose_checked(&self,path: &str, old: &str, new: &str, expected: Option<[u8;32]>) -> Result<Patch> {
+        ensure!(!old.is_empty() && old.len() <= PATCH_MAX && new.len() <= PATCH_MAX && !new.contains('\0'), "Invalid replacement");
         let resolved = self.resolve(path)?;
         ensure!(resolved.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&resolved, PATCH_MAX)?;
         ensure!(!truncated, "File too large for patch");
+        ensure!(expected.is_none_or(|value|value==hash(&bytes)), "File changed since context selection");
         let content = utf8(&bytes, false)?;
         ensure!(old != new, "No change");
         // Count overlapping occurrences as ambiguous too.
@@ -318,9 +362,21 @@ mod tests {
         fs::hard_link(&a, &b).unwrap();
         let p = Project::new(dir.path()).unwrap();
         assert!(p.propose("a.txt", "aa", "x").is_err());
-        assert!(p.apply(p.propose("a.txt", "aaa", "b").unwrap(), true).is_err());
+        assert!(p.read("a.txt").is_err());
+        assert!(p.propose("a.txt", "aaa", "b").is_err());
         assert_eq!(fs::read_to_string(&a).unwrap(), "aaa");
         assert_eq!(fs::read_to_string(&b).unwrap(), "aaa");
+    }
+    #[test]
+    fn proposal_is_bound_to_original_evidence_and_text_only() {
+        let dir=tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("a.txt"),"old").unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let source=p.read("a.txt").unwrap();
+        assert!(p.propose("a.txt","old","\0").is_err());
+        fs::write(dir.path().join("a.txt"),"old plus another change").unwrap();
+        assert!(p.propose_from_read(&source,"old","new").is_err());
+        assert_eq!(p.read("a.txt").unwrap().text,"old plus another change");
     }
     #[cfg(unix)]
     #[test]
