@@ -28,6 +28,20 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(collect(self.root, "macos", self.lookup),
                          {"pyinstaller": ("6.22.2", self.digest)})
 
+    def test_nested_vendored_metadata_is_not_distribution_identity(self):
+        with zipfile.ZipFile(self.path, "a") as wheel:
+            wheel.writestr("pkg/_vendor/example-1.dist-info/METADATA",
+                           "Name: Example\nVersion: 1\n")
+        self.digest = hashlib.sha256(self.path.read_bytes()).hexdigest()
+        self.assertEqual(wheel_record(self.path, self.lookup),
+                         ("pyinstaller", "6.22.2", self.digest))
+
+    def test_multiple_top_level_metadata_is_rejected(self):
+        with zipfile.ZipFile(self.path, "a") as wheel:
+            wheel.writestr("other-1.dist-info/METADATA", "Name: Other\nVersion: 1\n")
+        with self.assertRaises(ValueError):
+            wheel_record(self.path, self.lookup)
+
     def test_wrong_hash(self):
         original = self.digest
         self.digest = "0" * 64

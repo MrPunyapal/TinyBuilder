@@ -26,9 +26,9 @@ PINS = {"macos": "6.22.2", "linux": "6.15.0"}
 def wheel_record(path, lookup):
     with zipfile.ZipFile(path) as wheel:
         metadata = [entry for entry in wheel.infolist()
-                    if entry.filename.endswith(".dist-info/METADATA")]
+                    if re.fullmatch(r"[^/]+\.dist-info/METADATA", entry.filename)]
         if len(metadata) != 1 or metadata[0].file_size > 1024 * 1024:
-            raise ValueError("Unexpected wheel metadata")
+            raise ValueError("Unexpected top-level wheel metadata: " + path.name)
         fields = BytesParser(policy=default).parsebytes(wheel.read(metadata[0]))
     name, version = fields["Name"], fields["Version"]
     if (not name or not version or not re.fullmatch(r"[A-Za-z0-9_.-]+", name)
