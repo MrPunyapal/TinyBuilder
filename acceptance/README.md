@@ -14,9 +14,9 @@ From repo root, use Python 3.12:
     python -m unittest discover -s acceptance -v
     python acceptance/verify.py --help
 
-Verify an extracted, trusted distribution with relative app/server/license/notice/SBOM paths, --artifact pointing to its original compressed artifact, --expected-artifact-sha256 from a trusted independent source, and --output outside the tree. The optional --smoke runs four explicit CLI commands with a disposable user/project directory, a restricted environment and a timeout. It requires a trusted artifact digest; independently ensure the extracted directory actually came from that artifact. Never execute untrusted distributions. This does not disable external networking or guarantee child cleanup. Use a disposable runner or VM. --allow-contained-links is opt-in for reviewed packaging layouts. Junctions, directory links, broken, absolute and escaping links remain forbidden. File links must resolve to a regular file inside the distribution.
+Verify an extracted, trusted distribution with relative app/server/license/notice/SBOM paths, --artifact pointing to its original compressed artifact, --expected-artifact-sha256 from a trusted independent source, and --output outside the tree. The optional --smoke runs four explicit CLI commands with a disposable user/project directory, a restricted environment and a timeout. It requires an exact --candidate-sha, --expected-artifact-sha256, --expected-inventory and --expected-inventory-sha256. The reviewed inventory is a separately obtained JSON report containing the same candidate, artifact hash/size, expected architecture, complete file hash/size map, contained link map, installed logical bytes and required metadata paths. Obtain both digests from independently authenticated/reviewed build evidence, not the tree under inspection; independently ensure the extracted directory actually came from that artifact. A first static run can produce a report for independent review, but must not certify itself. Never execute untrusted distributions. This does not disable external networking or guarantee child cleanup. Use a disposable runner or VM. --allow-contained-links is opt-in for reviewed packaging layouts. Junctions, directory links, broken, absolute and escaping links remain forbidden. File links must resolve to a regular file inside the distribution.
 
-The inventory measures regular-file logical bytes (not disk allocation), compressed bytes and hashes. It does not establish authenticity, complete secret absence, universal Mach-O support, license/SBOM semantic validity or all dependency architectures. No model is downloaded by this utility. Gates A/B/C remain separate and require genuine clean-machine, offline model and independently scored functional evidence. Do not upload private artifacts or raw logs.
+The inventory measures regular-file logical bytes (not disk allocation), compressed bytes and hashes. It does not establish authenticity, complete secret absence, full native loader compatibility, license/SBOM semantic validity or unrecognized executable formats. No model is downloaded by this utility. Gates A/B/C remain separate and require genuine clean-machine, offline model and independently scored functional evidence. Do not upload private artifacts or raw logs.
 
 ## Parallel integration CI contract
 
@@ -37,3 +37,37 @@ The CI summary identifies the checked-out candidate SHA. Hosted deterministic
 tests and fake runtime fixture results are not acceptance gates. Actual build
 jobs remain blocked until the owner contracts, verified payloads, locked build
 dependencies, final entry point and metadata are integrated.
+
+## Candidate evidence and gate matrix
+
+The report checks separate nonempty license, notice and SBOM files; their legal
+and semantic completeness requires independent review. Known thin native
+headers and bounded universal Mach-O slice headers are checked; this does not
+replace the owners' actual dependency/loader audits.
+
+For each integrated candidate, record exact source SHA, target OS/architecture,
+trusted upstream runtime archive digest and manifest, pinned build dependency
+lock, final compressed artifact SHA-256 and bytes (after signing if applicable),
+installed logical bytes, full inventory digest, and license/SBOM review. Record
+artifact build/fixture results separately from these gates:
+
+| Gate | Windows x64 | macOS ARM64 | Linux x64 |
+| --- | --- | --- | --- |
+| Native deterministic checks | See exact-SHA CI | See exact-SHA CI | See exact-SHA CI |
+| Owner packaging unit tests | See job summary | See job summary | See job summary |
+| Native fake-runtime fixture | N/A | See job summary | N/A |
+| Real model-free build/inspection | BLOCKED | BLOCKED | BLOCKED |
+| A: clean-machine install/first launch/retention | BLOCKED | BLOCKED | BLOCKED |
+| B: offline real GGUF, randomized genuine tools | BLOCKED | BLOCKED | BLOCKED |
+| C: independent real Laravel editing | BLOCKED | BLOCKED | BLOCKED |
+| Optional model-selected MCP | NOT RUN | NOT RUN | NOT RUN |
+
+Missing build metadata and artifacts mean bytes/hash NOT MEASURED, not zero.
+No signing, publishing or model downloads in baseline PR CI. No fixture
+substitutes for real runtime or gates A/B/C. Keep signing/release operations
+in separate, explicitly authorized protected environments.
+
+PR #9 adds two parameter-harness baseline oracle assertions. PR #6 changes
+only the two disposable Path(d) roots to Path(d).resolve() in that file;
+the edits are disjoint and both must survive integration. Do not replace
+the negative/reference or genuine tool evidence assertions.

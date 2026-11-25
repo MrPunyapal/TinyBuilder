@@ -1,7 +1,9 @@
 import tempfile
 import unittest
 from pathlib import Path
-from verify import architecture, inspect, smoke
+from verify import architecture, inspect, smoke, native_architectures, check_provenance, required_metadata
+import hashlib
+import json
 from unittest.mock import patch
 import subprocess
 
@@ -84,3 +86,64 @@ class VerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch("verify.subprocess.run", side_effect=subprocess.TimeoutExpired("private", 30)):
             with self.assertRaisesRegex(ValueError, "^Smoke check failed: app_help$"):
                 smoke(Path(tmp), "app", "server")
+
+    def test_unsupported_native_header_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for data in (b"MZ", b"\x7fELF\x01\x01", b"\xcf\xfa\xed\xfe"):
+                with self.subTest(data=data):
+                    (root / "native").write_bytes(data)
+                    with self.assertRaises(ValueError):
+                        inspect(root, "x64", [])
+
+    def test_universal_mach_o_validates_slices(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            binary = root / "lib.dylib"
+            data = bytearray(128)
+            data[:8] = b"\xca\xfe\xba\xbe" + (2).to_bytes(4, "big")
+            for index, cpu in enumerate((0x0100000C, 0x01000007)):
+                offset = 64 + 32 * index
+                entry = 8 + 20 * index
+                data[entry:entry+4] = cpu.to_bytes(4, "big")
+                data[entry+8:entry+12] = offset.to_bytes(4, "big")
+                data[entry+12:entry+16] = (32).to_bytes(4, "big")
+                data[offset:offset+8] = b"\xcf\xfa\xed\xfe" + cpu.to_bytes(4, "little")
+            binary.write_bytes(data)
+            self.assertEqual(native_architectures(binary), {"arm64", "x64"})
+            self.assertEqual(inspect(root, "arm64", [])["files"]["lib.dylib"]["architectures"], ["arm64", "x64"])
+            data[96:100] = b"fake"
+            binary.write_bytes(data)
+            with self.assertRaises(ValueError):
+                inspect(root, "arm64", [])
+
+    def test_reviewed_inventory_matches_candidate_and_contents(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            inventory = root / "reviewed.json"
+            report = {"candidate_sha": "a" * 40, "artifact_sha256": "b" * 64,
+                      "compressed_bytes": 10, "expected_arch": "x64",
+                      "installed_file_bytes": 20, "files": {"app": {"bytes": 20}},
+                      "links": {}, "required_metadata": {"license": "LICENSE"}}
+            inventory.write_text(json.dumps(report), encoding="utf-8")
+            digest = hashlib.sha256(inventory.read_bytes()).hexdigest()
+            check_provenance(report, "b" * 64, inventory, digest)
+            self.assertTrue(report["trusted_inventory_checked"])
+            for changed in ({"candidate_sha": "c" * 40}, {"files": {}}, {"links": {"alias": "app"}}):
+                with self.subTest(changed=changed), self.assertRaises(ValueError):
+                    check_provenance(dict(report, **changed), "b" * 64, inventory, digest)
+            with self.assertRaises(ValueError):
+                check_provenance(report, "b" * 64, inventory, "c" * 64)
+            with self.assertRaises(ValueError):
+                check_provenance(report, "c" * 64, inventory, digest)
+            with self.assertRaises(ValueError):
+                check_provenance(report, "b" * 64, inventory)
+
+    def test_metadata_must_be_nonempty_and_distinct(self):
+        report = {"files": {name: {"bytes": 1} for name in ("LICENSE", "NOTICE", "SBOM")}}
+        self.assertEqual(required_metadata(report, ["LICENSE", "NOTICE", "SBOM"])["sbom"], "SBOM")
+        with self.assertRaises(ValueError):
+            required_metadata(report, ["LICENSE", "LICENSE", "SBOM"])
+        report["files"]["SBOM"]["bytes"] = 0
+        with self.assertRaises(ValueError):
+            required_metadata(report, ["LICENSE", "NOTICE", "SBOM"])

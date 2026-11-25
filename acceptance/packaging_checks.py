@@ -25,9 +25,13 @@ def run_tests(root, target):
     command = [sys.executable, "-m", "unittest", "discover", "-s", relative]
     if target != "windows":
         command += ["-p", "test_*.py"]
-    result = subprocess.run(command + ["-v"], cwd=root, check=True,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, encoding="utf-8", errors="replace", timeout=600)
+    try:
+        result = subprocess.run(command + ["-v"], cwd=root, check=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, encoding="utf-8", errors="replace", timeout=600)
+    except subprocess.CalledProcessError as exc:
+        print(exc.stdout or "Packaging unit suite failed without captured output")
+        raise
     print(result.stdout)
     count = re.search(r"^Ran (\d+) tests? in ", result.stdout, re.MULTILINE)
     if not count or int(count.group(1)) == 0:
@@ -58,7 +62,7 @@ def run(root, target):
     try:
         rows.append(("Packaging unit tests", run_tests(root, target)))
         rows.append(("macOS native fixture", run_fixture(root) if target == "macos" else "NOT APPLICABLE"))
-    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+    except (OSError, RuntimeError, subprocess.SubprocessError):
         rows.append(("Packaging checks", "FAIL (see job log)"))
         raise
     finally:
