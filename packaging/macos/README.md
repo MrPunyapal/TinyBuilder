@@ -47,6 +47,22 @@ native user data outside the distribution, typically ~/Library/Application
 Support/TinyBuilder. Removal or replacement of the copied folder must not
 remove external data. Do not introduce migration or deletion logic here.
 
+## Native deterministic packaging fixture
+
+On a native Mac with the approved Python/PyInstaller environment, run:
+
+    bash packaging/macos/native_fixture_smoke.sh
+
+This compiles a tiny test executable with Xcode's clang, signs it ad-hoc,
+stages it through the actual build pipeline, verifies and mounts the DMG,
+copies the folder to a path containing spaces and non-ASCII characters,
+and runs the relocated frozen CLI and fixture version check with an isolated
+HOME and system-only PATH. The temporary DMG is destroyed; never publish
+or reuse its fake runtime. This is a packaging-only test double, not
+llama.cpp and not CPU/Metal or Gatekeeper acceptance. No model is needed.
+The CI owner may call this script on the macOS runner once dependencies
+are available. Finder interaction remains manual.
+
 ## Acceptance and signing
 
 Inspect dependencies.txt and load-commands.txt for absolute build paths,
