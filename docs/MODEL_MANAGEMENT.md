@@ -14,8 +14,12 @@ CI metadata are made here.
   ~/Library/Application Support/TinyBuilder/models, Linux
   $XDG_DATA_HOME/tinybuilder/models or ~/.local/share/tinybuilder/models.
 - ModelManager(storage_dir=None): uses a canonical absolute root, including
-  an explicit alternate drive. Construction, catalog inspection, status and
-  local selection make no network requests.
+  an explicit alternate drive. Choose an existing directory on an attached
+  volume for removable storage. The nearest existing ancestor is pinned by
+  filesystem identity; if it disappears or is replaced during the manager's
+  lifetime, operations fail closed. Re-select the directory after remount.
+  Construction, catalog inspection, status and local selection make no
+  network requests.
 - destination(model_id): absolute planned path, without creating it.
 - select_local(path): returns ModelSelection(path, catalog_id, managed,
   provenance). Checks a minimal GGUF header and compares size/digest against

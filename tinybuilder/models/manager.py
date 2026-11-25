@@ -239,6 +239,16 @@ class ModelManager:
     def __init__(self, storage_dir=None, *, catalog=CATALOG, timeout=15,
                  allow_http_loopback=False):
         self.root = Path(storage_dir if storage_dir is not None else native_model_dir()).expanduser().resolve()
+        # Pin the nearest existing directory identity. If an explicitly
+        # selected mounted volume disappears, do not recreate its old path
+        # on the underlying system volume.
+        anchor = self.root
+        while _info(anchor, directory=True, missing=True) is None:
+            if anchor == anchor.parent:
+                raise ModelError("Storage volume unavailable")
+            anchor = anchor.parent
+        self._anchor = anchor
+        self._anchor_info = _info(anchor, directory=True)
         self.catalog = tuple(catalog)
         self._entries = {entry.model_id: entry for entry in self.catalog}
         if len(self._entries) != len(self.catalog):
@@ -255,10 +265,16 @@ class ModelManager:
         except KeyError:
             raise ModelError("Unknown catalog model") from None
 
-    def _directory(self, entry, *, create=False):
-        # A selected root is canonicalized once. Never follow links below it.
+    def _check_root(self):
         if self.root.resolve() != self.root:
             raise ModelError("Storage root changed")
+        info = _info(self._anchor, directory=True, missing=True)
+        if info is None or not os.path.samestat(self._anchor_info, info):
+            raise ModelError("Selected storage volume or directory changed")
+
+    def _directory(self, entry, *, create=False):
+        # A selected root is canonicalized once. Never follow links below it.
+        self._check_root()
         if create:
             self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
         if _info(self.root, directory=True, missing=True) is None:
@@ -316,6 +332,7 @@ class ModelManager:
 
     def check_space(self, model_id):
         entry = self._entry(model_id)
+        self._check_root()
         ancestor = self.root
         while not ancestor.exists():
             if ancestor == ancestor.parent:
@@ -366,6 +383,7 @@ class ModelManager:
                 _unlink(meta)
                 raise ModelError("Model checksum or length mismatch")
             token.check()
+            self._check_root()
             _publish(part, final)
             _unlink(meta)
             notify(DownloadProgress(entry.size_bytes, entry.size_bytes, "complete"))

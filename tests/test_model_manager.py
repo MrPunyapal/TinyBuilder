@@ -189,6 +189,18 @@ class ModelManagerTests(unittest.TestCase):
         self.download()
         self.assertEqual(self.final.read_bytes(), DATA)
 
+    def test_selected_volume_replacement_fails_closed(self):
+        self.root.mkdir()
+        manager = ModelManager(self.root, catalog=[self.entry], allow_http_loopback=True)
+        request = manager.request_download("fixture", consent=True)
+        self.root.rename(self.root.with_name("old-volume"))
+        self.root.mkdir()
+        with self.assertRaisesRegex(ModelError, "storage volume or directory changed"):
+            manager.download(request, retries=0)
+        self.assertEqual(manager.status("fixture"), ModelStatus.INVALID)
+        self.assertEqual(self.requests, [])
+        self.assertEqual(list(self.root.iterdir()), [])
+
     def test_insufficient_space(self):
         with patch("tinybuilder.models.manager.shutil.disk_usage",
                    return_value=SimpleNamespace(free=0)):
