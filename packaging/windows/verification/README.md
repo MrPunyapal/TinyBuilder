@@ -19,8 +19,30 @@ SHA-256 digests for every file in the dedicated runtime directory, obtained from
 the verified pinned runtime and dependency assets, not calculated from an
 untrusted staging directory. Include the server, DLLs and any runtime notices in
 the map. This is a packaging input adapter, not a competing runtime manifest.
-No runtime release or tool versions are guessed. An example invocation (adjust
-paths to the shared manifest layout):
+The shared catalog in PR #10 pins b6500 Windows x64 CPU
+(llama-b6500-bin-win-cpu-x64.zip; upstream SHA-256
+73e00267e852e666a6fce2c3fb7a2603dd1934a37259f3f45c2c1b6983fa605a).
+Do not duplicate the pin in executable code. After #10 is integrated, run the
+offline adapter from an installed/editable source environment with the actual
+approved local archive and freshly staged flat runtime:
+
+    python packaging/windows/verification/runtime_payload.py --payload-root STAGING --archive APPROVED/llama-b6500-bin-win-cpu-x64.zip --selection OUTSIDE/selection.json --extra-pins OUTSIDE/extra-pins.json --pins-out OUTSIDE/runtime-files.json
+
+selection.json maps each staged flat filename to the exact member name in the
+ZIP (inspect the verified archive; do not guess names). extra-pins.json is
+optional and maps audited additions such as upstream LICENSE to independently
+trusted hashes; LICENSE must be staged. The adapter verifies the archive digest,
+compares each selected staged file with its archive bytes, checks other files
+against explicit pins, emits PR #10 schema 1 runtime-manifest.json and produces
+external payload-relative pins including the manifest hash. No extraction or
+downloads are performed. Use a fresh stage if generation fails. The selected
+native files and additional notices still need a dependency/license audit; the
+adapter cannot prove loader closure or CPU compatibility. Signing runtime
+binaries changes archive bytes: coordinate with #10 before attempting this.
+The application's final executable/renderer entry point is not yet published
+by #3. Do not substitute a parallel launcher or runtime manager.
+
+Then run the payload gate (adjust paths to the integrated layout):
 
     python packaging/windows/verification/payload.py create STAGING OUTSIDE/stage.json --app TinyBuilder.exe --server runtime/llama-server.exe --runtime-files TRUSTED/runtime-files.json
     python packaging/windows/verification/payload.py verify STAGING OUTSIDE/stage.json
