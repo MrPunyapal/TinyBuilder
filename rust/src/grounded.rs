@@ -44,6 +44,10 @@ pub fn selection_request(task: &str, required: &str) -> Value {
 }
 
 pub fn answer_request(task: &str, evidence: &[ReadResult], mode: AnswerMode) -> Result<Value> {
+    answer_request_with_ranges(task,evidence,mode,None)
+}
+pub fn answer_request_with_ranges(task: &str, evidence: &[ReadResult], mode: AnswerMode, ranges: Option<&[(usize,usize)]>) -> Result<Value> {
+    ensure!(ranges.is_none_or(|r|r.len()==evidence.len()),"Invalid source ranges");
     ensure!(!task.trim().is_empty() && task.len() <= 8192, "Invalid task");
     ensure!(!evidence.is_empty() && evidence.len() <= 4, "Missing or excessive evidence");
     let total: usize = evidence.iter().map(|r| r.text.len()+r.path.len()).sum();
@@ -58,6 +62,10 @@ pub fn answer_request(task: &str, evidence: &[ReadResult], mode: AnswerMode) -> 
     for (i, r) in evidence.iter().enumerate() {
         sources.push_str(&format!("\n--- FILE {}: {} ({} bytes; truncated={}) ---\n",i+1,
             serde_json::to_string(&r.path)?,r.text.len(),r.truncated));
+        if let Some(ranges)=ranges {
+            let (first,last)=ranges[i];
+            sources.push_str(&format!("Source lines {first}–{last}; boundaries may be partial.\n"));
+        }
         sources.push_str(&r.text);
         sources.push_str("\n--- END FILE ---\n");
     }

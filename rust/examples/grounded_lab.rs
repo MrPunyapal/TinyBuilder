@@ -32,11 +32,11 @@ fn main() -> Result<()> {
     };
     let selected=context::retrieve(&project,&task)?;
     println!("Deterministic context selection (not model-selected tool use):");
-    for f in &selected.files {println!("File read verified: {}{}",terminal(&f.path),if f.truncated{" [prefix only]"}else{""});}
+    for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
     let server=Runtime::start(&args.runtime,&args.model)?;
     if !edit {
-        let request=grounded::answer_request(&task,&selected.files,AnswerMode::Plain)?;
+        let request=grounded::answer_request_with_ranges(&task,&selected.files,AnswerMode::Plain,Some(&selected.ranges))?;
         let answer=grounded::decode_answer(&server.complete(request)?,AnswerMode::Plain)?;
         println!("Model answer (verify factual claims):");
         show(&answer);

@@ -27,6 +27,11 @@ pub struct ReadResult {
     pub text: String,
     pub truncated: bool,
 }
+pub struct ContextExcerpt {
+    pub read: ReadResult,
+    pub first_line: usize,
+    pub last_line: usize,
+}
 pub struct Patch {
     path: String,
     original_hash: [u8; 32],
@@ -187,6 +192,59 @@ impl Project {
         }
         Ok((result, limited))
     }
+    /// Read a bounded relevant region, not just a prefix. Excerpts are
+    /// always marked truncated and cannot be used as complete patch evidence.
+    pub fn excerpt(&self, relative: &str, terms: &[String], budget: usize) -> Result<ContextExcerpt> {
+        ensure!((256..=12*1024).contains(&budget) && terms.len()<=4
+            && terms.iter().all(|t| !t.is_empty() && t.len()<=80), "Invalid excerpt budget");
+        let path=self.resolve(relative)?;
+        ensure!(path.is_file(),"Not a regular file");
+        let (bytes,scan_truncated)=read_bounded(&path,SEARCH_MAX)?;
+        let content=utf8(&bytes,scan_truncated)?;
+        let canonical=self.relative(&path)?;
+        if !scan_truncated && content.len()<=budget {
+            let last_line=content.lines().count();
+            return Ok(ContextExcerpt{read:ReadResult{path:canonical,text:content,truncated:false},
+                first_line:1,last_line});
+        }
+        let lines:Vec<_>=content.split_inclusive('\n').collect();
+        // Prefer a region containing the largest number of distinct terms.
+        // Ties keep the earlier line; no model is involved.
+        let mut best=0;
+        let mut best_score=0;
+        for (i,line) in lines.iter().enumerate() {
+            let score=terms.iter().filter(|term|line.contains(term.as_str())).count();
+            if score>best_score {best=i;best_score=score;}
+        }
+        let mut start=best;
+        let mut end=best+1;
+        let mut used=lines.get(best).map_or(0,|line|line.len());
+        if used>budget {
+            // For an oversized single line, center around the first match.
+            let line=lines[best];
+            let hit=terms.iter().filter_map(|t|line.find(t)).min().unwrap_or(0);
+            let mut from=hit.saturating_sub(budget/3);
+            while !line.is_char_boundary(from) {from-=1;}
+            let mut to=(from+budget).min(line.len());
+            while !line.is_char_boundary(to) {to-=1;}
+            return Ok(ContextExcerpt{read:ReadResult{path:canonical,text:line[from..to].to_owned(),truncated:true},
+                first_line:best+1,last_line:best+1});
+        }
+        // Expand symmetrically without dropping the matching line.
+        loop {
+            let mut changed=false;
+            if start>0 && used+lines[start-1].len()<=budget {
+                start-=1;used+=lines[start].len();changed=true;
+            }
+            if end<lines.len() && used+lines[end].len()<=budget {
+                used+=lines[end].len();end+=1;changed=true;
+            }
+            if !changed {break;}
+        }
+        Ok(ContextExcerpt{read:ReadResult{path:canonical,text:lines[start..end].concat(),truncated:true},
+            first_line:start+1,last_line:end})
+    }
+
     pub fn list(&self, relative: &str) -> Result<String> {
         let (mut files, limited) = self.candidates(relative)?;
         let truncated = limited || files.len() > LIST_MAX;
@@ -366,6 +424,30 @@ mod tests {
         assert!(p.propose("a.txt", "aaa", "b").is_err());
         assert_eq!(fs::read_to_string(&a).unwrap(), "aaa");
         assert_eq!(fs::read_to_string(&b).unwrap(), "aaa");
+    }
+    #[test]
+    fn excerpt_includes_deep_match_and_cannot_be_patched() {
+        let dir=tempfile::tempdir().unwrap();
+        let body=format!("{}fn compute_total() {{}}\n{}","// filler\n".repeat(1800),"// filler\n".repeat(1800));
+        fs::write(dir.path().join("deep.rs"),body).unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let e=p.excerpt("deep.rs",&["compute_total".into()],1024).unwrap();
+        assert!(e.read.truncated);
+        assert!(e.read.text.contains("fn compute_total"));
+        assert!(e.read.text.len()<=1024);
+        assert!(e.first_line<=1801&&e.last_line>=1801);
+        assert!(p.propose_from_read(&e.read,"compute_total","other").is_err());
+    }
+    #[test]
+    fn excerpt_long_unicode_line_preserves_utf8_and_match() {
+        let dir=tempfile::tempdir().unwrap();
+        let body=format!("{}needle{}","é".repeat(1000),"é".repeat(1000));
+        fs::write(dir.path().join("a.txt"),body).unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let e=p.excerpt("a.txt",&["needle".into()],257).unwrap();
+        assert!(e.read.text.contains("needle"));
+        assert!(e.read.text.len()<=257);
+        assert!(e.read.truncated);
     }
     #[test]
     fn proposal_is_bound_to_original_evidence_and_text_only() {
