@@ -33,17 +33,19 @@ class LauncherTests(unittest.TestCase):
                               cwd=self.project, env={**os.environ, "HOME": str(self.home)},
                               text=True, capture_output=True, check=False)
 
-    def test_no_arguments_uses_home_and_help_until_shared_entry_exists(self):
+    def test_no_arguments_uses_home_and_guided_app(self):
         result = self.invoke()
         self.assertEqual(result.returncode, 23)
-        self.assertEqual(result.stdout.splitlines(), [str(self.home.resolve()), "--help"])
+        cwd, *args = result.stdout.splitlines()
+        self.assertEqual(Path(cwd).resolve(strict=True), self.home.resolve(strict=True))
+        self.assertEqual(args, ["app"])
 
     def test_explicit_arguments_keep_cwd_and_literal_values(self):
         result = self.invoke("doctor", "--project", "folder with spaces", "$(touch unwanted)")
         self.assertEqual(result.returncode, 23)
-        self.assertEqual(result.stdout.splitlines(),
-                         [str(self.project.resolve()), "doctor", "--project",
-                          "folder with spaces", "$(touch unwanted)"])
+        cwd, *args = result.stdout.splitlines()
+        self.assertEqual(Path(cwd).resolve(strict=True), self.project.resolve(strict=True))
+        self.assertEqual(args, ["doctor", "--project", "folder with spaces", "$(touch unwanted)"])
         self.assertFalse((self.project / "unwanted").exists())
 
 

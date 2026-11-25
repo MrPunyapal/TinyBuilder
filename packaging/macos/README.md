@@ -1,8 +1,6 @@
 # macOS ARM64 development distribution
 
-Status: packaging scaffold, not a supported or notarized release. Schema-1 runtime manifest generation is implemented; shared runtime discovery, model storage and guided entry point are pending integration. Do not substitute a second implementation. Main currently
-has a required CLI subcommand; the Finder-openable .command shows help and
-accepts CLI arguments from Terminal. It is not yet the guided app.
+Status: packaging scaffold, not a supported or notarized release. Schema-1 runtime manifest generation is implemented. The integration candidate uses shared runtime discovery, model storage and the guided entry point. The Finder-openable .command invokes the shared app with no arguments and accepts explicit CLI arguments from Terminal. Native installed startup remains unqualified.
 
 ## Build
 
@@ -28,7 +26,7 @@ artifact by bypassing Gatekeeper; use authorized locally built development
 copies for testing. No native .app is claimed. A proper Finder app launcher
 must be evaluated with the shared guided application before public release.
 
-The shared schema-1 manifest is from PR #10. Installed resource contract proposed to PR #3: the frozen executable at TinyBuilder/tinybuilder/tinybuilder resolves runtime via Path(sys.executable).resolve().parent.parent / 'runtime'; the application owns discovery and guided no-argument invocation. Until #3 is integrated the launcher shows CLI help, not guided startup. PR 2 owns models/preferences in
+The shared schema-1 manifest is from PR #10. Installed resource contract proposed to PR #3: the frozen executable at TinyBuilder/tinybuilder/tinybuilder resolves runtime via Path(sys.executable).resolve().parent.parent / 'runtime'; the application owns discovery and guided no-argument invocation. The integrated launcher starts the shared guided app. Model storage is managed by the shared model manager in
 native user data outside the distribution, typically ~/Library/Application
 Support/TinyBuilder. Removal or replacement of the copied folder must not
 remove external data. Do not introduce migration or deletion logic here.
