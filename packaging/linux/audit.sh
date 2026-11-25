@@ -2,6 +2,15 @@
 set -euo pipefail
 export LC_ALL=C
 root=$(realpath "$1")
+for required in app/tinybuilder runtime/llama-server; do
+  [[ -x "$root/$required" ]] || exit 1
+  readelf -h "$root/$required" >/dev/null
+  [[ -f "$root/$required" && ! -L "$root/$required" ]] || exit 1
+done
+while IFS= read -r -d '' link; do
+  target=$(realpath -e "$link")
+  [[ "$target" == "$root/"* ]] || { echo "escaping bundle link: $link" >&2; exit 1; }
+done < <(find "$root" -type l -print0)
 while IFS= read -r -d '' f; do
   if ! readelf -h "$f" >/dev/null 2>&1; then continue; fi
   printf '\n%s\n' "${f#"$root/"}"
@@ -34,13 +43,9 @@ while IFS= read -r -d '' f; do
   # ldd only on trusted build outputs, never untrusted downloaded executables.
   if grep -q '(NEEDED)' <<< "$dynamic"; then
     if [[ "$f" == "$root/runtime/"* ]]; then
-      deps=$(env -u LD_PRELOAD -u LD_LIBRARY_PATH ldd "$f" 2>&1) || {
-        [[ "$deps" == *'statically linked'* ]] || exit 1;
-      }
+      deps=$(env -u LD_PRELOAD -u LD_LIBRARY_PATH ldd "$f" 2>&1) || exit 1
     else
-      deps=$(env -u LD_PRELOAD LD_LIBRARY_PATH="$root/app/_internal" ldd "$f" 2>&1) || {
-        [[ "$deps" == *'statically linked'* ]] || exit 1;
-      }
+      deps=$(env -u LD_PRELOAD LD_LIBRARY_PATH="$root/app/_internal" ldd "$f" 2>&1) || exit 1
     fi
     printf '%s\n' "$deps"
     if grep -q 'not found' <<< "$deps"; then exit 1; fi
