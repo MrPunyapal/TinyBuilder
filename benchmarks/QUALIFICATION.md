@@ -13,14 +13,15 @@ proof of general coding ability. Do not compare historical and new scores.
 
 Run only against an existing approved model. The evaluator uses historical Ollama
 unless BOTH `TB_BENCH_MANAGED_URL` and `TB_BENCH_MANAGED_KEY` are supplied.
-Managed mode requires the backend PR's ManagedConnection and ChatModel.from_managed;
+For standalone qualification always pass `--require-managed` so omitted variables
+cannot silently select historical Ollama. Managed mode requires the backend PR's ManagedConnection and ChatModel.from_managed;
 no automatic fallback. Use an authenticated loopback server owned by the runtime
 manager, not a remote provider. Do not print credentials. Set these variables in
 the local process only and unset them afterwards. Use a public model alias.
 
     python -m unittest discover -s tests -v
     python -m compileall -q tinybuilder benchmarks
-    python benchmarks/evaluate.py --smoke-profile hidden-facts-v1 --models ALIAS --trials 10 --fixture-seed LOCAL_32_HEX --tool-protocol strict-json --strict-json-profile constrained --progress-guidance checklist --max-steps 8 --output NEW_DIRECTORY
+    python benchmarks/evaluate.py --require-managed --smoke-profile hidden-facts-v1 --models ALIAS --trials 10 --fixture-seed LOCAL_32_HEX --tool-protocol strict-json --strict-json-profile constrained --progress-guidance checklist --max-steps 8 --output NEW_DIRECTORY
 
 Replace placeholders. Use a cryptographically random local seed. Stop on transport,
 identity, safety or fixture failure; inspect complete reports even on exit 1.
@@ -39,13 +40,24 @@ Do not change oracle criteria mid-campaign.
 | historical comparison only | Qwen2.5-Coder 3B | [publisher model](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct), Qwen Research License; not an unrestricted default |
 
 These tiers are hypotheses, not measured RAM/VRAM requirements. Q4 weights alone
-do not determine process memory. Exact immutable revisions, byte sizes and LFS
-SHA-256 were not obtained from the metadata API in this review. Do not use this
-table as a download catalog. Before inference, verify the chosen original model
+do not determine process memory. Two priority artifacts have publisher LFS
+metadata recorded below; other candidates remain unpinned. Do not use this table
+as a download catalog. Before inference, verify the chosen original model
 and conversion license, immutable revision, LFS digest and byte size against
 publisher metadata; hash the actual existing local file and compare. No downloads
 or real model tests were performed. Third-party conversions require separate
 provenance review.
+
+## Verified publisher artifact pointers (metadata only)
+
+| File | Immutable upload revision | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| qwen2.5-coder-1.5b-instruct-q4_k_m.gguf | [2ab9f8f42af02fc212effaef7c4850c885e965f4](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/commit/2ab9f8f42af02fc212effaef7c4850c885e965f4) | 1117320768 | cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046 |
+| Qwen3-4B-Q4_K_M.gguf | [a9a60d009fa7ff9606305047c2bf77ac25dbec49](https://huggingface.co/Qwen/Qwen3-4B-GGUF/commit/a9a60d009fa7ff9606305047c2bf77ac25dbec49) | 2497280256 | 7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5 |
+
+Both publisher GGUF cards advertise Apache 2.0. Review applicable license and
+notices at the chosen revision before redistribution. These are remote metadata
+identities, not locally hashed files or model compatibility evidence.
 
 ## Measurement protocol
 
@@ -57,7 +69,8 @@ total request time. Record effective settings, not desired settings. Record
 cold server launch to ready, warm readiness, TTFT if supported, generation
 tokens/sec from server telemetry, peak process-tree RAM and sampled VRAM with
 sampling interval and attribution method, plus full task wall time through
-independent acceptance. Unsupported metrics are null with explanation.
+independent acceptance (Laravel full_duration_seconds includes worktree setup and
+controls, unlike the per-agent duration_seconds). Unsupported metrics are null with explanation.
 Keep logs, seeds, hidden values, credentials, model answers and patches local.
 Publish only sanitized counts, durations, identities and failure categories.
 

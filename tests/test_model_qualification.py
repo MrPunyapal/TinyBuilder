@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from benchmarks.evaluate import benchmark_model, smoke
+from benchmarks.evaluate import benchmark_model, main, smoke
 from benchmarks.compare import compare
 
 
@@ -57,6 +57,27 @@ class QualificationTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "requires URL and key"):
                     benchmark_model("candidate")
                 model.assert_not_called()
+
+    def test_require_managed_cannot_fall_back(self):
+        with tempfile.TemporaryDirectory() as d, patch.dict(os.environ, {}, clear=True):
+            output = Path(d) / "out"
+            with patch("sys.argv", ["evaluate.py", "--require-managed", "--output", str(output)]), \
+                 patch("benchmarks.evaluate.ChatModel") as model:
+                with self.assertRaises(SystemExit) as raised:
+                    main()
+                self.assertEqual(raised.exception.code, 2)
+                model.assert_not_called()
+                self.assertFalse(output.exists())
+
+    def test_managed_delegates_to_shared_backend_without_key_in_report(self):
+        with patch.dict(os.environ, {"TB_BENCH_MANAGED_URL": "http://127.0.0.1:8080/v1",
+                                    "TB_BENCH_MANAGED_KEY": "test-key"}, clear=True), \
+             patch("tinybuilder.model.ManagedConnection", create=True) as connection, \
+             patch("benchmarks.evaluate.ChatModel") as model:
+            self.assertIs(benchmark_model("candidate"), model.from_managed.return_value)
+            connection.assert_called_once_with("http://127.0.0.1:8080/v1", "candidate", "test-key")
+            model.from_managed.assert_called_once_with(connection.return_value)
+            model.assert_not_called()
 
     def test_comparer_rejects_mixed_profiles(self):
         with tempfile.TemporaryDirectory() as d:

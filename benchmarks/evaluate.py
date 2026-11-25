@@ -486,6 +486,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
     revision = validate_laravel_baseline(base, output)
     results = []
     for index, model in enumerate(models):
+        full_started = time.monotonic()
         root = output / f"laravel-{index}"
         require(["git", "worktree", "add", "--detach", str(root), revision], base)
         # Copy dependencies from the explicitly disposable baseline, without network requests.
@@ -637,6 +638,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
         result = {"model": model, "scenario": scenario, "preserve_sibling_route": preserve_sibling_route,
                   "baseline_commit": revision, "worktree": root.name,
                   "composer_lock_sha256": hashlib.sha256((base / "composer.lock").read_bytes()).hexdigest(),
+                  "full_duration_seconds": round(time.monotonic() - full_started, 3),
                   "baseline_test_exit": baseline.returncode,
                   "baseline_health_exit": negative.returncode if scenario in ("health", "repair") else None,
                   "baseline_repair_exit": (visible_negative.returncode if scenario == "repair" else None),
@@ -680,6 +682,8 @@ def main():
                         help="constrained: compact prompt plus server JSON schema; requires strict-json")
     parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
                         help="opt-in bounded checklist; requires constrained strict-json")
+    parser.add_argument("--require-managed", action="store_true",
+                        help="Refuse historical fallback; require explicit managed credentials")
     parser.add_argument("--smoke-profile", choices=("historical", "hidden-facts-v1"), default="historical",
                         help="hidden-facts-v1: two unseen randomized Composer values; exact two-line answer")
     parser.add_argument("--trials", type=int, default=1, help="1–10 independent random-name trials")
@@ -715,6 +719,16 @@ def main():
     if args.controls_only and (args.scenario not in ("validation", "parameter") or
                                not args.laravel or args.trials != 1):
         parser.error("--controls-only requires --scenario validation/parameter --laravel and --trials 1")
+    managed_requested = (args.require_managed or os.environ.get("TB_BENCH_MANAGED_URL") is not None
+                         or os.environ.get("TB_BENCH_MANAGED_KEY") is not None)
+    if managed_requested and not args.controls_only:
+        if not os.environ.get("TB_BENCH_MANAGED_URL") or not os.environ.get("TB_BENCH_MANAGED_KEY"):
+            parser.error("Managed benchmark requires URL and key")
+        try:
+            for model in args.models:
+                benchmark_model(model)
+        except (ValueError, ModelError):
+            parser.error("Managed benchmark connection configuration is invalid or unavailable")
     args.output = args.output.resolve()
     if args.laravel:
         try:
