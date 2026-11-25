@@ -128,3 +128,27 @@ model-generated replacement in a fully read file, binds proposals to the exact s
 not guarantee that a model proposal is semantically correct. Use disposable
 projects only; ACL and extended attribute preservation remain unqualified.
 No default CLI behavior changed. No real model trials were performed remotely.
+
+## Context-first native CLI and proposal diagnostic
+
+The new CLI entry points are explicit opt-ins; native tool calling remains the
+default. Inspect context without starting inference:
+
+    tinybuilder inspect "Locate compute_total" --project PATH
+    tinybuilder grounded "Explain compute_total" --project PATH --runtime RUNTIME --model MODEL
+    tinybuilder grounded "Fix compute_total" --project DISPOSABLE_PROJECT --runtime RUNTIME --model MODEL --strict-json --propose
+
+The last command produces a diff only. Add --allow-write to enable the per-patch
+approval prompt, never implicit writes. In the interactive app, /ask QUESTION
+uses the read-only context-first workflow and clears any pending write permission.
+All large-file snippets are read-only evidence. Commands and arbitrary generated
+code execution remain unavailable.
+
+    diagnose_patch --runtime RUNTIME --model EXISTING_GGUF --expected-sha256 HASH --output NEW_DIRECTORY
+
+The diagnostic creates three small disposable Python, PHP and Rust fixtures with
+randomized untouched comments. It independently compares the prospective complete
+source against a predeclared exact-source oracle. It never applies edits, runs
+model-generated code, or saves raw outputs. This is a narrow proposal diagnostic,
+not semantic coding qualification; equivalent alternative repairs can fail. A
+successful diagnostic does not establish that the model can fix arbitrary bugs.

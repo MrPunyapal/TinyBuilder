@@ -38,6 +38,10 @@ pub struct Patch {
     replacement: String,
     pub diff: String,
 }
+impl Patch {
+    /// Reviewed prospective content; reading it never mutates the project.
+    pub fn preview_text(&self) -> &str { &self.replacement }
+}
 fn link_like(meta: &Metadata) -> bool {
     if meta.file_type().is_symlink() {
         return true;

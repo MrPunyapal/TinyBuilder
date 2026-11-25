@@ -48,17 +48,18 @@ jobs:
           "$binary" doctor --project .
           "$binary" read Cargo.toml --project .
           "$binary" search 'tinybuilder' --project .
+          "$binary" inspect "Explain Cargo.toml" --project .
       - name: Model-free file operation benchmark
         if: runner.os == 'Linux'
         run: |
           cargo build --release --locked --example file_bench --target ${{ matrix.target }}
           python3 benchmarks/compare_files.py target/${{ matrix.target }}/release/examples/file_bench
       - name: Build offline qualification executable
-        run: cargo build --release --locked --example qualify_read --example diagnose_read --example grounded_lab --target ${{ matrix.target }}
+        run: cargo build --release --locked --example qualify_read --example diagnose_read --example grounded_lab --example diagnose_patch --target ${{ matrix.target }}
       - name: Lab example CLI smoke
         shell: bash
         run: |
-          for name in qualify_read diagnose_read grounded_lab; do
+          for name in qualify_read diagnose_read grounded_lab diagnose_patch; do
             binary="target/${{ matrix.target }}/release/examples/$name"
             if [ "${{ runner.os }}" = Windows ]; then binary="$binary.exe"; fi
             "$binary" --help
@@ -78,6 +79,7 @@ jobs:
           Copy-Item "$release/examples/qualify_read$ext" $dir
           Copy-Item "$release/examples/diagnose_read$ext" $dir
           Copy-Item "$release/examples/grounded_lab$ext" $dir
+          Copy-Item "$release/examples/diagnose_patch$ext" $dir
           Copy-Item ../LICENSE (Join-Path $dir "LICENSE")
           $files = @(Get-ChildItem -File $dir | Sort-Object Name | ForEach-Object {
             @{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant() }

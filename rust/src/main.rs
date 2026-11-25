@@ -1,7 +1,7 @@
 use anyhow::{ensure, Context, Result};
 use clap::{Parser, Subcommand};
 use std::{io::{self, Write}, path::PathBuf};
-use tinybuilder::{agent::{self, Options, Protocol}, project::Project, runtime::{self, Runtime}, show, terminal};
+use tinybuilder::{agent::{self, Options, Protocol}, project::Project, runtime::{self, Runtime}, workbench, show, terminal};
 
 #[derive(Parser)]
 #[command(name="tinybuilder", version, about="Native experimental local coding assistant")]
@@ -24,6 +24,21 @@ enum Command {
         #[arg(long)] strict_json: bool,
         #[arg(long)] allow_write: bool,
         #[arg(long)] required_read: Option<String>,
+    },
+    /// Inspect context without starting a model or writing files.
+    Inspect {
+        task: String,
+        #[arg(long, default_value=".")] project: PathBuf,
+    },
+    /// Experimental context-first answer or reviewed patch proposal.
+    Grounded {
+        task: String,
+        #[arg(long, default_value=".")] project: PathBuf,
+        #[arg(long)] runtime: PathBuf,
+        #[arg(long)] model: PathBuf,
+        #[arg(long)] strict_json: bool,
+        #[arg(long, requires="strict_json")] propose: bool,
+        #[arg(long, requires="propose")] allow_write: bool,
     },
     Read {
         path: String,
@@ -77,8 +92,34 @@ fn task(project: &Project, server: &Runtime, text: &str, protocol: Protocol, all
         result.reads.len(), result.searches, result.listings, result.edits);
     Ok(())
 }
+fn show_context(context: &tinybuilder::context::Context) {
+    println!("Deterministic context selection:");
+    for (file,(first,last)) in context.files.iter().zip(&context.ranges) {
+        println!("File read verified: {} (lines {}–{}){}",terminal(&file.path),first,last,
+            if file.truncated {" [excerpt only]"}else{""});
+    }
+    if context.incomplete {println!("Context incomplete; bounded search and excerpt limits apply.");}
+}
+fn grounded_task(project: &Project, server: &Runtime, text: &str, proposal: bool, allow_write: bool) -> Result<()> {
+    let context=workbench::collect(project,text)?;
+    show_context(&context);
+    if !proposal {
+        show(&workbench::ask(text,&context,|p|server.complete(p))?);
+    } else {
+        let result=workbench::propose(project,text,&context,|p|server.complete(p))?;
+        println!("Proposed replacement in {}",terminal(&result.path));
+        show(&result.patch.diff);
+        if allow_write && yes("Apply this exact patch to the disposable project? Type yes: ") {
+            project.apply(result.patch,true)?;
+            println!("Approved patch applied. Independent verification still required.");
+        } else {
+            println!("Proposal only; no files changed.");
+        }
+    }
+    Ok(())
+}
 fn help() {
-    println!("/read PATH (verified AI-assisted read), /cat PATH (no inference), /search TEXT, /strict, /write, /help, /quit");
+    println!("/read PATH (verified AI-assisted read), /cat PATH (no inference), /search TEXT, /ask QUESTION (context-first read), /strict, /write, /help, /quit");
 }
 fn app(project: Option<PathBuf>, runtime_dir: Option<PathBuf>, model: Option<PathBuf>) -> Result<()> {
     println!("TinyBuilder native Rust — experimental. Read-only by default. No automatic downloads.");
@@ -125,6 +166,12 @@ fn app(project: Option<PathBuf>, runtime_dir: Option<PathBuf>, model: Option<Pat
                     println!("Read failed or required evidence missing; no final answer.");
                 }
             }
+            _ if line.starts_with("/ask ") => {
+                allow_write=false;
+                if grounded_task(&project,&server,line[5..].trim(),false,false).is_err() {
+                    println!("Context-first answer failed. Specify a file or symbol and try again.");
+                }
+            }
             _ if line.starts_with("/cat ") => {
                 match project.read(line[5..].trim()) {
                     Ok(read) => { println!("File read verified: {}", terminal(&read.path)); show(&read.text); if read.truncated { println!("[Truncated]"); } }
@@ -156,6 +203,19 @@ fn run() -> Result<()> {
             let project = Project::new(&project)?;
             let server = Runtime::start(&runtime,&model)?;
             task(&project,&server,&text,if strict_json {Protocol::StrictJson} else {Protocol::Native},allow_write,required_read)
+        }
+        Command::Inspect {task:text,project} => {
+            let project=Project::new(&project)?;
+            let context=workbench::collect(&project,&text)?;
+            show_context(&context);
+            for file in context.files {println!("Source: {}",terminal(&file.path));show(&file.text);}
+            Ok(())
+        }
+        Command::Grounded {task:text,project,runtime,model,strict_json,propose,allow_write} => {
+            ensure!(!propose||strict_json,"Explicit strict JSON consent required");
+            let project=Project::new(&project)?;
+            let server=Runtime::start(&runtime,&model)?;
+            grounded_task(&project,&server,&text,propose,allow_write)
         }
         Command::Read {path,project} => {
             let result = Project::new(&project)?.read(&path)?;

@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod grounded;
 pub mod context;
+pub mod workbench;
 pub mod project;
 mod process;
 pub mod runtime;
