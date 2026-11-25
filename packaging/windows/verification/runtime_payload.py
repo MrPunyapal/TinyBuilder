@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 import stat
 import zipfile
 
@@ -29,7 +30,8 @@ def read_json(path):
 
 def flat(name):
     safe_relative(name)
-    if "/" in name or name.casefold() == MANIFEST.casefold():
+    if (not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*", name)
+            or name.casefold() == MANIFEST.casefold()):
         raise ValueError("runtime filenames must be flat and not reserved")
     return name
 
@@ -63,6 +65,8 @@ def prepare(runtime, archive, selection, extra_pins, catalog):
     if "llama-server.exe" not in selection:
         raise ValueError("server must originate in the pinned archive")
     rows = inventory(runtime)
+    if any(not stat.S_ISREG(plain(path).st_mode) for path in runtime.iterdir()):
+        raise ValueError("runtime directory must contain only regular files")
     hashes = {flat(row["path"]): row["sha256"] for row in rows}
     if set(hashes) != set(selection) | set(extra_pins) or "LICENSE" not in hashes:
         raise ValueError("staged runtime inventory or license mismatch")

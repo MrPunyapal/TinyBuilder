@@ -81,6 +81,32 @@ class RuntimePayloadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "server must originate"):
             self.prepare()
 
+    def test_empty_nested_directory_rejected(self):
+        (self.runtime / "empty").mkdir()
+        with self.assertRaisesRegex(ValueError, "only regular files"):
+            self.prepare()
+
+    def test_runtime_filename_with_space_rejected(self):
+        name = "extra notice.txt"
+        (self.runtime / name).write_bytes(b"notice")
+        self.extra[name] = hashlib.sha256(b"notice").hexdigest()
+        with self.assertRaisesRegex(ValueError, "filenames must be flat"):
+            self.prepare()
+
+    def test_shared_resolver_contract_when_integrated(self):
+        from unittest.mock import patch
+        from runtime_payload import write_json
+        try:
+            from tinybuilder.runtime import manifest
+        except ImportError:
+            self.skipTest("shared runtime branch not present")
+        write_json(self.runtime / "runtime-manifest.json", self.prepare())
+        with patch.object(manifest, "REVISION", self.catalog.REVISION), \
+                patch.object(manifest, "CPU_ARCHIVES", self.catalog.CPU_ARCHIVES), \
+                patch.object(manifest, "platform_key", return_value=("windows", "x64")):
+            self.assertEqual(manifest.resolve_runtime(self.runtime, "cpu"),
+                             self.runtime / "llama-server.exe")
+
     def test_existing_manifest_rejected(self):
         (self.runtime / "runtime-manifest.json").write_text("{}")
         with self.assertRaises(ValueError):
