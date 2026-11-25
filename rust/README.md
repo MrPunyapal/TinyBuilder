@@ -152,3 +152,8 @@ source against a predeclared exact-source oracle. It never applies edits, runs
 model-generated code, or saves raw outputs. This is a narrow proposal diagnostic,
 not semantic coding qualification; equivalent alternative repairs can fail. A
 successful diagnostic does not establish that the model can fix arbitrary bugs.
+
+The baseline agent also rejects duplicate unchanged read observations, repeated
+search/list requests, and edits against stale or truncated read evidence.
+After a successful edit it discards its patch-authorizing snapshots and requires
+a fresh read before another edit. The existing exact-answer gate is unchanged.
