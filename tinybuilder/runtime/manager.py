@@ -26,6 +26,9 @@ class RuntimeConnection:
 class RuntimeStatus:
     state: str
     failure: str | None = None
+    stage: str | None = None
+    os_code: int | None = None
+    exit_code: int | None = None
 
 
 def _model_path(value):
@@ -91,15 +94,17 @@ class RuntimeManager:
         self._status = RuntimeStatus("stopped")
         self._process = None
 
-    def _set(self, state, failure=None):
+    def _set(self, state, failure=None, *, stage=None, os_code=None, exit_code=None):
         with self._state_lock:
-            self._status = RuntimeStatus(state, failure)
+            self._status = RuntimeStatus(state, failure, stage, os_code, exit_code)
 
     def status(self):
         with self._state_lock:
             current, process = self._status, self._process
-        if current.state == "ready" and process is not None and process.poll() is not None:
-            return RuntimeStatus("failed", "server_crash")
+        if current.state == "ready" and process is not None:
+            code = process.poll()
+            if code is not None:
+                return RuntimeStatus("failed", "server_crash", "running", exit_code=code)
         return current
 
     def cancel(self):
@@ -124,15 +129,20 @@ class RuntimeManager:
             self._status = RuntimeStatus("starting")
         try:
             try:
+                stage = "model_validation"
                 model = _model_path(model_path)
+                stage = "runtime_validation"
                 executable = resolve_runtime(self._root, backend)
                 self._check_cancel()
+                stage = "port_selection"
                 port = _available_port()
                 alias = "tinybuilder-" + secrets.token_hex(16)
                 key = secrets.token_urlsafe(32)
+                stage = "spawn"
                 self._process = spawn(executable, model, port, alias, key)
                 atexit.register(self._exit_cleanup)
-                self._set("loading")
+                stage = "readiness"
+                self._set("loading", stage=stage)
                 self._wait_ready(port, alias, key, time.monotonic() + timeout)
                 with self._state_lock:
                     self._check_cancel()
@@ -143,9 +153,14 @@ class RuntimeManager:
                 try:
                     self._cleanup()
                 except RuntimeFailure:
-                    self._set("failed", "cleanup_failed")
-                    raise RuntimeFailure("cleanup_failed") from None
-                self._set("failed", failure)
+                    self._set("failed", "cleanup_failed", stage="cleanup")
+                    raise RuntimeFailure("cleanup_failed", stage="cleanup") from None
+                if isinstance(exc, RuntimeFailure):
+                    exc.stage = exc.stage or stage
+                    self._set("failed", failure, stage=exc.stage, os_code=exc.os_code,
+                              exit_code=exc.exit_code)
+                else:
+                    self._set("failed", failure, stage=stage)
                 raise
         finally:
             self._operation.release()
@@ -153,9 +168,10 @@ class RuntimeManager:
     def _wait_ready(self, port, alias, key, deadline):
         while True:
             self._check_cancel()
-            if self._process.poll() is not None:
+            code = self._process.poll()
+            if code is not None:
                 # Exit alone is not evidence of loader vs model failure.
-                raise RuntimeFailure("server_crash")
+                raise RuntimeFailure("server_crash", stage="readiness", exit_code=code)
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise RuntimeFailure("startup_timeout")
@@ -190,8 +206,9 @@ class RuntimeManager:
                     accepted, _ = request("/props", key)
                     if accepted != 200:
                         raise RuntimeFailure("authentication")
-                    if self._process.poll() is not None:
-                        raise RuntimeFailure("server_crash")
+                    code = self._process.poll()
+                    if code is not None:
+                        raise RuntimeFailure("server_crash", stage="readiness", exit_code=code)
                     if time.monotonic() >= deadline:
                         raise RuntimeFailure("startup_timeout")
                     return
@@ -219,8 +236,8 @@ class RuntimeManager:
             self._set("stopping")
             try:
                 self._cleanup()
-            except RuntimeFailure:
-                self._set("failed", "cleanup_failed")
+            except RuntimeFailure as exc:
+                self._set("failed", "cleanup_failed", stage=exc.stage or "cleanup", os_code=exc.os_code)
                 raise
             self._set("stopped")
 

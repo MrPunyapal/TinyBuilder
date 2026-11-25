@@ -14,7 +14,7 @@ and magic again; not full GGUF validation).
 Start is synchronous; run it on a worker. Poll status() for starting/loading
 (indeterminate progress), ready, failed (sanitized failure category), stopping,
 stopped. cancel() signals active startup; stop() cancels and joins the operation,
-then terminates the owned server. A failed cleanup retains the handle for retry.
+then terminates the owned server tree. A failed cleanup retains the handle for retry.
 The startup timeout covers HTTP readiness after spawn, not file hashing or OS
 process creation. Cancellation during those operations is cooperative.
 Credentials are random, per-session, passed via LLAMA_API_KEY in the child
@@ -24,7 +24,7 @@ OS account.
 
 ## Packaging contract
 
-Supply a flat runtime directory (as staged by Linux/macOS packaging) containing
+Use installed_runtime_root(absolute_installation_root) to resolve the explicit\nlauncher-provided installation root / runtime. It never discovers from project\ncwd, PATH, sys._MEIPASS or an implicit executable location. App #3 can pass\nthat absolute result to ManagedServices.from_installation(runtime_root, approve).\nPackaging #4/#5/#8 own the explicit installation root and final staged bytes.\n\nSupply a flat runtime directory (as staged by Linux/macOS packaging) containing
 the executable, LICENSE, native dependencies and runtime-manifest.json.
 The JSON schema version is 1. Required keys:
 
@@ -68,7 +68,11 @@ used as an authentication test. The temporary free-port selection has an unavoid
 fail closed for unexpected replies and never kill another process. A hostile
 local process could impersonate the server, including capturing a key during
 that race; this is not an OS sandbox. A child exit during startup is classified
-as server_crash, not guessed to be a loader, bind or model error. Raw server
+as server_crash with readiness stage and numeric exit code, not guessed to be a
+loader, bind or model error. RuntimeFailure and RuntimeStatus expose optional
+stage, os_code and exit_code; OS errors from process creation are distinguished
+from known loader-format failures. POSIX shell status 126/127 is not proof of
+a loader cause. No raw output is retained. Raw server
 output is discarded, not written to disk. No arbitrary extra flags, no web UI
 or slots, no server-side tool execution enabled by this pinned server. Native
 tool call formatting uses Jinja; TinyBuilder still authorizes and runs tools.
@@ -82,11 +86,19 @@ on the OS Windows-directory API, not inherited SystemRoot. Runtime paths
 containing the platform search-path separator are rejected.
 POSIX uses a new process session and bounded TERM/KILL; Linux limits
 LD_LIBRARY_PATH to the trusted runtime, macOS requires verified install names
-and rpaths. These measures are not a complete native loader sandbox. Windows
-uses direct child termination, not a Job Object. Ordinary stop and atexit are
-implemented, but forced interpreter exit, signals, OS crashes, descendant
-processes and Windows Job Object / POSIX supervisor behavior are unqualified.
-Atexit does not run on SIGKILL or TerminateProcess. Application must use finally
+and rpaths. These measures are not a complete native loader sandbox. Windows uses an unnamed non-inheritable Job Object with KILL_ON_JOB_CLOSE,
+assigned immediately after Popen. It fails closed if assignment fails (e.g.
+incompatible enclosing job). There is a launch-to-assignment race; atomic
+STARTUPINFOEX job assignment is not implemented. TerminateJobObject and
+accounting plus direct child wait bound ordinary cleanup; native nested jobs
+and descendant handle-signaling need platform acceptance.
+POSIX launches a fixed /bin/sh supervisor in a fresh session. The private
+parent pipe closes on parent exit; the supervisor sends TERM then KILL to its
+own group while it remains group leader. The native child receives no pipe
+handles and its output is discarded; only a bounded numeric shell exit status
+is returned. Descendants deliberately escaping the session/group, kernel
+uninterruptible processes and system crashes are outside the guarantee.
+Actual target OS tests are required; atexit alone is not a hard-crash solution. Application must use finally
 or context manager for normal exits. A stop after failed cleanup can be retried.
 
 Actual target binaries, OS loader dependencies, minimum OS/CPU features,
@@ -99,3 +111,34 @@ Do not change the uncommitted installer. Resolve executable, GGUF and cwd
 absolutely; run llama-server --version and --help first. Record only stage and
 OS error code, not private paths, raw output or secrets. Check native DLLs and
 architecture before model loading; then verify health, public alias and authenticated /props before chat completion. Errno 2 alone does not identify the cause.
+
+## Shared schema fixture and qualification
+
+For synthetic tests only, create an empty temporary installation directory with
+runtime/ containing llama-server (Windows: llama-server.exe) and LICENSE,
+write arbitrary fixture bytes to both, then:
+
+    from tinybuilder.runtime import installed_runtime_root, manifest_fields
+    from tinybuilder.runtime.manifest import platform_key, resolve_runtime
+    import hashlib, json
+    root = installed_runtime_root(absolute_installation_root)
+    files = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in root.iterdir()}
+    (root / "runtime-manifest.json").write_text(json.dumps(manifest_fields(platform_key(), files, [])), encoding="utf-8")
+    assert resolve_runtime(root, "cpu").is_absolute()
+
+Do not execute fixture bytes. manifest_fields is a pure schema constructor,
+not an archive verifier: packaging must independently authenticate source
+archives and final staged files before generating the production manifest.
+Linux #4 already uses the same field names and flat layout. macOS #5 and
+Windows #8 must reconcile signing/manifest generation and launcher root.
+Model qualification #9 confirms the b6500 architecture registry contains
+qwen2, qwen3 and phi3; Qwen3.5 is excluded. Architecture presence does not
+establish actual GGUF/template compatibility. No silent revision change.
+
+Model-free native qualification: verify archive SHA-256, enumerate ZIP members,
+check architecture and dependencies, run staged server --version and --help
+from an unrelated cwd, then run tests/test_runtime_processes.py on each target.
+See packaging owner smoke scripts. No real archive bytes or models were
+available in the connector-only environment. Windows Errno 2 remains local.
+Official Windows Job Object reference:
+https://learn.microsoft.com/en-us/windows/win32/procthread/job-objects

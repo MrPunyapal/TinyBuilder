@@ -110,3 +110,30 @@ def resolve_runtime(root: Path, backend: str) -> Path:
         raise
     except (OSError, UnicodeError, ValueError, KeyError, TypeError, RuntimeError):
         raise RuntimeFailure("manifest_invalid") from None
+
+
+def installed_runtime_root(installation_root) -> Path:
+    """Resolve the explicitly supplied absolute installation root's runtime child.
+
+    Launcher owns discovery of its installation root; never use project cwd,
+    sys._MEIPASS, PATH or an implicit executable-relative fallback here.
+    """
+    root = absolute_directory(installation_root)
+    runtime = root / "runtime"
+    if runtime.is_symlink():
+        raise RuntimeFailure("runtime_missing", stage="runtime_validation")
+    return absolute_directory(runtime)
+
+
+def manifest_fields(target, files, native_dependencies):
+    """Pure schema-1 fixture/build adapter; does NOT authenticate staged bytes."""
+    if target not in CPU_ARCHIVES:
+        raise RuntimeFailure("unsupported_platform")
+    archive, digest = CPU_ARCHIVES[target]
+    return {
+        "schema": 1, "revision": REVISION, "os": target[0],
+        "architecture": target[1], "backend": "cpu",
+        "executable": "llama-server.exe" if target[0] == "windows" else "llama-server",
+        "archive": archive, "archive_sha256": digest,
+        "native_dependencies": list(native_dependencies), "files": dict(files),
+    }

@@ -1,11 +1,26 @@
 """Private process adapter. No shell, inherited server flags or raw logs."""
 import errno
 import os
-import signal
 import subprocess
 from pathlib import Path
 
 from .errors import RuntimeFailure
+
+
+class WindowsOwned:
+    def __init__(self, process, job):
+        self.process, self.job = process, job
+
+    def poll(self):
+        return self.process.poll()
+
+    def stop(self, grace):
+        self.job.terminate(grace)
+        try:
+            self.process.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            raise RuntimeFailure('cleanup_failed', stage='job_wait') from None
+        self.job.close()
 
 
 def child_environment(executable: Path, key: str) -> dict[str, str]:
@@ -36,45 +51,48 @@ def spawn(executable, model, port, alias, key):
             "--port", str(port), "--alias", alias, "--device", "none",
             "--n-gpu-layers", "0", "--no-webui", "--no-slots", "--jinja",
             "--log-disable"]
-    options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {
-        "start_new_session": True}
+    return spawn_owned(argv, str(executable.parent), child_environment(executable, key))
+
+
+def spawn_owned(argv, cwd, env):
+    """Launch a trusted argv under platform ownership; no project-controlled shell."""
     try:
-        return subprocess.Popen(
-            argv, cwd=str(executable.parent), env=child_environment(executable, key),
-            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, shell=False, **options)
+        if os.name != "nt":
+            from .posix_supervisor import spawn_posix
+            return spawn_posix(argv, cwd, env)
+        from .windows_job import WindowsJob
+        job = WindowsJob()
+        try:
+            process = subprocess.Popen(
+                argv, cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False,
+                close_fds=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+        except BaseException:
+            job.close()
+            raise
+        try:
+            job.attach(process)
+        except BaseException:
+            # Do not proceed without ownership. Only the exact launched handle.
+            try:
+                if process.poll() is None:
+                    process.kill()
+                process.wait(timeout=2)
+            except (OSError, subprocess.TimeoutExpired):
+                raise RuntimeFailure("cleanup_failed", stage="job_assign") from None
+            finally:
+                job.close()
+            raise
+        return WindowsOwned(process, job)
     except OSError as exc:
-        # Only known executable-format/dependency errors are classified as
-        # loader errors; ENOENT can mean missing executable, cwd or interpreter.
-        kind = "native_loader" if (exc.errno == errno.ENOEXEC or
-                                   getattr(exc, "winerror", None) in (126, 193, 216)) else "process_spawn"
-        raise RuntimeFailure(kind) from None
+        code = getattr(exc, "winerror", None) or exc.errno
+        loader = (exc.errno == errno.ENOEXEC or getattr(exc, "winerror", None) in (126, 193, 216))
+        raise RuntimeFailure("native_loader" if loader else "process_spawn",
+                             stage="loader" if loader else "spawn", os_code=code) from None
     except ValueError:
-        raise RuntimeFailure("process_spawn") from None
+        raise RuntimeFailure("process_spawn", stage="spawn") from None
 
 
 def terminate_owned(process, grace=2.0):
-    """Bounded direct-child cleanup. POSIX signals its owned process group."""
-    if process.poll() is not None:
-        return
-    try:
-        if os.name == "nt":
-            process.terminate()
-        else:
-            os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=grace)
-    except ProcessLookupError:
-        pass
-    except subprocess.TimeoutExpired:
-        try:
-            if os.name == "nt":
-                process.kill()
-            else:
-                os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=grace)
-        except (OSError, subprocess.TimeoutExpired):
-            raise RuntimeFailure("cleanup_failed") from None
-    except OSError:
-        raise RuntimeFailure("cleanup_failed") from None
-    if process.poll() is None:
-        raise RuntimeFailure("cleanup_failed")
+    """Stop only the owned job or supervised POSIX process group."""
+    process.stop(grace)

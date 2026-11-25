@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
 
-from tinybuilder.runtime import RuntimeFailure, RuntimeManager
+from tinybuilder.runtime import RuntimeFailure, RuntimeManager, installed_runtime_root, manifest_fields
 from tinybuilder.runtime.catalog import CPU_ARCHIVES, REVISION
 from tinybuilder.runtime.manifest import MANIFEST_NAME, platform_key, resolve_runtime
 from tinybuilder.runtime.processes import child_environment
@@ -172,12 +172,17 @@ class RuntimeTests(unittest.TestCase):
         with self.assertRaises(RuntimeFailure) as exc:
             self.manager.start(self.model)
         self.assertEqual(exc.exception.kind, "server_crash")
+        self.assertEqual(exc.exception.stage, "readiness")
+        self.assertEqual(exc.exception.exit_code, 1)
+        self.assertEqual(self.manager.status().exit_code, 1)
         self.assertEqual(self.cleaned, 1)
 
     def test_ready_child_crash(self):
         self.manager.start(self.model)
         self.process.exitcode = 1
         self.assertEqual(self.manager.status().failure, "server_crash")
+        self.assertEqual(self.manager.status().stage, "running")
+        self.assertEqual(self.manager.status().exit_code, 1)
 
     def test_bad_model_and_backend(self):
         with self.assertRaises(RuntimeFailure) as exc:
@@ -187,6 +192,12 @@ class RuntimeTests(unittest.TestCase):
             self.manager.start(self.model, backend="cuda")
         self.assertEqual(exc.exception.kind, "unsupported_backend")
         self.assertTrue(exc.exception.cpu_recovery)
+
+    def test_shared_layout_and_fixture(self):
+        self.assertEqual(installed_runtime_root(self.root.parent), self.root)
+        self.assertEqual(manifest_fields(self.target, self.manifest["files"], []), self.manifest)
+        with self.assertRaises(RuntimeFailure):
+            installed_runtime_root("relative")
 
     def test_runtime_inventory(self):
         self.assertEqual(resolve_runtime(self.root, "cpu"), self.exe)
