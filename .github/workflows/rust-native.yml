@@ -1,0 +1,47 @@
+name: Rust native rewrite
+on:
+  push:
+    branches: ['feat/rust-native-rewrite']
+  pull_request:
+    paths: ['rust/**', '.github/workflows/rust-native.yml']
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - run: rustc -vV
+      - name: Generate candidate lock if not yet committed
+        shell: bash
+        run: |
+          if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
+          cat Cargo.lock
+      - run: cargo test --locked --target ${{ matrix.target }}
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Native CLI smoke (no models)
+        shell: bash
+        run: |
+          binary="target/${{ matrix.target }}/release/tinybuilder"
+          if [ "${{ runner.os }}" = Windows ]; then binary="$binary.exe"; fi
+          "$binary" --help
+          "$binary" doctor --project .
+          "$binary" read Cargo.toml --project .
+          "$binary" search 'tinybuilder' --project .
