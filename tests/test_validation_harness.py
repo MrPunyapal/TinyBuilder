@@ -94,7 +94,7 @@ class ValidationHarnessTests(unittest.TestCase):
 
     def test_controls_only_never_calls_the_model(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home = self.seed(top)
             output = top / "controls"
             with patch("benchmarks.evaluate.ChatModel") as model:
@@ -129,7 +129,7 @@ class ValidationHarnessTests(unittest.TestCase):
 
     def test_scripted_reference_edit_passes_only_after_real_tool_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home = self.seed(top)
             output = top / "out"
             output.mkdir()
@@ -144,7 +144,7 @@ class ValidationHarnessTests(unittest.TestCase):
 
     def test_late_test_read_rejected_even_after_reference_fix_and_passing_suite(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home = self.seed(top)
             output = top / "out"
             output.mkdir()
@@ -155,7 +155,7 @@ class ValidationHarnessTests(unittest.TestCase):
 
     def test_off_target_ignored_write_rejected_despite_passing_tests(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home = self.seed(top)
             output = top / "out"
             output.mkdir()

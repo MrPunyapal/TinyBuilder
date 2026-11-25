@@ -91,3 +91,7 @@ Ubuntu Python CI does not prove macOS or Windows Ollama/Laravel behavior.
 
 See [Security](SECURITY.md), [Release checklist](RELEASE_CHECKLIST.md),
 and [benchmark setup](../benchmarks/README.md).
+
+## Standalone versus source installation
+
+The instructions above are for the existing source CLI, not the future standalone application. For the planned no-Python/no-Git/no-Ollama onboarding flow, see [standalone onboarding](STANDALONE.md). Until a platform artifact has passed acceptance and is explicitly published, use these source instructions if you have the prerequisites. Keep writes and execution disabled for your first inspection.

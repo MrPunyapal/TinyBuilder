@@ -29,7 +29,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_clean_tracked_route_symlink_is_rejected_before_any_fixture_write(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home, output, outside = top / "baseline", top / "results", top / "private.php"
             HarnessTest().seed_repo(home)
             outside.write_text("PRIVATE: MUST STAY", encoding="utf-8")
@@ -48,7 +48,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_symlinked_tests_directory_is_rejected_before_php_fixture_write(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home, outside = top / "baseline", top / "outside-tests"
             HarnessTest().seed_repo(home)
             outside.mkdir()
@@ -62,7 +62,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_ignored_env_symlink_is_rejected_even_when_git_status_is_clean(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home, outside = top / "baseline", top / "outside-env"
             HarnessTest().seed_repo(home)
             outside.write_text("PRIVATE", encoding="utf-8")
@@ -76,7 +76,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_dangling_hidden_test_symlink_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             root = top / "disposable"
             (root / "tests/Feature").mkdir(parents=True)
             hidden = root / VALIDATION_HIDDEN_PATH
@@ -90,7 +90,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_visible_validation_test_cannot_escape_via_parent_symlink(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             root, outside = top / "disposable", top / "outside-tests"
             (root / "tests").mkdir(parents=True)
             outside.mkdir()
@@ -101,7 +101,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_direct_route_seed_cannot_follow_symlink(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             root, outside = top / "disposable", top / "outside.php"
             (root / "routes").mkdir(parents=True)
             outside.write_text("PRIVATE", encoding="utf-8")
@@ -112,7 +112,7 @@ class ValidationSymlinkSafetyTests(unittest.TestCase):
 
     def test_normal_fresh_fixture_path_remains_usable(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / "tests/Feature").mkdir(parents=True)
             p = fresh_fixture_path(root, VALIDATION_HIDDEN_PATH)
             self.assertEqual(p, root / VALIDATION_HIDDEN_PATH)
