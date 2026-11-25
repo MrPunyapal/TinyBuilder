@@ -68,7 +68,7 @@ def stage(archive, target, runtime):
             if name != server and not name.startswith("LICENSE"):
                 deps.append(name)
     if "LICENSE" not in files and platform == "windows":
-        data = (ROOT / "acceptance" / "llama-b6500-LICENSE").read_bytes()
+        data = (ROOT / "acceptance" / "llama-b6500-LICENSE").read_bytes().replace(b"\r\n", b"\n")
         blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
         if blob != "acb96ce78e0486e9dc7602cdcdd2f491c34f335a":
             raise ValueError("Upstream license blob mismatch")
@@ -117,7 +117,7 @@ def build(target, source_commit, output):
                 ["inspect", "probe.txt", "--project", str(project)],
             ]
             for args in commands:
-                result = subprocess.check_output([str(root / binary), *args], text=True, cwd=project)
+                result = subprocess.check_output([str(root / binary), *args], text=True, encoding="utf-8", cwd=project, timeout=30)
                 print(result)
                 if args[0] in {"read", "search", "inspect"} and "candidate-smoke-fact" not in result:
                     raise ValueError("Smoke evidence missing")
@@ -158,6 +158,37 @@ def build(target, source_commit, output):
             package = output / (name + ".tar.gz")
             with tarfile.open(package, "x:gz") as tar:
                 tar.add(root, arcname=name)
+        # Exercise the exact archive that will be retained, rather than only
+        # the staging folder. Extraction here is of our own verified output.
+        with tempfile.TemporaryDirectory(prefix="tinybuilder unpack ") as unpacked:
+            destination = Path(unpacked)
+            if platform == "windows":
+                with zipfile.ZipFile(package) as z:
+                    z.extractall(destination)
+            else:
+                with tarfile.open(package, "r:gz") as tar:
+                    tar.extractall(destination, filter="data")
+            installed = destination / name
+            for record in files:
+                p = installed / record["path"]
+                if p.stat().st_size != record["bytes"] or digest(p) != record["sha256"]:
+                    raise ValueError("Unpacked file hash mismatch")
+            project = destination / "separate project"
+            project.mkdir()
+            probe = project / "probe.txt"
+            probe.write_text("unpacked-smoke-marker", encoding="utf-8")
+            result = subprocess.check_output(
+                [str(installed / binary), "app", "--project", str(project)],
+                input="\n/cat probe.txt\n/quit\n", text=True, encoding="utf-8",
+                cwd=project, timeout=30)
+            if "Model-free mode" not in result or "unpacked-smoke-marker" not in result:
+                raise ValueError("Unpacked first launch failed")
+            subprocess.run([str(installed / binary), "doctor", "--project", str(project),
+                            "--runtime", str(installed / "runtime")],
+                           cwd=project, check=True, timeout=30)
+            shutil.rmtree(installed)
+            if list(project.iterdir()) != [probe] or probe.read_text() != "unpacked-smoke-marker":
+                raise ValueError("Project changed during package lifecycle")
         write_json(output / "artifact.json", {
             "name": package.name, "bytes": package.stat().st_size, "sha256": digest(package),
             "source_commit": source_commit, "target": target,
