@@ -22,6 +22,10 @@ class DownloadOffer:
     destination: Path
     license: str
     sha256: str
+    source_url: str
+    revision: str
+    filename: str
+    qualification: str
 
     def __post_init__(self):
         if not self.model_id.strip() or type(self.size_bytes) is not int or self.size_bytes <= 0:
@@ -30,6 +34,10 @@ class DownloadOffer:
             raise ValueError("An absolute destination and license are required")
         if not re.fullmatch(r"[0-9a-f]{64}", self.sha256):
             raise ValueError("A pinned SHA-256 digest is required")
+        if (not re.fullmatch(r"[0-9a-f]{40}", self.revision)
+                or not self.source_url or not self.filename
+                or self.destination.name != self.filename or not self.qualification):
+            raise ValueError("Complete catalog identity is required")
 
 
 @dataclass(frozen=True)

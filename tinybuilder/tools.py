@@ -6,6 +6,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from .external_env import external_env
+
 EXCLUDED = {".git", ".venv", "node_modules", "vendor", "__pycache__", ".next", ".idea"}
 MAX_OBSERVATION = 16000
 
@@ -117,7 +119,7 @@ class LocalTools:
                 if self.exec_commands is not None and argv not in self.exec_commands:
                     return "Permission denied: command is not in the operator's exact argv allowlist"
                 result = subprocess.run(argv, cwd=self.root, shell=False, capture_output=True,
-                                        text=True, timeout=60, errors="replace", stdin=subprocess.DEVNULL)
+                                        text=True, timeout=60, errors="replace", stdin=subprocess.DEVNULL, **external_env())
                 output = result.stdout + ("\n" + result.stderr if result.stderr else "")
                 return f"Exit code: {result.returncode}\n{output[:MAX_OBSERVATION]}"
             return "Unknown tool: " + name

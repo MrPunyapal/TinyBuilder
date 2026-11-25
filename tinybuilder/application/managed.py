@@ -47,7 +47,8 @@ class ManagedServices:
     def offers(self):
         return tuple(DownloadOffer(entry.model_id, entry.size_bytes,
                                    self.models.destination(entry.model_id),
-                                   entry.license, entry.sha256)
+                                   entry.license, entry.sha256, entry.source_url,
+                                   entry.revision, entry.filename, entry.qualification)
                      for entry in self.models.catalog)
 
     def transfer(self, offer, cancel, progress):
@@ -57,8 +58,9 @@ class ManagedServices:
         token.check()
         request = self.models.request_download(offer.model_id, consent=True)
         entry = request.entry
-        if (entry.model_id, entry.size_bytes, request.destination, entry.license, entry.sha256) != (
-                offer.model_id, offer.size_bytes, offer.destination, offer.license, offer.sha256):
+        if DownloadOffer(entry.model_id, entry.size_bytes, request.destination,
+                         entry.license, entry.sha256, entry.source_url, entry.revision,
+                         entry.filename, entry.qualification) != offer:
             raise ValueError("Download request changed; obtain fresh consent")
         def notify(update):
             token.check()

@@ -1,4 +1,5 @@
 from pathlib import Path
+from dataclasses import replace
 from tempfile import TemporaryDirectory
 from threading import Event
 from types import SimpleNamespace as NS
@@ -11,7 +12,9 @@ from tinybuilder.application.managed import ManagedServices
 class Models:
     def __init__(self, root):
         self.root = root
-        self.catalog = (NS(model_id="test", size_bytes=8, license="MIT", sha256="a" * 64),)
+        self.catalog = (NS(model_id="test", size_bytes=8, license="MIT", sha256="a" * 64,
+                           source_url="https://example.invalid/model", revision="b" * 40,
+                           filename="model.gguf", qualification="provisional"),)
         self.calls = []
 
     def destination(self, model_id):
@@ -92,6 +95,15 @@ class ManagedTests(unittest.TestCase):
         self.runtime.fail_stop = False
         self.assertTrue(self.session.stop())
         self.session.close()
+
+    def test_full_identity_change_blocks_transfer(self):
+        offer = self.service.offers()[0]
+        for changed in (replace(offer, source_url="https://example.invalid/other"),
+                        replace(offer, revision="d" * 40),
+                        replace(offer, qualification="qualified")):
+            with self.assertRaises(ValueError):
+                self.service.transfer(changed, Event(), lambda n: None)
+        self.assertEqual(self.models.calls, [])
 
     def test_cancelled_transfer_does_not_request(self):
         cancel = Event()

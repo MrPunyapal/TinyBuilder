@@ -15,7 +15,7 @@ class SessionTests(unittest.TestCase):
 
     def offer(self):
         self.session.select_project(self.root)
-        offer = DownloadOffer("test", 4, self.root / "model.gguf", "MIT", "a" * 64)
+        offer = DownloadOffer("test", 4, self.root / "model.gguf", "MIT", "a" * 64, "https://example.invalid/model", "c" * 40, "model.gguf", "provisional")
         self.session.offer_download(offer)
         return offer
 
@@ -49,7 +49,7 @@ class SessionTests(unittest.TestCase):
             progress(4)
             return o.destination
         with self.assertRaises(RuntimeError):
-            self.session.download(DownloadOffer("other", 4, offer.destination, "MIT", "a" * 64), transfer)
+            self.session.download(DownloadOffer("other", 4, offer.destination, "MIT", "a" * 64, "https://example.invalid/model", "c" * 40, "model.gguf", "provisional"), transfer)
         self.assertEqual(calls, [])
         def fail(*args):
             raise OSError("private information")
@@ -171,9 +171,9 @@ class SessionTests(unittest.TestCase):
 
     def test_digest_required_and_consent_bound(self):
         with self.assertRaises(ValueError):
-            DownloadOffer("test", 4, self.root / "model.gguf", "MIT", "invalid")
+            DownloadOffer("test", 4, self.root / "model.gguf", "MIT", "invalid", "https://example.invalid/model", "c" * 40, "model.gguf", "provisional")
         offer = self.offer()
-        changed = DownloadOffer("test", 4, offer.destination, "MIT", "b" * 64)
+        changed = DownloadOffer("test", 4, offer.destination, "MIT", "b" * 64, "https://example.invalid/model", "c" * 40, "model.gguf", "provisional")
         with self.assertRaises(RuntimeError):
             self.session.download(changed, lambda *args: self.fail("unexpected transfer"))
 
