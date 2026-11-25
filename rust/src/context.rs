@@ -6,6 +6,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct Context {
     pub files: Vec<ReadResult>,
     pub incomplete: bool,
+    pub ranges: Vec<(usize,usize)>,
 }
 const STOP: &[&str] = &["the","and","this","that","with","from","what","where","when","which",
     "please","find","explain","show","locate","fix","change","update","make","project","file",
@@ -41,24 +42,20 @@ pub fn retrieve(project: &Project, task: &str) -> Result<Context> {
     ranked.sort_by(|(pa,a),(pb,b)|b.cmp(a).then_with(||pa.cmp(pb)));
     incomplete |= ranked.len()>4;
     let mut files = Vec::new();
+    let mut ranges = Vec::new();
     for (path,_) in ranked {
         if files.len() == 4 {break;}
-        match project.read(&path) {
-            Ok(mut read) => {
-                if read.text.len()>12*1024 {
-                    let mut end=12*1024;
-                    while !read.text.is_char_boundary(end) {end-=1;}
-                    read.text.truncate(end);
-                    read.truncated=true;
-                }
-                incomplete |= read.truncated;
-                files.push(read);
+        match project.excerpt(&path,&words,12*1024) {
+            Ok(excerpt) => {
+                incomplete |= excerpt.read.truncated;
+                ranges.push((excerpt.first_line,excerpt.last_line));
+                files.push(excerpt.read);
             }
             Err(_) => incomplete=true,
         }
     }
     ensure!(!files.is_empty(),"No relevant readable files found; specify a file or symbol");
-    Ok(Context {files,incomplete})
+    Ok(Context {files,incomplete,ranges})
 }
 
 #[cfg(test)]
@@ -78,6 +75,17 @@ mod tests {
         assert_eq!(c.files[0].path,"alpha.rs");
         assert!(c.files.iter().all(|r|!r.path.starts_with("vendor/")));
         assert!(c.files.iter().all(|r|r.path!="beta.rs"));
+    }
+    #[test]
+    fn deep_symbol_context_is_not_just_a_prefix() {
+        let dir=tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("deep.rs"),format!("{}fn deep_symbol() {{}}\n","// line\n".repeat(3000))).unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let c=retrieve(&p,"Explain deep_symbol").unwrap();
+        assert!(c.files[0].text.contains("deep_symbol"));
+        assert!(c.files[0].truncated);
+        assert!(c.ranges[0].0>1);
+        assert!(c.incomplete);
     }
     #[test]
     fn missing_evidence_is_not_a_guess() {
