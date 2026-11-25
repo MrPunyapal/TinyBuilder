@@ -52,7 +52,7 @@ class ParameterHarnessTests(unittest.TestCase):
 
     def test_controls_only_does_not_infer_or_leave_reference_patch(self):
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
+            root = Path(d).resolve()
             home = self.seed(root)
             output = root / "controls"
             with patch("benchmarks.evaluate.ChatModel") as model, \
@@ -78,7 +78,7 @@ class ParameterHarnessTests(unittest.TestCase):
 
     def test_scripted_model_requires_actual_reads_edit_and_test(self):
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
+            root = Path(d).resolve()
             home = self.seed(root)
             output = root / "out"
             output.mkdir()

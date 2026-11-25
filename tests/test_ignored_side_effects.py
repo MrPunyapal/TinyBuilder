@@ -41,7 +41,7 @@ class EnvTamperModel:
 class IgnoredSideEffectTests(unittest.TestCase):
     def test_allowed_command_indirectly_mutating_ignored_env_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            top = Path(directory)
+            top = Path(directory).resolve()
             home = top / "baseline"
             HarnessTest().seed_repo(home)
             modified = FAKE_VALIDATION_ARTISAN.replace(

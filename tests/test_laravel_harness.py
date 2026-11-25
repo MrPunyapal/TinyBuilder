@@ -78,8 +78,8 @@ class HarnessTest(unittest.TestCase):
 
     def test_repair_accepts_only_a_real_scripted_edit_and_test_order(self):
         with tempfile.TemporaryDirectory() as d:
-            home = Path(d) / "base"
-            output = Path(d) / "out"
+            home = Path(d).resolve() / "base"
+            output = Path(d).resolve() / "out"
             output.mkdir()
             self.seed_repo(home)
             model_root = output / "laravel-0"
