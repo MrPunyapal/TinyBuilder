@@ -15,14 +15,20 @@ use std::{
     time::{Duration, Instant},
 };
 
-const REVISION: &str = "b6500";
-fn pin() -> Result<(&'static str, &'static str, &'static str, &'static str)> {
-    match (std::env::consts::OS, std::env::consts::ARCH) {
-        ("windows", "x86_64") => Ok(("windows", "x64", "llama-b6500-bin-win-cpu-x64.zip",
+// Published official release asset digests; not local archive/build qualification.
+fn pin(revision: &str) -> Result<(&'static str, &'static str, &'static str, &'static str)> {
+    match (revision, std::env::consts::OS, std::env::consts::ARCH) {
+        ("b12359", "windows", "x86_64") => Ok(("windows", "x64", "llama-b12359-bin-win-cpu-x64.zip",
+            "837c1655e87df3b66989f4be33a792a1399c785bf259038dc75c900096683e69")),
+        ("b12359", "macos", "aarch64") => Ok(("macos", "arm64", "llama-b12359-bin-macos-arm64.tar.gz",
+            "82b00abc740160e1b9980e6cc79c117345fa34af058c80e6c0a69aa8ddccde75")),
+        ("b12359", "linux", "x86_64") => Ok(("linux", "x64", "llama-b12359-bin-ubuntu-x64.tar.gz",
+            "0bc1f091e8916102b6d8f2cf944233a620e90a0f856c72d0ce41150c65c2e72e")),
+        ("b6500", "windows", "x86_64") => Ok(("windows", "x64", "llama-b6500-bin-win-cpu-x64.zip",
             "73e00267e852e666a6fce2c3fb7a2603dd1934a37259f3f45c2c1b6983fa605a")),
-        ("macos", "aarch64") => Ok(("macos", "arm64", "llama-b6500-bin-macos-arm64.zip",
+        ("b6500", "macos", "aarch64") => Ok(("macos", "arm64", "llama-b6500-bin-macos-arm64.zip",
             "4f34ae19823ee22e8036d6da91f083ca62ab926c2a0a4a5ce9df34897360087b")),
-        ("linux", "x86_64") => Ok(("linux", "x64", "llama-b6500-bin-ubuntu-x64.zip",
+        ("b6500", "linux", "x86_64") => Ok(("linux", "x64", "llama-b6500-bin-ubuntu-x64.zip",
             "716803084e565fe779bc2d01ea576c418be141f8fabac97509bc6d7c3cd786b2")),
         _ => bail!("Unsupported runtime platform"),
     }
@@ -69,14 +75,21 @@ fn valid_name(name: &str) -> bool {
 }
 pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
     ensure!(root.is_absolute(), "Use an absolute trusted runtime directory");
+    let root_meta = root.symlink_metadata()?;
+    ensure!(root_meta.is_dir() && !root_meta.file_type().is_symlink(), "Runtime root must be a real directory");
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt;
+        ensure!(root_meta.file_attributes() & 0x400 == 0, "Runtime root reparse point");
+    }
     let root = root.canonicalize()?;
     let manifest_path = root.join("runtime-manifest.json");
     regular(&manifest_path)?;
     ensure!(manifest_path.metadata()?.len() <= 1024 * 1024, "Oversized runtime manifest");
     let data: Manifest = serde_json::from_reader(File::open(manifest_path)?)?;
-    let (os, arch, archive, sha) = pin()?;
+    let (os, arch, archive, sha) = pin(&data.revision)?;
     let exe = if os == "windows" { "llama-server.exe" } else { "llama-server" };
-    ensure!(data.schema == 1 && data.revision == REVISION && data.os == os
+    ensure!(data.schema == 1 && data.os == os
         && data.architecture == arch && data.backend == "cpu" && data.executable == exe
         && data.archive == archive && data.archive_sha256 == sha, "Runtime manifest pin mismatch");
     ensure!(data.files.contains_key(exe) && data.files.contains_key("LICENSE"), "Missing runtime files");
@@ -173,14 +186,17 @@ impl Runtime {
             ensure!(self.child.try_wait()?.is_none(), "Runtime exited before readiness");
             match status(http.get(&format!("{}/health", self.base)).call()) {
                 Some(200) => {
-                    let models = http.get(&format!("{}/v1/models", self.base)).call()
-                        .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
-                    let data = bounded_json(models)?;
-                    ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     let url = format!("{}/props", self.base);
                     ensure!(matches!(status(http.get(&url).call()), Some(401 | 403)), "Runtime accepted missing authentication");
                     ensure!(matches!(status(http.get(&url).set("Authorization", "Bearer invalid-session").call()), Some(401 | 403)), "Runtime accepted invalid authentication");
                     ensure!(status(http.get(&url).set("Authorization", &format!("Bearer {}", self.key)).call()) == Some(200), "Runtime authentication failed");
+                    // b12359 protects /v1/models; b6500 accepts authenticated
+                    // access too. Require the random session alias after auth.
+                    let models = http.get(&format!("{}/v1/models", self.base))
+                        .set("Authorization", &format!("Bearer {}", self.key)).call()
+                        .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
+                    let data = bounded_json(models)?;
+                    ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     ensure!(self.child.try_wait()?.is_none(), "Runtime exited during readiness");
                     return Ok(());
                 }
@@ -205,5 +221,35 @@ impl Runtime {
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
         ensure!(choice["message"].is_object(), "Missing model message");
         Ok(choice["message"].clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn approved_pin_and_inventory_only() {
+        for revision in ["b6500", "b12359"] {
+            let dir = tempfile::tempdir().unwrap();
+            let root = dir.path();
+            let (os, arch, archive, sha) = pin(revision).unwrap();
+            let exe = if os == "windows" { "llama-server.exe" } else { "llama-server" };
+            fs::write(root.join(exe), b"fixture, never executed").unwrap();
+            fs::write(root.join("LICENSE"), b"fixture license").unwrap();
+            let files = BTreeMap::from([(exe, digest(&root.join(exe)).unwrap()), ("LICENSE", digest(&root.join("LICENSE")).unwrap())]);
+            let manifest = serde_json::json!({"schema":1,"revision":revision,"os":os,"architecture":arch,
+                "backend":"cpu","executable":exe,"archive":archive,"archive_sha256":sha,
+                "native_dependencies":[],"files":files});
+            let path = root.join("runtime-manifest.json");
+            fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+            assert_eq!(verify_runtime(root).unwrap(), root.canonicalize().unwrap().join(exe));
+            let mut wrong = manifest.clone();
+            wrong["revision"] = serde_json::json!("unknown");
+            fs::write(&path, serde_json::to_vec(&wrong).unwrap()).unwrap();
+            assert!(verify_runtime(root).is_err());
+            fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+            fs::write(root.join(exe), b"changed").unwrap();
+            assert!(verify_runtime(root).is_err());
+        }
     }
 }

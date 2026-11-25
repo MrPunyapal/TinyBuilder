@@ -67,8 +67,16 @@ impl Drop for Owned {
     fn drop(&mut self) {
         #[cfg(windows)]
         {
-            self.job.terminate();
-            let _ = self.child.wait();
+            use std::{thread, time::{Duration, Instant}};
+            self.job.terminate_and_close();
+            let deadline = Instant::now() + Duration::from_secs(5);
+            loop {
+                match self.child.try_wait() {
+                    Ok(Some(_)) => break,
+                    Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(25)),
+                    _ => { eprintln!("Runtime job cleanup not confirmed."); break; }
+                }
+            }
         }
         #[cfg(unix)]
         {
@@ -136,15 +144,22 @@ mod windows {
             ensure!(unsafe { AssignProcessToJobObject(self.0, child.as_raw_handle()) } != 0, "Job assignment failed");
             Ok(())
         }
-        pub fn terminate(&self) {
+        pub fn terminate_and_close(&mut self) {
             if unsafe { TerminateJobObject(self.0, 1) } == 0 {
                 eprintln!("Runtime job termination not confirmed; handle close will retry.");
+            }
+            // Closing the last job handle invokes KILL_ON_JOB_CLOSE. Do this
+            // before waiting so a failed TerminateJobObject cannot hang exit.
+            if unsafe { CloseHandle(self.0) } != 0 {
+                self.0 = ptr::null_mut();
+            } else {
+                eprintln!("Runtime job handle close not confirmed.");
             }
         }
     }
     impl Drop for Job {
         fn drop(&mut self) {
-            unsafe { CloseHandle(self.0); }
+            if !self.0.is_null() { unsafe { CloseHandle(self.0); } }
         }
     }
 }

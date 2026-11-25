@@ -39,8 +39,7 @@ Commands are not implemented in this draft. /read requests an AI-assisted read w
 
 ## Not yet complete or qualified
 
-The runtime pin is the public integration branch's b6500, not the unavailable
-local lab b12359 build. No actual runtime or model execution has been verified.
+Both b6500 and b12359 official CPU asset metadata are supported in the schema-1 manifest. b12359 archive digests come from the official GitHub release API; flags and authenticated models endpoint were checked against upstream tag source. The unpublished local lab manifest is unavailable and no actual runtime or model execution has been verified.
 The runtime manifest checks consistency with a trusted installation; it cannot
 authenticate a manifest and binaries supplied by an attacker together.
 
