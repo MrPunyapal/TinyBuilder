@@ -14,15 +14,26 @@ notices=$(realpath -e "$5")
 # The shared runtime must be integrated before a distribution can be built.
 [[ -f "$repo/tinybuilder/runtime/catalog.py" && -f "$repo/tinybuilder/runtime/manifest.py" ]] || { echo "shared runtime integration missing" >&2; exit 1; }
 [[ $(uname -m) == x86_64 && $(getconf GNU_LIBC_VERSION) == 'glibc 2.39' ]]
-python -c 'import sys; assert sys.version_info[:2] == (3,12)'
+python -I -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3,12) else "Python 3.12 required")'
+python -I -c 'import sys,PyInstaller; sys.exit(0 if PyInstaller.__version__ == "6.15.0" else "PyInstaller 6.15.0 required")'
+git -C "$repo" diff --quiet HEAD -- || { echo "Tracked source changes; commit before building" >&2; exit 1; }
+source_sha=$(git -C "$repo" rev-parse HEAD)
+[[ "$out" != "$runtime" && "$out" != "$runtime/"* ]] || { echo "output must be outside runtime input" >&2; exit 2; }
 [[ ! -e "$out" ]] || { echo "output must not exist" >&2; exit 2; }
+# Build exclusively from the recorded committed tree, not the caller's checkout.
+work=$(mktemp -d)
+trap 'rm -rf -- "$work"' EXIT
+mkdir "$work/source"
+git -C "$repo" archive --format=tar "$source_sha" | tar -xf - -C "$work/source"
+repo="$work/source"
+here="$repo/packaging/linux"
+cd "$repo"
 # Require a flat, regular-file runtime payload with a complete trusted checksum list.
 python "$here/verify_runtime.py" "$runtime" "$sums"
 mkdir -p "$out"
-work=$(mktemp -d)
-trap 'rm -rf -- "$work"' EXIT
-cd "$repo"
-python -m PyInstaller --noconfirm --clean --onedir --name tinybuilder \
+printf '%s\n' "$source_sha" > "$out/source-commit.txt"
+python -VV > "$out/python-version.txt" 2>&1
+python -I -m PyInstaller --noconfirm --clean --onedir --name tinybuilder \
   --paths "$repo" --collect-all tinybuilder --distpath "$work/dist" \
   --workpath "$work/build" --specpath "$work" "$here/entry.py"
 bundle="$out/TinyBuilder-linux-x64"

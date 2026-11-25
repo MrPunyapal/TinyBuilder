@@ -35,7 +35,8 @@ layout, native dependency inventory and redistribution terms remain unverified.
 No modified or rebuilt binaries may be substituted under this archive pin.
 
 The entry wrapper currently calls tinybuilder.cli:main (the existing console
-script). Guided startup, runtime discovery and XDG paths are integration gates.
+script). The integrated CLI dispatches frozen no-argument launches to the guided app;
+installed startup, runtime discovery and XDG paths still require acceptance.
 No packaging code creates or deletes user model/preferences directories.
 Update by extracting to a new directory; remove only the old extracted folder.
 No automated cleanup of user data.
@@ -76,8 +77,12 @@ inventory, then rerun with a fresh output directory. No publication authorized.
 The actual upstream payload and complete reviewed notice texts remain unverified.
 The successful build records compressed, installed, application and runtime byte
 counts in sizes.txt; no model weights are included.
-Archive timestamps and ownership are normalized; dependency lock, builder
-image digest and bit-for-bit reproducibility remain unverified.
+The build enforces Python 3.12 and PyInstaller 6.15.0, refuses tracked changes,
+freezes only a Git archive of the recorded source commit, and records the
+source SHA and Python version outside the distribution. Untracked checkout
+files are not copied into the build source. Archive timestamps and ownership
+are normalized; dependency lock, builder image digest and bit-for-bit
+reproducibility remain unverified.
 Real model loading, offline inference and randomized tool inspection are
 separate gates; do not download weights without approval.
 
