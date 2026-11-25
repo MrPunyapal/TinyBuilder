@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import os
 import secrets
 import sys
 import time
@@ -41,6 +42,8 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--fixture-seed", default=None)
     args = parser.parse_args(argv)
+    if any(name in os.environ for name in ("TB_BENCH_MANAGED_URL", "TB_BENCH_MANAGED_KEY")):
+        parser.error("Remove externally configured managed connection variables before CPU qualification")
     seed = args.fixture_seed or secrets.token_hex(16)
     if len(seed) != 32 or any(c not in "0123456789abcdefABCDEF" for c in seed):
         parser.error("Fixture seed must be 32 hex characters")
@@ -63,13 +66,24 @@ def main(argv=None):
             connection = runtime.start(args.model.resolve(strict=True), backend="cpu", timeout=180)
             report["cold_ready_seconds"] = round(time.monotonic() - started, 3)
             report["evaluation_exit"] = evaluate([
-                "--require-managed", "--smoke-profile", "hidden-facts-v1", "--models",
+                "--require-managed", "--stop-on-qualification-error", "--smoke-profile", "hidden-facts-v1", "--models",
                 connection.model_alias, "--trials", "10", "--fixture-seed", seed,
                 "--tool-protocol", "strict-json", "--strict-json-profile", "constrained",
                 "--progress-guidance", "checklist", "--max-steps", "8",
                 "--output", str(out / "evaluation")], connection=connection)
-        report["status"] = "completed"
-        return report["evaluation_exit"]
+        result = json.loads((out / "evaluation" / "results.json").read_text(encoding="utf-8"))
+        trials = result["trials"]
+        report["trials_completed"] = len(trials)
+        report["trials_passed"] = sum(t["smoke"][0]["passed"] is True for t in trials)
+        report["trials_failed"] = len(trials) - report["trials_passed"]
+        report["trials_not_run"] = 10 - len(trials)
+        if len(trials) == 10 and not result.get("aborted"):
+            report["status"] = "completed"
+        return report["evaluation_exit"] if report["status"] == "completed" else 1
+    except Exception:
+        # Do not emit private local paths, runtime arguments or model/server errors.
+        print("CPU qualification aborted; inspect local sanitized report", file=sys.stderr)
+        return 1
     finally:
         report["duration_seconds"] = round(time.monotonic() - started, 3)
         (out / "campaign.json").write_text(json.dumps(report, indent=2), encoding="utf-8")

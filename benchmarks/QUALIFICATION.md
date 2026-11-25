@@ -87,7 +87,7 @@ different lines. Keep both edits at integration.
 After HQ integrates the runtime and backend, run one candidate per process.
 No downloaded models or runtimes are authorized by this document. The
 following command starts only the staged runtime and existing verified model,
-with a fresh seed and exactly ten read trials. Use the same private seed
+with a fresh seed and up to ten read trials (fail-fast on safety or transport error). Use the same private seed
 across candidates if comparing matched inputs; do not publish it.
 
     python benchmarks/qualify_cpu.py --candidate qwen2.5-coder-1.5b --runtime /absolute/staged/runtime --model /absolute/existing.gguf --output /absolute/new-output
@@ -96,7 +96,7 @@ Repeat once for qwen3-4b only if its verified file already exists and memory
 permits. Pass --fixture-seed with the same private 32-hex seed for pairing.
 The runner verifies exact bytes and SHA-256, delegates runtime startup and
 cleanup, passes credentials only in memory, and records cold readiness plus
-campaign duration in campaign.json. Do not log runtime connection objects or
+campaign duration and attempted/pass/fail/not-run counts in campaign.json. Do not log runtime connection objects or
 process command lines. Use external hardware sampling on the owned server
 process without capturing its arguments. Warm authenticated readiness and
 TTFT/tokens/sec/RAM/VRAM remain manual/unsupported where not exposed; record

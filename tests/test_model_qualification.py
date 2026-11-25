@@ -3,11 +3,14 @@ import json
 import os
 import tempfile
 import unittest
+import hashlib
+import types
 from pathlib import Path
 from unittest.mock import patch
 
 from benchmarks.evaluate import benchmark_model, main, smoke, _managed_settings
 from benchmarks.compare import compare
+from benchmarks import qualify_cpu
 
 
 class QualificationTests(unittest.TestCase):
@@ -131,6 +134,61 @@ class QualificationTests(unittest.TestCase):
                 main([])
             self.assertEqual(_managed_settings.get(), (None, None))
             self.assertNotIn("TB_BENCH_MANAGED_KEY", os.environ)
+
+    def test_fail_fast_saves_partial_report(self):
+        with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.smoke") as run:
+            run.return_value = [{"model": "fake", "passed": False, "read_only_ok": False}]
+            output = Path(d) / "out"
+            code = main(["--models", "fake", "--trials", "10", "--smoke-profile", "hidden-facts-v1",
+                         "--stop-on-qualification-error", "--output", str(output)])
+            self.assertEqual(code, 1)
+            run.assert_called_once()
+            report = json.loads((output / "results.json").read_text(encoding="utf-8"))
+            self.assertTrue(report["aborted"])
+            self.assertEqual(report["trials_completed"], 1)
+
+    def test_cpu_runner_verifies_file_and_uses_in_memory_connection(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            model = root / "fixture.gguf"
+            data = b"GGUFfixture"
+            model.write_bytes(data)
+            identity = (len(data), hashlib.sha256(data).hexdigest())
+            qualify_cpu.verify_model(model, identity)
+            with self.assertRaisesRegex(ValueError, "hash"):
+                qualify_cpu.verify_model(model, (len(data), "0" * 64))
+            with self.assertRaisesRegex(ValueError, "size"):
+                qualify_cpu.verify_model(model, (1, identity[1]))
+            conn = types.SimpleNamespace(base_url="http://127.0.0.1:8080/v1",
+                                         model_alias="fixture-alias", api_key="never-report-key")
+            out = root / "out"
+            runtime = types.ModuleType("tinybuilder.runtime")
+            from unittest.mock import MagicMock
+            runtime.RuntimeManager = MagicMock()
+            manager = runtime.RuntimeManager.return_value.__enter__.return_value
+            manager.start.return_value = conn
+
+            def evaluate(argv, *, connection):
+                self.assertIs(connection, conn)
+                self.assertNotIn(conn.api_key, argv)
+                self.assertIn("--stop-on-qualification-error", argv)
+                output = Path(argv[argv.index("--output") + 1])
+                output.mkdir()
+                report = {"trials": [{"smoke": [{"passed": True}]} for _ in range(10)]}
+                (output / "results.json").write_text(json.dumps(report), encoding="utf-8")
+                return 0
+
+            with patch.dict("sys.modules", {"tinybuilder.runtime": runtime}), \
+                 patch.dict(qualify_cpu.CANDIDATES, {"qwen2.5-coder-1.5b": identity}), \
+                 patch.object(qualify_cpu, "evaluate", side_effect=evaluate):
+                self.assertEqual(qualify_cpu.main(["--candidate", "qwen2.5-coder-1.5b",
+                    "--runtime", str(root), "--model", str(model), "--output", str(out)]), 0)
+            manager.start.assert_called_once_with(model.resolve(), backend="cpu", timeout=180)
+            runtime.RuntimeManager.return_value.__exit__.assert_called_once()
+            raw = (out / "campaign.json").read_text(encoding="utf-8")
+            self.assertNotIn(conn.api_key, raw)
+            self.assertNotIn(str(root), raw)
+            self.assertEqual(json.loads(raw)["trials_passed"], 10)
 
     def test_comparer_rejects_mixed_profiles(self):
         with tempfile.TemporaryDirectory() as d:

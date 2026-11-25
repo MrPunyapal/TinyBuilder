@@ -707,6 +707,8 @@ def _main(argv=None, managed_alias=None):
                         help="constrained: compact prompt plus server JSON schema; requires strict-json")
     parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
                         help="opt-in bounded checklist; requires constrained strict-json")
+    parser.add_argument("--stop-on-qualification-error", action="store_true",
+                        help="Stop after a read-only qualification safety or transport failure")
     parser.add_argument("--require-managed", action="store_true",
                         help="Refuse historical fallback; require explicit managed credentials")
     parser.add_argument("--smoke-profile", choices=("historical", "hidden-facts-v1"), default="historical",
@@ -730,6 +732,9 @@ def _main(argv=None, managed_alias=None):
         parser.error("--strict-json-profile constrained requires --tool-protocol strict-json")
     if args.progress_guidance != "off" and (args.tool_protocol != "strict-json" or args.strict_json_profile != "constrained"):
         parser.error("--progress-guidance checklist requires constrained strict-json")
+    if args.stop_on_qualification_error and (args.smoke_profile != "hidden-facts-v1" or args.laravel
+                                            or len(args.models) != 1 or args.trials < 2):
+        parser.error("Fail-fast requires a multi-trial, single-model hidden-facts read-only campaign")
     if len(set(args.models)) != len(args.models):
         parser.error("Duplicate model aliases are not allowed")
     if not 1 <= args.trials <= 10:
@@ -809,6 +814,14 @@ def _main(argv=None, managed_alias=None):
                                          "paired_fixture_id": (hashlib.sha256(bytes.fromhex(args.fixture_seed)).hexdigest()[:16]
                                                                if args.fixture_seed else None)},
                       "trials": all_trials}
+        if args.stop_on_qualification_error and any(
+                item.get("read_only_ok") is False or item.get("error_kind") in
+                ("configuration", "connectivity", "authentication", "http", "timeout", "execution", "cancelled")
+                for item in trial["smoke"]):
+            report["aborted"] = True
+            report["trials_completed"] = len(all_trials)
+            report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+            return 1
         report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     # No optimistic inference from model narratives. Use each task's actual verified pass signal.
     all_results = [result for trial in all_trials for name in ("smoke", "laravel")
