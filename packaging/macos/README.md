@@ -33,7 +33,7 @@ From repository root:
     python -m unittest discover -s packaging/macos -p 'test_*.py' -v
     bash packaging/macos/build.sh /absolute/verified/runtime TRUSTED_INVENTORY_SHA256 /absolute/new/output
 
-The output path must not exist and must be outside the runtime input. Build from committed tracked sources. The script records platform, Python and runtime inventory provenance, performs isolated CLI help/doctor smoke checks, rejects non-system absolute dylib dependencies, and verifies the resulting DMG. Relative rpath resolution still requires native inspection. The DMG contains a folder to copy as a unit
+The output path must not exist and must be outside the runtime input. Build from committed tracked sources; a Git archive snapshot excludes untracked files. The script records platform, Python and runtime inventory provenance, performs isolated CLI help/doctor smoke checks, rejects non-system absolute dylib dependencies and rpaths, and verifies the resulting DMG. Relative rpath resolution still requires native inspection. The DMG contains a folder to copy as a unit
 into a user-selected location. No Python, Git, Ollama or developer tools are
 required by the intended installed artifact. Do not launch the development
 artifact by bypassing Gatekeeper; use authorized locally built development
@@ -51,7 +51,7 @@ remove external data. Do not introduce migration or deletion logic here.
 
 Inspect dependencies.txt and load-commands.txt for absolute build paths,
 unexpected third-party libraries, unresolved @rpath/@loader_path references,
-and minimum OS versions. The script checks arm64 slices, absolute non-system dependencies and existing signatures
+and minimum OS versions. The script checks arm64 slices, absolute non-system dependencies/rpaths and existing signatures
 but does not prove all dependencies resolve. Verify runtime version/help,
 actual startup and CPU inference (-ngl 0 if supported by the pinned server).
 Separately test Metal with explicit offload and inspect logs for real GPU
