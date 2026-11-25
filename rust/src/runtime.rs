@@ -1,5 +1,6 @@
 //! Existing, trusted installed llama.cpp runtime. No downloads or remote API.
 use anyhow::{bail, ensure, Context, Result};
+use crate::process::{self, Owned};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use serde_json::Value;
@@ -10,7 +11,6 @@ use std::{
     io::Read,
     net::TcpListener,
     path::{Path, PathBuf},
-    process::{Child, Command, Stdio},
     thread,
     time::{Duration, Instant},
 };
@@ -112,18 +112,10 @@ pub fn model_path(path: &Path) -> Result<PathBuf> {
 }
 
 pub struct Runtime {
-    child: Child,
+    child: Owned,
     base: String,
     alias: String,
     key: String,
-}
-impl Drop for Runtime {
-    fn drop(&mut self) {
-        // Normal-exit cleanup. Abrupt parent death and descendants require
-        // native Job Object / POSIX supervisor parity before release.
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
 }
 fn client(timeout: Duration) -> ureq::Agent {
     // No proxy-from-env feature and no redirects. Managed URLs are constructed
@@ -154,12 +146,11 @@ impl Runtime {
         let key: String = rand::thread_rng().sample_iter(&Alphanumeric).take(48).map(char::from).collect();
         let alias: String = format!("tinybuilder-{}", rand::thread_rng().sample_iter(&Alphanumeric).take(24).map(char::from).collect::<String>());
         let dir = exe.parent().context("Missing runtime directory")?;
-        let mut command = Command::new(&exe);
+        let mut command = process::command(&exe);
         command.current_dir(dir).env_clear().env("LLAMA_API_KEY", &key)
             .args(["--model"]).arg(&model)
             .args(["--host", "127.0.0.1", "--port"]).arg(port.to_string())
-            .args(["--alias", &alias, "--device", "none", "--n-gpu-layers", "0", "--no-webui", "--no-slots", "--jinja", "--log-disable"])
-            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+            .args(["--alias", &alias, "--device", "none", "--n-gpu-layers", "0", "--no-webui", "--no-slots", "--jinja", "--log-disable"]);
         #[cfg(windows)]
         {
             let system = std::env::var_os("SystemRoot").context("SystemRoot missing")?;
@@ -170,7 +161,7 @@ impl Runtime {
         command.env("PATH", "/usr/bin:/bin");
         #[cfg(target_os = "linux")]
         command.env("LD_LIBRARY_PATH", dir);
-        let child = command.spawn().map_err(|_| anyhow::anyhow!("Runtime spawn failed"))?;
+        let child = Owned::spawn(&mut command).map_err(|_| anyhow::anyhow!("Runtime spawn failed"))?;
         let mut runtime = Self { child, base: format!("http://127.0.0.1:{port}"), alias, key };
         runtime.ready()?;
         Ok(runtime)

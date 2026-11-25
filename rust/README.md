@@ -34,7 +34,7 @@ Commands are not implemented in this draft. /read requests an AI-assisted read w
 - Typed native/strict actions, bounded rounds and context, required genuine
   read evidence, refusal of early answers, sanitized terminal rendering.
 - Managed CPU llama.cpp loopback startup with random alias and key, authenticated
-  readiness, runtime manifest and inventory checks, normal-exit child cleanup.
+  readiness, runtime manifest and inventory checks, owned runtime cleanup through Windows Job Objects and a POSIX parent-pipe supervisor.
 - Native CLI, guided line session, model-free smoke and unit tests.
 
 ## Not yet complete or qualified
@@ -44,8 +44,7 @@ local lab b12359 build. No actual runtime or model execution has been verified.
 The runtime manifest checks consistency with a trusted installation; it cannot
 authenticate a manifest and binaries supplied by an attacker together.
 
-Full rewrite parity remains open: native Windows Job Objects/POSIX parent-death
-supervision, cancellation/streaming, secure model catalog and resumable consented
+Full rewrite parity remains open: native process ownership acceptance (including Windows spawn-to-assignment hardening), cancellation/streaming, secure model catalog and resumable consented
 downloads, persistent explicit preferences, MCP and approved exact-argv command
 execution, creation of new files, installer packaging, and independent Rust
 benchmark/clean-machine acceptance. No training or weights are downloaded.

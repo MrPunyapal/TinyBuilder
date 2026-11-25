@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod project;
+mod process;
 pub mod runtime;
 
 pub fn terminal(text: &str) -> String {
