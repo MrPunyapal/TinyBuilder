@@ -17,6 +17,8 @@ from .tools import LocalTools
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="tinybuilder", description="Experimental tiny, local-first coding agent")
     sub = p.add_subparsers(dest="command", required=True)
+    app = sub.add_parser("app", help="Launch guided experimental local application")
+    app.add_argument("--runtime-root", help="Absolute trusted runtime directory (required from source)")
     chat = sub.add_parser("chat", help="Run a single coding task through a local model")
     chat.add_argument("task", help="Coding request, quoted as one argument")
     chat.add_argument("--project", default=".", help="Project directory")
@@ -56,7 +58,13 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parser().parse_args(argv)
+    values = list(sys.argv[1:] if argv is None else argv)
+    if not values and getattr(sys, "frozen", False):
+        values = ["app"]
+    args = parser().parse_args(values)
+    if args.command == "app":
+        from .ui.guided import launch
+        return launch(args.runtime_root)
     project = Path(args.project).expanduser().resolve()
     if not project.is_dir():
         print(f"Not a directory: {project}", file=sys.stderr)

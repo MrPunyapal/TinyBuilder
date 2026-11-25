@@ -8,6 +8,8 @@ import threading
 from pathlib import Path
 from typing import Any
 
+from .external_env import external_env
+
 
 class MCPError(RuntimeError):
     pass
@@ -19,7 +21,7 @@ class MCPServer:
         self.timeout = timeout
         self.proc = subprocess.Popen([command, *args], cwd=cwd, text=True, encoding="utf-8",
                                      stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                     stderr=subprocess.DEVNULL, bufsize=1)
+                                     stderr=subprocess.DEVNULL, bufsize=1, **external_env())
         self.pending: queue.Queue[str | None] = queue.Queue()
         self.counter = 0
         threading.Thread(target=self._reader, daemon=True).start()

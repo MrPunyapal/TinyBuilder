@@ -52,7 +52,7 @@ class ParameterHarnessTests(unittest.TestCase):
 
     def test_controls_only_does_not_infer_or_leave_reference_patch(self):
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
+            root = Path(d).resolve()
             home = self.seed(root)
             output = root / "controls"
             with patch("benchmarks.evaluate.ChatModel") as model, \
@@ -78,7 +78,7 @@ class ParameterHarnessTests(unittest.TestCase):
 
     def test_scripted_model_requires_actual_reads_edit_and_test(self):
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
+            root = Path(d).resolve()
             home = self.seed(root)
             output = root / "out"
             output.mkdir()
@@ -113,6 +113,8 @@ class ParameterHarnessTests(unittest.TestCase):
                                  tool_protocol="strict-json", strict_json_profile="constrained")[0]
             self.assertTrue(result["passed"], json.dumps(result, indent=2))
             self.assertTrue(result["parameter_reference_passed"])
+            self.assertIsNone(result["baseline_health_exit"])
+            self.assertEqual(result["baseline_parameter_exit"], 1)
             self.assertTrue(result["write"]["required_reads_before_edit"])
             self.assertTrue(result["write"]["tests_after_last_edit"])
             self.assertEqual(result["validation_test_exit"], 0)

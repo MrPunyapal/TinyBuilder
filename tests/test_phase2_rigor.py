@@ -19,7 +19,7 @@ class Phase2RigorTests(unittest.TestCase):
     def test_paired_seed_matches_same_trial_and_varies_between_trials(self):
         with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
             model.return_value.complete.return_value = {"content": "No source inspection"}
-            root = Path(d)
+            root = Path(d).resolve()
             prompts = []
 
             def no_tool(messages, tools):
@@ -42,7 +42,7 @@ class Phase2RigorTests(unittest.TestCase):
     def test_paired_sibling_route_is_repeatable_and_hidden(self):
         from benchmarks.evaluate import prepare_route_variant
         with tempfile.TemporaryDirectory() as d:
-            root = Path(d)
+            root = Path(d).resolve()
             markers = []
             for i in (1, 2):
                 project = root / str(i)
@@ -57,7 +57,7 @@ class Phase2RigorTests(unittest.TestCase):
     def test_invalid_seed_refused_before_any_output_creation(self):
         with tempfile.TemporaryDirectory() as d:
             for seed in ("short", "z" * 32, "0" * 31 + "\\n", "0" * 33):
-                output = Path(d) / "out"
+                output = Path(d).resolve() / "out"
                 with self.subTest(seed=seed), patch("sys.argv", ["evaluate.py", "--output", str(output),
                                                                   "--fixture-seed", seed]), \
                         contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
@@ -78,7 +78,7 @@ class Phase2RigorTests(unittest.TestCase):
 
     def test_tool_order_failure_when_model_edits_after_its_last_test(self):
         with tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
-            root = Path(d)
+            root = Path(d).resolve()
             (root / "routes").mkdir()
             (root / "routes/web.php").write_text("before")
             (root / "artisan").write_text("print('ok')\n")
@@ -122,7 +122,7 @@ class Phase2RigorTests(unittest.TestCase):
 
     def test_preflight_refuses_nested_output_untracked_and_missing_dependencies(self):
         with tempfile.TemporaryDirectory() as d:
-            top = Path(d)
+            top = Path(d).resolve()
             base = self._baseline(top / "baseline")
             self.assertTrue(validate_laravel_baseline(base, top / "separate"))
             with self.assertRaisesRegex(ValueError, "separate"):
@@ -140,7 +140,7 @@ class Phase2RigorTests(unittest.TestCase):
         """A clean marker + vendor directory alone is not a runnable Laravel app."""
         for missing in ("artisan", "vendor/autoload.php"):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as d:
-                top = Path(d)
+                top = Path(d).resolve()
                 base = self._baseline(top / "baseline")
                 (base / missing).unlink()
                 if missing == "artisan":
@@ -165,7 +165,7 @@ class Phase2RigorTests(unittest.TestCase):
 
     def test_preflight_rejects_dirty_tracked_baseline_before_output_or_inference(self):
         with tempfile.TemporaryDirectory() as d:
-            top = Path(d)
+            top = Path(d).resolve()
             base = self._baseline(top / "baseline")
             (base / "routes/web.php").write_text("<?php // dirty\n")
             output = top / "uncreated-output"
@@ -180,7 +180,7 @@ class Phase2RigorTests(unittest.TestCase):
 
     def test_main_rejects_bad_baseline_before_model_or_output(self):
         with tempfile.TemporaryDirectory() as d:
-            top = Path(d)
+            top = Path(d).resolve()
             base = self._baseline(top / "baseline")
             output = base / "unsafe-benchmark"
             with patch("sys.argv", ["evaluate.py", "--output", str(output), "--laravel", str(base)]), \

@@ -42,7 +42,7 @@ class TestPhase2Acceptance(unittest.TestCase):
     def test_successful_route_cannot_hide_model_write_to_ignored_env(self):
         """A passing PHPUnit suite + clean Git scope must not hide an .env edit."""
         with tempfile.TemporaryDirectory() as d:
-            home, output = Path(d) / "base", Path(d) / "out"
+            home, output = Path(d).resolve() / "base", Path(d).resolve() / "out"
             output.mkdir()
             self.seed_repo(home)
             model_root = output / "laravel-0"
@@ -82,7 +82,7 @@ class TestPhase2Acceptance(unittest.TestCase):
 
     def test_repair_read_after_edit_does_not_prove_test_guided_repair(self):
         with tempfile.TemporaryDirectory() as d:
-            home, output = Path(d) / "base", Path(d) / "out"
+            home, output = Path(d).resolve() / "base", Path(d).resolve() / "out"
             output.mkdir()
             self.seed_repo(home)
             model_root = output / "laravel-0"

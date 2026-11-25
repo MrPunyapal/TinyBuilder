@@ -1,0 +1,93 @@
+name: Rust native rewrite
+on:
+  push:
+    branches: [main, 'feat/rust-native-rewrite', 'integration/standalone-preview-20261125']
+    paths: ['rust/**', '.github/workflows/rust-native.yml']
+  pull_request:
+    paths: ['rust/**', '.github/workflows/rust-native.yml']
+permissions:
+  contents: read
+concurrency:
+  group: rust-native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install declared minimum Rust toolchain
+        run: rustup toolchain install 1.88.0 --profile minimal
+      - run: rustup override set 1.88.0
+      - run: rustc -vV
+      - name: Verify committed dependency lock
+        run: cargo metadata --locked --format-version 1 --no-deps
+      - run: cargo test --all-targets --locked --target ${{ matrix.target }}
+      - run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Native CLI smoke (no models)
+        shell: bash
+        run: |
+          binary="target/${{ matrix.target }}/release/tinybuilder"
+          if [ "${{ runner.os }}" = Windows ]; then binary="$binary.exe"; fi
+          "$binary" --help
+          "$binary" doctor --project .
+          "$binary" read Cargo.toml --project .
+          "$binary" search 'tinybuilder' --project .
+      - name: Model-free file operation benchmark
+        if: runner.os == 'Linux'
+        run: |
+          cargo build --release --locked --example file_bench --target ${{ matrix.target }}
+          python3 benchmarks/compare_files.py target/${{ matrix.target }}/release/examples/file_bench
+      - name: Build offline qualification executable
+        run: cargo build --release --locked --example qualify_read --example diagnose_read --example grounded_lab --target ${{ matrix.target }}
+      - name: Lab example CLI smoke
+        shell: bash
+        run: |
+          for name in qualify_read diagnose_read grounded_lab; do
+            binary="target/${{ matrix.target }}/release/examples/$name"
+            if [ "${{ runner.os }}" = Windows ]; then binary="$binary.exe"; fi
+            "$binary" --help
+          done
+      - name: Stage hashed lab binaries (no runtime or models)
+        shell: pwsh
+        env:
+          TB_TARGET: ${{ matrix.target }}
+          TB_SHA: ${{ github.sha }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ext = if ($IsWindows) { '.exe' } else { '' }
+          $release = "target/$env:TB_TARGET/release"
+          $dir = Join-Path (Get-Location) 'lab-binaries'
+          New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null
+          Copy-Item "$release/tinybuilder$ext" $dir
+          Copy-Item "$release/examples/qualify_read$ext" $dir
+          Copy-Item "$release/examples/diagnose_read$ext" $dir
+          Copy-Item "$release/examples/grounded_lab$ext" $dir
+          Copy-Item ../LICENSE (Join-Path $dir "LICENSE")
+          $files = @(Get-ChildItem -File $dir | Sort-Object Name | ForEach-Object {
+            @{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant() }
+          })
+          @{ source_commit = $env:TB_SHA; target = $env:TB_TARGET; status = 'lab only; no runtime, model or installer'; files = $files } |
+            ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $dir 'build.json')
+      - name: Retain lab binaries
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tinybuilder-rust-lab-${{ matrix.target }}-${{ github.sha }}
+          path: rust/lab-binaries/
+          if-no-files-found: error
+          retention-days: 14

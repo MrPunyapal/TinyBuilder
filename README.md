@@ -6,9 +6,20 @@
 
 **Start here:** [Quick start](docs/QUICKSTART.md) · [Security boundaries](docs/SECURITY.md) · [Public-preview checklist](docs/RELEASE_CHECKLIST.md).
 
-The [November 16 Windows validation](benchmarks/results/2026-11-16-windows-preview-validation.md) observed **18/18 factual read inspections**, **3/3 health edits**, and **3/3 route repairs** using an installed Qwen2.5-Coder 3B model with opt-in constrained JSON. All **12 request-validation edits failed PHP parsing**, and model-selected Boost MCP calls remained **0/3**. These small task samples support a *public experimental preview*, not reliable autonomous coding or a stable release. Python CI cannot validate Ollama inference.
+The [November 16 Windows validation](benchmarks/results/2026-11-16-windows-preview-validation.md) observed **18/18 factual read inspections**, **3/3 health edits**, and **3/3 route repairs** using an installed Qwen2.5-Coder 3B model with opt-in constrained JSON. All **12 request-validation edits failed PHP parsing**, and model-selected Boost MCP calls remained **0/3**. These small task samples supported a historical *source-based experimental preview*, not standalone qualification, reliable autonomous coding or a stable release. Python CI cannot validate Ollama inference.
 
-## Architecture
+
+## Native Rust development
+
+The experimental native Rust executable is now part of this repository in [`rust/`](rust/README.md), alongside the existing Python reference and standalone packaging work. Rust is the primary direction for new agent development, not yet a replacement for all Python features. Native deterministic builds and file-operation benchmarks are distinct from model capability. The reported Windows lab achieved offline inference but failed its exact two-fact gate (0/10) and live edit proposals (0/3); no model is qualified for the public standalone preview. No installer or release is announced. Use only disposable projects and trusted existing runtimes/models for lab tests.
+
+## Standalone preview (in development)
+
+Windows x64, macOS Apple Silicon and Linux x64 are equal targets, not yet qualified standalone platforms. The existing Python packaging scaffold targets Python 3.12 and a managed llama.cpp runtime, with a shared terminal interface and separately selected GGUF weights. No standalone download is announced here. The source-based instructions below remain applicable to the historical CLI; its experimental readiness does not transfer to the standalone application.
+
+See [standalone onboarding draft](docs/STANDALONE.md), [architecture decision](docs/ADR-STANDALONE.md), and [proposed release notes](docs/PREVIEW_RELEASE_NOTES.md). The [corrected parameter evaluation](benchmarks/results/2026-11-16-parameter-followup.md) additionally records 0/3 parameter edits, 2/3 fresh Composer inspections and 0/1 model-selected MCP calls. Do not interpret the earlier read counts as general reliability.
+
+## Existing source CLI architecture
 
 ```
 User CLI task
@@ -21,9 +32,9 @@ SQLite → explicit, user-owned project preferences/decisions only
 Soup → optional offline fine-tuning stage, outside the runtime
 ```
 
-All runtime Python dependencies are from the standard library. **No subscription or API key is required** when using a locally hosted model.
+The existing source CLI uses standard-library Python dependencies. No paid inference subscription or external API key is required for a local server; the managed standalone runtime uses an internal, transient authentication credential.
 
-## Get started
+## Get started — existing source CLI
 
 Requires Python 3.10+ and a running local OpenAI-compatible model server.
 **Install model weights separately, by choice**; TinyBuilder does not download

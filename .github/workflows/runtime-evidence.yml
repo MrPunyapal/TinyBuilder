@@ -1,0 +1,29 @@
+name: Pinned runtime archive evidence
+on:
+  push:
+    branches: ['integration/standalone-preview-20261125']
+    paths:
+      - '.github/workflows/runtime-evidence.yml'
+      - 'acceptance/runtime_evidence.py'
+      - 'acceptance/test_runtime_evidence.py'
+      - 'tinybuilder/runtime/catalog.py'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [windows, macos, linux]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s acceptance -p test_runtime_evidence.py -v
+      - name: Download and inspect pinned runtime archive only
+        run: python acceptance/runtime_evidence.py ${{ matrix.target }}
