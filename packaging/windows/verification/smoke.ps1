@@ -26,6 +26,9 @@ function Invoke-Probe([string]$Exe,[string]$Arguments,[string]$WorkingDirectory,
         $exit = $process.ExitCode
         Write-Output "$Label exit=$exit"
         if ($exit -ne 0) { throw "$Label failed" }
+        if (((Get-Item -LiteralPath $stdout).Length + (Get-Item -LiteralPath $stderr).Length) -eq 0) {
+            throw "$Label returned no output"
+        }
     } catch {
         # No raw stdout/stderr or private command paths in shared logs.
         $cause = $_.Exception
@@ -33,7 +36,7 @@ function Invoke-Probe([string]$Exe,[string]$Arguments,[string]$WorkingDirectory,
         if ($cause -is [ComponentModel.Win32Exception]) {
             Write-Output "$Label winerror=$($cause.NativeErrorCode)"
         }
-        throw "$Label probe failed; inspect locally"
+        throw "$Label probe failed; repeat the direct command for private diagnostics"
     } finally {
         if ($process) { $process.Dispose() }
     }

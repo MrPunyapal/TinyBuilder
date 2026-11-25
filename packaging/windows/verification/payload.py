@@ -26,7 +26,7 @@ def safe_relative(value):
     for part in value.split("/"):
         if (not re.fullmatch(r"[A-Za-z0-9_.+() -]+", part)
                 or part in {".", ".."} or part.endswith((" ", "."))
-                or part.split(".")[0].upper() in RESERVED):
+                or part.split(".")[0].rstrip(" ").upper() in RESERVED):
             raise ValueError(f"unsafe payload path: {value!r}")
         lower = part.lower()
         if (lower in FORBIDDEN or lower.startswith(".env.")
@@ -112,6 +112,8 @@ def make_manifest(root, app, server, runtime_files):
     Map exact payload-relative paths to independently trusted SHA-256 values
     for llama-server and its native dependencies. No assets are fetched here.
     """
+    if not isinstance(runtime_files, dict):
+        raise ValueError("runtime file pins must be a mapping")
     app, server = safe_relative(app), safe_relative(server)
     if (app.casefold() == server.casefold() or not app.lower().endswith(".exe")
             or server.split("/")[-1].lower() != "llama-server.exe"):
@@ -140,7 +142,7 @@ def make_manifest(root, app, server, runtime_files):
 
 
 def verify(root, manifest):
-    if manifest.get("schema") != 1:
+    if not isinstance(manifest, dict) or manifest.get("schema") != 1:
         raise ValueError("unsupported inventory schema")
     rows = inventory(root)
     if rows != manifest["files"] or sum(r["bytes"] for r in rows) != manifest["bytes"]:

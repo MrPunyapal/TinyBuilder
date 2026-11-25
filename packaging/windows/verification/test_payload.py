@@ -56,7 +56,7 @@ class PayloadTests(unittest.TestCase):
 
     def test_forbidden_paths(self):
         for path in ("../other", "a/../../b", "/a", "C:/a", "a\\b",
-                     "a:stream", "NUL.txt", "a/COM1", "a.", "a ",
+                     "a:stream", "NUL.txt", "a/COM1", "CON .txt", "a.", "a ",
                      "a//b", ".env", "a/.env.local", "a/MODEL.GGUF",
                      "a/key.pfx", "a/cache.sqlite"):
             with self.subTest(path=path), self.assertRaises(ValueError):
@@ -92,6 +92,15 @@ class PayloadTests(unittest.TestCase):
         (self.root / "foo").write_text("b")
         with self.assertRaises(ValueError):
             inventory(self.root)
+
+    def test_invalid_pin_mapping(self):
+        with self.assertRaises(ValueError):
+            make_manifest(self.root, "TinyBuilder.exe",
+                          "runtime/llama-server.exe", [])
+
+    def test_invalid_manifest(self):
+        with self.assertRaises(ValueError):
+            verify(self.root, [])
 
     def test_missing_pin(self):
         self.pins.pop("runtime/ggml.dll")

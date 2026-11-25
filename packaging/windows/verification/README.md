@@ -43,6 +43,8 @@ Reports file hashes, byte sizes and exit codes. Probes use a fresh disposable
 project and both server and unrelated working directories. No model downloads,
 inference calls or raw child output retained in reports. A timeout is a failure.
 The smoke cannot prove clean-machine compatibility or frozen child launch.
+On failure, rerun the affected command directly for private diagnostics; raw
+probe outputs are deleted by default.
 
 ## Prototype integration and acceptance (not completed)
 
