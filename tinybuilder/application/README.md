@@ -1,22 +1,38 @@
-# Application foundation (draft)
+# Application orchestration (draft)
 
-This package is deliberately independent of terminal libraries. The existing CLI
-is unchanged until the local prototype is preserved and reviewed.
+The existing CLI and unpublished terminal prototype are not replaced. Session
+is a framework-neutral, in-memory service. Frontends run download, start,
+run_task and stop on a worker and poll immutable snapshots. Only one operation
+is allowed; cancel signals the operation's Event, and cancelling remains
+visible until the operation returns. Join the worker before closing the UI.
+No network, model, or runtime implementations are duplicated.
 
-Session owns setup state in memory. A frontend runs download on a worker and
-polls immutable snapshots; cancel signals the adapter, and close requires the
-worker to finish. The transfer callable must be implemented by the model manager
-adapter, not by this package. It must validate the GGUF and digest, honor the
-event, clean up or preserve resumable partial files, and release resources before
-returning. The service checks the consent offer, returned destination and size,
-but these checks do not replace model-manager verification.
+DownloadOffer includes exact byte count, destination, license and pinned digest.
+The frontend must present these and obtain fresh explicit consent. Transfer
+adapters verify the GGUF and digest, manage resumable partials, honor cancellation
+and return the verified path only after resources are released. The application
+checks destination and size, not binary integrity. Existing file selection is
+path validation only; the start factory must verify the model before launch.
 
-Pending integration: model validation and catalog; backend selection, runtime
-startup and shutdown; agent task cancellation and tool approvals; file change
-reporting; terminal rendering and CLI launch. No production test double is
-provided. Native is the default; strict-json selection is intended to map to
-the constrained profile when the agent adapter is connected. Exact argv is
-required for application execution permissions. This is not an OS sandbox.
+Runtime discovery supplies backend IDs. The start factory owns cleanup on
+failure before returning a RunningBackend. The handle owns inference and
+runtime cleanup; close must be retryable, and failure retains ownership in
+cleanup_failed. The application closes late handles after cancelled startup.
+The run method receives one-task permissions, project, protocol and cancellation
+token. Map strict-json to constrained profile; native remains default. A run must
+return only after inference and tools are no longer active. Cancellation is
+cooperative: blocking HTTP or subprocesses may remain pending until adapters
+return. Do not advertise immediate interruption. Activity accepts only fixed
+tool labels, never tool arguments. Answers are returned to the frontend, not
+stored by the service.
 
-Do not mark this draft ready until the prototype is preserved and actual
-runtime/model/inference interfaces have been reviewed. No transcript storage.
+Permissions are explicitly set by the user for the next task, then reset on
+dispatch; use LocalTools exact argv allowlist (not a sandbox). Project switching
+requires stopping the owned backend first and revokes permissions and protocol
+selection. Per-action file previews/approvals still need agent/tool integration.
+
+PR 3 backend exposes ChatModel.from_managed and a cancel_event argument but
+currently checks cancellation around a blocking request; an agent adapter must
+also stop further tool dispatch. Runtime and model manager interfaces are
+pending. No production test double or automatic model download is provided.
+Keep draft until real integration and preserved prototype terminal acceptance.
