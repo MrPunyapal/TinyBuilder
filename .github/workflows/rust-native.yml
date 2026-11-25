@@ -50,7 +50,7 @@ jobs:
           cargo build --release --locked --example file_bench --target ${{ matrix.target }}
           python3 benchmarks/compare_files.py target/${{ matrix.target }}/release/examples/file_bench
       - name: Build offline qualification executable
-        run: cargo build --release --locked --example qualify_read --target ${{ matrix.target }}
+        run: cargo build --release --locked --example qualify_read --example diagnose_read --target ${{ matrix.target }}
       - name: Stage hashed lab binaries (no runtime or models)
         shell: pwsh
         env:
@@ -64,6 +64,7 @@ jobs:
           New-Item -ItemType Directory -Path $dir -ErrorAction Stop | Out-Null
           Copy-Item "$release/tinybuilder$ext" $dir
           Copy-Item "$release/examples/qualify_read$ext" $dir
+          Copy-Item "$release/examples/diagnose_read$ext" $dir
           $files = @(Get-ChildItem -File $dir | Sort-Object Name | ForEach-Object {
             @{ name = $_.Name; bytes = $_.Length; sha256 = (Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant() }
           })

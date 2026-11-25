@@ -1,15 +1,18 @@
 //! Offline read qualification against an existing, explicitly selected model.
 //! No prompts, answers, credentials, absolute paths or fixture secrets saved.
 use anyhow::{ensure, Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use rand::{distributions::Alphanumeric, Rng};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::{fs::{self, File}, io::Read, path::{Path, PathBuf}, time::Instant};
-use tinybuilder::{agent::{self, Options, Protocol}, project::Project, runtime::{self, Runtime}};
+use tinybuilder::{agent::{self, Options, Protocol}, project::Project, grounded::{self, AnswerMode}, runtime::{self, Runtime}};
 
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum Engine { Baseline, SplitPlain, SplitJson }
 #[derive(Parser)]
 struct Args {
+    #[arg(long, value_enum, default_value="baseline")] engine: Engine,
     #[arg(long)] runtime: PathBuf,
     #[arg(long)] model: PathBuf,
     // Deliberately require identity; never silently qualify a different model.
@@ -63,10 +66,8 @@ fn main() -> Result<()> {
         let mut read_event = false;
         let mut attempted_write = false;
         let mut transport_failed = false;
-        let result = agent::run(&project,
-            "Read pyproject.toml. Return exactly the project name on the first line and the project description on the second line. No labels, quotes, or other text.",
-            Options { protocol: Protocol::StrictJson, allow_write: false, required_read: Some("pyproject.toml".into()), max_rounds:8 },
-            |payload| {
+        let task = "Read pyproject.toml. Return exactly the project name on the first line and the project description on the second line. No labels, quotes, or other text.";
+        let mut complete = |payload| {
                 match server.complete(payload) {
                     Ok(response) => {
                         // Independently reject attempted edits, even if denied.
@@ -80,9 +81,16 @@ fn main() -> Result<()> {
                     }
                     Err(e) => { transport_failed = true; Err(e) }
                 }
-            },
-            |_,_| false,
-            |event| { if event == "File read verified: pyproject.toml" { read_event = true; } });
+            };
+        let mut activity = |event: &str| { if event == "File read verified: pyproject.toml" { read_event = true; } };
+        let result = match args.engine {
+            Engine::Baseline => agent::run(&project,task,
+                Options { protocol:Protocol::StrictJson,allow_write:false,required_read:Some("pyproject.toml".into()),max_rounds:8 },
+                &mut complete,|_,_|false,&mut activity),
+            Engine::SplitPlain | Engine::SplitJson => grounded::required_read(&project,task,"pyproject.toml",
+                if matches!(args.engine,Engine::SplitPlain) {AnswerMode::Plain}else{AnswerMode::Json},
+                &mut complete,&mut activity),
+        };
         let unchanged = fs::read(&fixture)? == contents.as_bytes()
             && fs::read_dir(dir.path())?.count() == 1;
         let correct = result.as_ref().is_ok_and(|r| r.answer == format!("{secret}\n{description}")
@@ -106,7 +114,7 @@ fn main() -> Result<()> {
     let report = json!({"requested":10,"attempted":attempted,"passed":passed,
         "failed":attempted-passed,"not_run":10-attempted,"model_sha256":actual,"model_bytes":model_bytes,
         "model_unchanged":unchanged_model,"startup_ms":startup_ms,
-        "profile":"rust-hidden-pyproject-facts-v1","protocol":"strict_json","backend":"cpu",
+        "profile":"rust-hidden-pyproject-facts-v1","engine":format!("{:?}",args.engine),"protocol":"strict_json_selection; final mode depends on engine","backend":"cpu",
         "read_gate_passed":passed==10 && unchanged_model,
         "qualification":"lab evidence only; license, installer and edit gates separate","trials":rows});
     fs::write(args.output.join("campaign.json"), serde_json::to_vec_pretty(&report)?)?;

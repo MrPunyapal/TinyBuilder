@@ -93,3 +93,24 @@ hashes before using them. They are not signed installers, do not include a model
 or llama.cpp, and are not public-preview qualification. Use only a trusted
 existing staged runtime with a reviewed manifest. The PR workflow's checkout
 may be a merge test SHA; use a branch push run to obtain the exact branch head.
+
+## Paired read diagnostics (experimental)
+
+The Windows lab reported genuine reads but 0/10 exact two-fact answers. The
+unpublished local fixes are not present in this branch. The baseline is kept
+unchanged by default. To distinguish formatting and tool-loop failure from
+model copying limitations, use diagnose_read with the same arguments as
+qualify_read (optional --trials 1..10, default 3). Each randomized fixture is
+shared by five randomly ordered arms: direct plain, direct final JSON,
+baseline agent, split plain agent, split JSON agent. Direct controls do not
+count as tool-selected reads. No real project or raw prompt/output is stored.
+The report distinguishes wrong facts, formatting, protocol/transport failure,
+actual read events, and request sizes. No automatic retries or output repairs.
+
+The split candidate performs one constrained read selection, one actual file
+read, and one fresh final-only completion. The answer phase has no tools or
+citation mandate; the model output is scored verbatim. This is an experiment,
+not a demonstrated improvement. After diagnostic evidence, run qualify_read
+with --engine split-plain or --engine split-json on ten new fixtures. The exact
+same task, oracle, required read and 10/10 threshold apply; the baseline remains
+the default. Do not select the best of repeated qualification campaigns.
