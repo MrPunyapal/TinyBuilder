@@ -1,7 +1,14 @@
 name: Pinned runtime archive evidence
 on:
   push:
-    branches: ['integration/standalone-preview-20261125']
+    branches: ['integration/standalone-preview-20261125', 'release/0.1']
+    paths:
+      - '.github/workflows/runtime-evidence.yml'
+      - 'acceptance/runtime_evidence.py'
+      - 'acceptance/test_runtime_evidence.py'
+      - 'tinybuilder/runtime/catalog.py'
+  pull_request:
+    branches: [main]
     paths:
       - '.github/workflows/runtime-evidence.yml'
       - 'acceptance/runtime_evidence.py'
@@ -26,4 +33,14 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s acceptance -p test_runtime_evidence.py -v
       - name: Download and inspect pinned runtime archive only
-        run: python acceptance/runtime_evidence.py ${{ matrix.target }}
+        run: |
+          mkdir -p runtime-evidence
+          python acceptance/runtime_evidence.py ${{ matrix.target }} > runtime-evidence/${{ matrix.target }}.json
+          cat runtime-evidence/${{ matrix.target }}.json
+      - name: Retain archive inventory (no binaries or weights)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: runtime-archive-evidence-${{ matrix.target }}-${{ github.sha }}
+          path: runtime-evidence/*.json
+          if-no-files-found: error
+          retention-days: 14
