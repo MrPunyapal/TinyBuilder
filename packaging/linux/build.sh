@@ -25,6 +25,10 @@ mkdir -p "$bundle/runtime" "$bundle/licenses"
 mv "$work/dist/tinybuilder" "$bundle/app"
 install -m 755 "$here/launch.sh" "$bundle/tinybuilder"
 cp -a "$runtime/." "$bundle/runtime/"
+# Revalidate the staged bytes before any execution.
+python "$here/verify_runtime.py" "$bundle/runtime" "$sums"
+# Drop inherited special mode bits; only the server needs execution.
+find "$bundle/runtime" -type f -exec chmod 644 {} +
 chmod 755 "$bundle/runtime/llama-server"
 cp "$repo/LICENSE" "$bundle/licenses/TinyBuilder.txt"
 cp "$here/README.md" "$bundle/README.md"

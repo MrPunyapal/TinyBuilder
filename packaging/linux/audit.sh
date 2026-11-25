@@ -8,7 +8,21 @@ while IFS= read -r -d '' f; do
   header=$(readelf -h "$f")
   grep -q 'ELF64' <<< "$header"
   grep -q 'Advanced Micro Devices X86-64' <<< "$header"
-  readelf -d "$f"
+  dynamic=$(readelf -d "$f")
+  printf '%s\n' "$dynamic"
+  # Reject non-relocatable or cwd-dependent ELF search paths.
+  while IFS= read -r paths; do
+    [[ -n "$paths" && "$paths" != :* && "$paths" != *: && "$paths" != *::* ]] || exit 1
+    IFS=: read -ra components <<< "$paths"
+    for component in "${components[@]}"; do
+      case "$component" in
+        '$ORIGIN'|'${ORIGIN}') ;;
+        '$ORIGIN/'*|'${ORIGIN}/'*)
+          [[ "$component" != *..* ]] || { echo "parent search path: $f" >&2; exit 1; } ;;
+        *) echo "unsafe ELF search path: $f" >&2; exit 1 ;;
+      esac
+    done
+  done < <(sed -nE '/\((RPATH|RUNPATH)\)/s/.*\[([^]]*)\].*/\1/p' <<< "$dynamic")
   versions=$(readelf --version-info "$f")
   printf '%s\n' "$versions"
   while read -r v; do
@@ -18,7 +32,7 @@ while IFS= read -r -d '' f; do
     }
   done < <(grep -oE 'GLIBC_[0-9]+(\.[0-9]+)+' <<< "$versions" | cut -d_ -f2 | sort -u)
   # ldd only on trusted build outputs, never untrusted downloaded executables.
-  if grep -q 'DYN\|EXEC' <<< "$header"; then
+  if grep -q '(NEEDED)' <<< "$dynamic"; then
     if [[ "$f" == "$root/runtime/"* ]]; then
       deps=$(env -u LD_PRELOAD -u LD_LIBRARY_PATH ldd "$f" 2>&1) || {
         [[ "$deps" == *'statically linked'* ]] || exit 1;

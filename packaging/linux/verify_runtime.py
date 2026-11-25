@@ -1,8 +1,14 @@
-"""Validate a flat, externally pinned runtime payload before copying it."""
+"""Verify a flat runtime payload against a separately trusted inventory."""
 import hashlib
 import re
 import sys
 from pathlib import Path
+
+
+def allowed(name: str) -> bool:
+    return (name == "llama-server" or
+            re.fullmatch(r"lib[A-Za-z0-9_+.-]+\.so(?:\.[0-9]+)*", name) is not None or
+            re.fullmatch(r"(?:LICENSE|NOTICE|COPYING)(?:[._-][A-Za-z0-9_-]+)*", name) is not None)
 
 
 def verify(root: Path, checksums: Path) -> None:
@@ -12,7 +18,7 @@ def verify(root: Path, checksums: Path) -> None:
         if not match:
             raise ValueError("invalid checksum line")
         digest, name = match.groups()
-        if name in expected or name in (".", "..") or name.lower().endswith(".gguf"):
+        if name in expected or not allowed(name):
             raise ValueError("invalid runtime filename")
         expected[name] = digest
     entries = list(root.iterdir())

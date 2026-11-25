@@ -19,7 +19,8 @@ coreutils, gzip and tar. From repository root:
     bash packaging/linux/build.sh /absolute/verified-runtime /absolute/runtime-SHA256SUMS /tmp/tinybuilder-linux-output
 
 The runtime directory must be a flat payload containing llama-server, LICENSE,
-required native libraries and their notices. The checksum inventory must come
+required native libraries and their notices (only llama-server, lib*.so[.N...],
+LICENSE*, NOTICE*, COPYING* filenames are accepted). The checksum inventory must come
 from the shared runtime owner's reviewed pin, not be generated from arbitrary
 downloaded files. No model weights. Build does not fetch runtime assets.
 Use a CPU build with portable instruction-set configuration, no GPU dependency,
@@ -42,6 +43,8 @@ export runtime paths from the launcher. This remains an integration blocker.
 
 ## Qualification
 
+Run `python -m unittest discover -s packaging/linux -p 'test_*.py' -v`
+for deterministic runtime inventory tests (Python 3.12 or later).
 Run the build, examine elf-audit.txt for interpreter, NEEDED, RPATH/RUNPATH
 and host-only dependencies. Reject absolute build paths and unresolved libraries.
 Run smoke.sh against the extracted archive on a clean Ubuntu 24.04 x64 image
