@@ -40,6 +40,8 @@ class ApprovedTools(LocalTools):
     def _before(path):
         if not path.exists():
             return None
+        if not path.is_file():
+            raise ValueError("Not a regular file")
         with path.open("rb") as source:
             data = source.read(MAX_FILE + 1)
         if len(data) > MAX_FILE:
@@ -61,7 +63,10 @@ class ApprovedTools(LocalTools):
         # this also prevents terminal escapes from the source text.
         def lines(value):
             return [repr(line) + "\n" for line in value.splitlines(keepends=True)]
-        diff = "".join(unified_diff(lines(old), lines(content),
+        old_lines, new_lines = lines(old), lines(content)
+        if len(old_lines) + len(new_lines) > 4_000:
+            return "Permission denied: too many lines for interactive preview"
+        diff = "".join(unified_diff(old_lines, new_lines,
                                     fromfile="before", tofile="after"))
         if len(diff) > MAX_PREVIEW:
             return "Permission denied: change too large for complete preview"

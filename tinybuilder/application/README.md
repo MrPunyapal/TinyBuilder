@@ -34,11 +34,13 @@ changing legacy CLI behavior. It requires task permission AND explicit approval,
 rejects oversized previews, and checks for file changes during approval. Its
 callback runs on the worker: frontend must render untrusted text safely and
 unblock the request on cancellation. The underlying filesystem and subprocess
-operations are not atomic or sandboxed. Agent adapter must construct this gate
-for each task; no production adapter has been connected yet.
+operations are not atomic or sandboxed. AgentBackend constructs this gate for each task and wraps the existing Agent,
+forwarding cancel_event to the injected managed model and checking cancellation
+before tool dispatch. Runtime/model manager wiring and frontend approval callback
+remain pending. MCP is not configured by this adapter.
 
 PR 3 backend exposes ChatModel.from_managed and a cancel_event argument but
-currently checks cancellation around a blocking request; an agent adapter must
-also stop further tool dispatch. Runtime and model manager interfaces are
+currently checks cancellation around a blocking request; the application adapter stops subsequent tool dispatch but cannot interrupt an
+already blocking HTTP call or subprocess. Runtime and model manager interfaces are
 pending. No production test double or automatic model download is provided.
 Keep draft until real integration and preserved prototype terminal acceptance.
