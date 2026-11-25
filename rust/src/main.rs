@@ -39,6 +39,7 @@ enum Command {
         #[arg(long)] strict_json: bool,
         #[arg(long, requires="strict_json")] propose: bool,
         #[arg(long, requires="propose")] allow_write: bool,
+        #[arg(long, conflicts_with="propose")] stream: bool,
     },
     Read {
         path: String,
@@ -117,6 +118,22 @@ fn grounded_task(project: &Project, server: &Runtime, text: &str, proposal: bool
         }
     }
     Ok(())
+}
+fn streamed_task(project:&Project,server:&Runtime,text:&str)->Result<()> {
+    let context=workbench::collect(project,text)?;
+    show_context(&context);
+    let request=tinybuilder::grounded::answer_request_with_ranges(text,&context.files,
+        tinybuilder::grounded::AnswerMode::Plain,Some(&context.ranges))?;
+    println!("Streaming model text (unverified until complete; Ctrl+C exits the session):");
+    let result=server.stream_answer(request,|chunk|{
+        // Preserve newline layout, escape terminal controls in each chunk.
+        print!("{}",chunk.split('\n').map(terminal).collect::<Vec<_>>().join("\n"));
+        io::stdout().flush()?;
+        Ok(())
+    });
+    println!();
+    if result.is_err(){println!("Stream incomplete; partial answer is not verified.");}
+    result.map(|_|())
 }
 fn help() {
     println!("/read PATH (verified AI-assisted read), /cat PATH (no inference), /search TEXT, /ask QUESTION (context-first read), /strict, /write, /help, /quit");
@@ -211,11 +228,11 @@ fn run() -> Result<()> {
             for file in context.files {println!("Source: {}",terminal(&file.path));show(&file.text);}
             Ok(())
         }
-        Command::Grounded {task:text,project,runtime,model,strict_json,propose,allow_write} => {
+        Command::Grounded {task:text,project,runtime,model,strict_json,propose,allow_write,stream} => {
             ensure!(!propose||strict_json,"Explicit strict JSON consent required");
             let project=Project::new(&project)?;
             let server=Runtime::start(&runtime,&model)?;
-            grounded_task(&project,&server,&text,propose,allow_write)
+            if stream {streamed_task(&project,&server,&text)}else{grounded_task(&project,&server,&text,propose,allow_write)}
         }
         Command::Read {path,project} => {
             let result = Project::new(&project)?.read(&path)?;

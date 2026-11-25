@@ -5,6 +5,7 @@ pub mod workbench;
 pub mod project;
 mod process;
 pub mod runtime;
+pub mod stream;
 
 pub fn terminal(text: &str) -> String {
     text.chars()

@@ -157,3 +157,11 @@ The baseline agent also rejects duplicate unchanged read observations, repeated
 search/list requests, and edits against stale or truncated read evidence.
 After a successful edit it discards its patch-authorizing snapshots and requires
 a fresh read before another edit. The existing exact-answer gate is unchanged.
+
+Plain context-first answers can opt into --stream on the grounded command.
+The SSE parser bounds bytes, event sizes and answer length, rejects tool calls,
+and requires a stop event and DONE marker. Partial text is explicitly marked
+incomplete on failure. Callback errors stop consumption at chunk boundaries;
+Ctrl+C exits the session and relies on owned-runtime cleanup. Immediate
+in-flight cancellation without exiting, native tool streaming and real-engine
+stream compatibility are still unqualified. No streamed output is executed.

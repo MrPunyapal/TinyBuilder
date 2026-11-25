@@ -206,6 +206,18 @@ impl Runtime {
         }
         bail!("Runtime startup timed out")
     }
+    /// Plain-text SSE only; never stream tool calls or constrained actions.
+    pub fn stream_answer(&self, mut payload:Value, emit:impl FnMut(&str)->Result<()>) -> Result<String> {
+        ensure!(payload.get("tools").is_none() && payload.get("response_format").is_none(),"Streaming is plain-answer only");
+        payload["model"]=Value::String(self.alias.clone());
+        payload["stream"]=Value::Bool(true);
+        let response=client(Duration::from_secs(120))
+            .post(&format!("{}/v1/chat/completions",self.base))
+            .set("Authorization",&format!("Bearer {}",self.key))
+            .send_json(payload).map_err(|_|anyhow::anyhow!("Local stream request failed"))?;
+        ensure!(response.header("Content-Type").is_some_and(|v|v.split(';').next()==Some("text/event-stream")),"Unexpected stream content type");
+        crate::stream::read_answer(response.into_reader(),emit)
+    }
     pub fn complete(&self, mut payload: Value) -> Result<Value> {
         payload["model"] = Value::String(self.alias.clone());
         let response = client(Duration::from_secs(120))
