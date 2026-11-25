@@ -27,10 +27,10 @@ class WorkerTests(unittest.TestCase):
             self.assertFalse(self.worker.respond(pending.sequence + 1, True))
             self.assertTrue(self.worker.respond(pending.sequence, True))
             self.assertFalse(self.worker.respond(pending.sequence, True))
+            self.wait(lambda: not self.worker.busy())
         finally:
-            if self.worker.pending() is not None:
+            if self.worker.busy():
                 self.worker.cancel()
-        self.wait(lambda: not self.worker.busy())
         self.assertTrue(self.worker.take_result().value)
         self.assertIsNone(self.worker.take_result())
 

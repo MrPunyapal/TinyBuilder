@@ -62,5 +62,7 @@ Do not save answers, diffs or approval requests.
 
 The frontend must display the experimental status, project path, verified vs
 user-provided model provenance, consent metadata, current phase, permissions,
-activity and sanitized error. Only CPU is currently qualified by runtime
-interface; no auto-fallback. The existing unpublished renderer is not replaced.
+activity and sanitized error. Only CPU is currently exposed by the runtime interface; actual qualification
+requires hardware tests. Catalog entries are provisional unless the benchmark
+owner qualifies them. Use inspect_model on the worker for local provenance.
+No auto-fallback. The existing unpublished renderer is not replaced.

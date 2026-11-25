@@ -18,6 +18,14 @@ class _Token:
             raise Cancelled()
 
 
+class _CleanupHandle:
+    def __init__(self, close):
+        self.close = close
+
+    def run(self, *args):
+        raise RuntimeError("Cleanup-only handle")
+
+
 class ManagedServices:
     """Adapt the published ModelManager, RuntimeManager and ChatModel APIs."""
 
@@ -63,6 +71,10 @@ class ManagedServices:
             raise ValueError("Model manager did not verify download")
         return result.path
 
+    def inspect_model(self, model_path):
+        """Return manager provenance for explicit local selection; run on worker."""
+        return self.models.select_local(model_path)
+
     def start(self, model_path, backend, cancel):
         token = _Token(cancel)
         token.check()
@@ -90,7 +102,7 @@ class ManagedServices:
                 try:
                     self.runtime.stop()
                 except Exception:
-                    raise CleanupRequired(AgentBackend(None, self.runtime.stop, self.approve)) from None
+                    raise CleanupRequired(_CleanupHandle(self.runtime.stop)) from None
                 raise
         finally:
             done.set()
