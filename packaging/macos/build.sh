@@ -83,14 +83,13 @@ for executable in "$STAGE/runtime/llama-server" "$STAGE/tinybuilder/tinybuilder"
     /usr/bin/file -b "$executable" | grep -q 'Mach-O.*executable'
 done
 # Check every Mach-O, including libraries and Python extensions.
-# PyInstaller onedir uses symlinks; reject dangling or escaping links.
+# PyInstaller onedir uses symlinks; reject absolute, dangling or escaping links.
+"$PYTHON" -E "$SOURCE/packaging/macos/check_bundle_links.py" "$STAGE"
 "$PYTHON" - "$STAGE" <<'PY'
 import sys
 from pathlib import Path
 root = Path(sys.argv[1]).resolve()
 for path in root.rglob("*"):
-    if path.is_symlink() and not path.resolve(strict=True).is_relative_to(root):
-        raise SystemExit(f"escaping bundle symlink: {path}")
     if path.name.lower().endswith((".gguf", ".safetensors", ".sqlite", ".sqlite3", ".pem", ".p12", ".pfx", ".key")) or path.name.startswith(".env"):
         raise SystemExit(f"forbidden distribution path: {path.relative_to(root)}")
 PY

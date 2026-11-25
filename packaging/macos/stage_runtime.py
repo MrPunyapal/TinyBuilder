@@ -1,5 +1,6 @@
 """Package the pinned upstream runtime, not a runtime lifecycle implementation."""
 import hashlib
+import io
 import json
 import re
 import shutil
@@ -22,10 +23,13 @@ def digest(path):
 
 def extract(archive, output, expected):
     """Select server and dylibs from authenticated archive; never extract links."""
-    if digest(archive) != expected:
+    # Parse the very bytes that were hashed, not a second path lookup.
+    with archive.open("rb") as stream:
+        payload = stream.read(64 * 1024 * 1024 + 1)
+    if len(payload) > 64 * 1024 * 1024 or hashlib.sha256(payload).hexdigest() != expected:
         raise ValueError("upstream archive digest mismatch")
     selected = {}
-    with zipfile.ZipFile(archive) as source:
+    with zipfile.ZipFile(io.BytesIO(payload)) as source:
         for item in source.infolist():
             path = PurePosixPath(item.filename)
             if path.is_absolute() or ".." in path.parts or "\\" in item.filename:
