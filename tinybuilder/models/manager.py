@@ -2,6 +2,8 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
+import ctypes
+import errno
 import hashlib
 import http.client
 import json
@@ -10,6 +12,7 @@ from pathlib import Path
 import re
 import shutil
 import stat
+import sys
 import threading
 from urllib.error import URLError
 from urllib.parse import urlsplit
@@ -150,6 +153,38 @@ def _lock(path):
             raise ModelError("Model operation already active or locking unavailable") from None
         # Closing releases the OS lock, including after process termination.
         yield
+
+
+def _publish(part, final):
+    """Atomic exclusive publication, including volumes without hard links."""
+    _info(part)
+    if os.name == "nt":
+        os.rename(part, final)  # Windows rename never replaces an existing file.
+        return
+    # Linux renameat2(RENAME_NOREPLACE) and Darwin renamex_np(RENAME_EXCL)
+    # are exclusive, unlike POSIX rename. Use hard links only as a fallback
+    # where exclusive rename is unsupported by libc/kernel/filesystem.
+    libc = ctypes.CDLL(None, use_errno=True)
+    source, target = os.fsencode(part), os.fsencode(final)
+    function = None
+    if sys.platform.startswith("linux"):
+        function = getattr(libc, "renameat2", None)
+        args = (-100, source, -100, target, 1)  # AT_FDCWD, RENAME_NOREPLACE
+        types = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    elif sys.platform == "darwin":
+        function = getattr(libc, "renamex_np", None)
+        args = (source, target, 4)  # RENAME_EXCL (Darwin sys/stdio.h)
+        types = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+    if function is not None:
+        function.argtypes = types
+        function.restype = ctypes.c_int
+        if function(*args) == 0:
+            return
+        code = ctypes.get_errno()
+        if code not in {errno.ENOSYS, errno.ENOTSUP, errno.EINVAL}:
+            raise OSError(code, os.strerror(code), str(final))
+    os.link(part, final)
+    part.unlink()
 
 
 def _strong_etag(value):
@@ -331,13 +366,7 @@ class ModelManager:
                 _unlink(meta)
                 raise ModelError("Model checksum or length mismatch")
             token.check()
-            # Atomic no-clobber publication. Windows rename refuses an existing
-            # target; POSIX link does too, unlike POSIX rename.
-            if os.name == "nt":
-                os.rename(part, final)
-            else:
-                os.link(part, final)
-                part.unlink()
+            _publish(part, final)
             _unlink(meta)
             notify(DownloadProgress(entry.size_bytes, entry.size_bytes, "complete"))
             return ModelSelection(final, entry.model_id, True, "catalog-verified")
@@ -425,6 +454,22 @@ class ModelManager:
                 finally:
                     stream.flush()
                     os.fsync(stream.fileno())
+
+    def discard_partial(self, model_id, *, consent=False):
+        """Explicitly reset an interrupted transfer without touching final files."""
+        if consent is not True:
+            raise ModelError("Explicit partial deletion consent required")
+        entry = self._entry(model_id)
+        directory = self._directory(entry)
+        if directory is None:
+            return False
+        with _lock(directory / "operation.lock"):
+            part, meta = directory / "download.part", directory / "download.json"
+            part_info = _info(part, missing=True)
+            meta_info = _info(meta, missing=True)
+            _unlink(part)
+            _unlink(meta)
+            return part_info is not None or meta_info is not None
 
     def delete_managed(self, model_id, *, consent=False):
         if consent is not True:

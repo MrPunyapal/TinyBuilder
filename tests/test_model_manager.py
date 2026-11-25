@@ -1,7 +1,7 @@
 import hashlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-import shutil
+from types import SimpleNamespace
 import socket
 import tempfile
 import threading
@@ -49,7 +49,9 @@ class ModelManagerTests(unittest.TestCase):
                     self.send_header("Content-Range", "bytes %d-%d/%d" %
                                      (start, len(DATA) - 1, len(DATA)))
                 self.end_headers()
-                if mode == "interrupt":
+                if mode in {"interrupt", "interrupt-once"}:
+                    if mode == "interrupt-once":
+                        owner.mode = "ok"
                     self.wfile.write(body[:4096])
                     self.wfile.flush()
                     self.connection.shutdown(socket.SHUT_WR)
@@ -136,6 +138,29 @@ class ModelManagerTests(unittest.TestCase):
         self.download()
         self.assertEqual(self.final.read_bytes(), DATA)
 
+    def test_retry_and_explicit_partial_reset(self):
+        self.mode = "interrupt-once"
+        self.manager.download(self.request, retries=1)
+        self.assertEqual(self.requests, [(None, None), ("bytes=4096-", '"v1"')])
+        self.manager.delete_managed("fixture", consent=True)
+        self.interrupt()
+        with self.assertRaises(ModelError):
+            self.manager.discard_partial("fixture")
+        self.assertTrue(self.manager.discard_partial("fixture", consent=True))
+        self.assertEqual(self.manager.status("fixture"), ModelStatus.MISSING)
+        self.mode = "ok"
+        self.download()
+        self.assertEqual(self.requests[-1], (None, None))
+
+    def test_atomic_no_clobber_even_if_destination_appears(self):
+        def progress(event):
+            if event.phase == "verifying":
+                self.final.write_bytes(b"unrelated")
+        with self.assertRaises(FileExistsError):
+            self.download(progress=progress)
+        self.assertEqual(self.final.read_bytes(), b"unrelated")
+        self.assertEqual(self.part.read_bytes(), DATA)
+
     def test_checksum_failure_and_retry(self):
         self.mode = "corrupt"
         with self.assertRaisesRegex(ModelError, "checksum"):
@@ -166,7 +191,7 @@ class ModelManagerTests(unittest.TestCase):
 
     def test_insufficient_space(self):
         with patch("tinybuilder.models.manager.shutil.disk_usage",
-                   return_value=shutil._ntuple_diskusage(100, 100, 0)):
+                   return_value=SimpleNamespace(free=0)):
             self.assertFalse(self.manager.check_space("fixture").sufficient)
             with self.assertRaisesRegex(ModelError, "Insufficient"):
                 self.download()

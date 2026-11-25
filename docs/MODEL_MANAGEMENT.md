@@ -35,6 +35,9 @@ CI metadata are made here.
   CancellationToken.cancel() is thread-safe; checked between chunks and
   during verification. Socket reads can block up to the configured timeout
   (default 15 seconds); DNS resolution can take longer.
+- discard_partial(model_id, consent=True): explicitly discard owned partial
+  bytes and transfer metadata; never touches the final model. Use when a
+  server keeps returning invalid ranges or the user wants to free space.
 - delete_managed(model_id, consent=True): deletes only the verified managed
   file, not external selections, invalid files, or other directory contents.
   Returns whether a file was removed. Stop runtime before deletion or model
@@ -67,11 +70,14 @@ Links, Windows reparse points and multiply linked managed files are rejected.
 An OS advisory lock serializes downloads and deletion; locks release when the
 process exits. Lock files remain, and unrelated files are not removed.
 Existing final files are never overwritten. Verified bytes are published
-atomically without clobbering: Windows rename, POSIX hard link then unlink
-the partial. POSIX volumes that do not support hard links fail closed; an
-existing external GGUF on such a volume can still be selected. A crash
-between link and unlink can require manual recovery after verifying the
-digest. The directory is trusted user-controlled storage, not an OS sandbox;
+atomically without clobbering: Windows rename, Linux renameat2 with
+RENAME_NOREPLACE, macOS renamex_np with RENAME_EXCL. If the POSIX exclusive
+rename primitive is unavailable, hard link then unlink is the fallback.
+Volumes that support neither fail closed; external GGUF reuse still works.
+A crash between fallback link and unlink can require manual recovery after
+verifying the digest. Native primitive references:
+https://man7.org/linux/man-pages/man2/renameat2.2.html
+https://developer.apple.com/documentation/foundation/urlresourcekey/volumesupportsexclusiverenamingkey The directory is trusted user-controlled storage, not an OS sandbox;
 hostile concurrent directory replacement by the same local account cannot
 be fully prevented by portable path checks.
 
@@ -81,7 +87,8 @@ source/digest, exact effective URL fingerprint, exact 206 Content-Range and
 length. Signed URL rotation can prevent resumption; a valid 200 response
 restarts from zero rather than appending. No validator means a fresh transfer.
 A malformed 206 fails closed rather than appending. The caller can retry
-after the resource returns a valid full response. Interrupted transfers retain
+after the resource returns a valid full response, or explicitly discard the
+partial before starting a fresh authorized download. Interrupted transfers retain
 partial bytes, cancellation never publishes an incomplete file, and exact
 length plus SHA-256 are checked before publication. Invalid checksum partials
 are removed, while invalid existing final files are preserved for explicit

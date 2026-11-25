@@ -33,7 +33,7 @@ class CatalogEntry:
             raise ValueError("Reserved filename")
         url = urlsplit(self.source_url)
         if (url.scheme not in {"https", "http"} or not url.hostname or
-                url.username is not None or url.password is not None or url.fragment or
+                url.username is not None or url.password is not None or url.fragment or url.query or
                 self.revision not in url.path.split("/")):
             raise ValueError("A revision-pinned HTTP(S) source is required")
         if not self.license:
