@@ -8,6 +8,7 @@ import difflib
 import hashlib
 import hmac
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -16,6 +17,7 @@ import uuid
 from pathlib import Path
 
 from tinybuilder.agent import Agent
+from tinybuilder.context import project_summary
 from tinybuilder.model import ChatModel, ModelError
 from tinybuilder.protocol import ProtocolError
 from tinybuilder.tools import LocalTools
@@ -47,6 +49,26 @@ else:
 
 READ_TASK = ("Use read_file to inspect composer.json. Report its exact package name and "
              "laravel/framework version constraint. Do not guess or change any files.")
+QUALIFICATION_READ_TASK = ("Use read_file to inspect composer.json. Report its exact package name and "
+                           "description, in that order, one value per line with no other text. "
+                           "Do not guess or change any files.")
+
+
+def benchmark_model(model_name):
+    """Use the shared managed backend when explicitly requested; never fall back."""
+    endpoint = os.environ.get("TB_BENCH_MANAGED_URL")
+    key = os.environ.get("TB_BENCH_MANAGED_KEY")
+    if endpoint is None and key is None:
+        return ChatModel("http://127.0.0.1:11434/v1", model_name)
+    if not endpoint or not key:
+        raise ValueError("Managed benchmark requires URL and key")
+    try:
+        from tinybuilder.model import ManagedConnection
+    except ImportError:
+        raise ValueError("Managed backend integration is unavailable") from None
+    return ChatModel.from_managed(ManagedConnection(endpoint, model_name, key))
+
+
 ROUTE_TASK = ("Read routes/web.php and bootstrap/app.php using tools. Explain the existing routes "
               "and how to add GET /health returning JSON {\"status\":\"ok\"}. Do not change files.")
 WRITE_TASK = ("Read routes/web.php first. Add GET /health returning JSON {\"status\":\"ok\"} in "
@@ -345,7 +367,7 @@ def laravel_diagnostics(write: dict, lint_exit: int | None, final_test_exit: int
 
 def task(model_name, root, prompt, write=False, expected=None, php="php", tool_protocol="native",
          required_tools=(), strict_json_profile="prompt", required_files=(),
-         progress_guidance="off", required_sequence=(), max_steps=8):
+         progress_guidance="off", required_sequence=(), max_steps=8, exact_facts=False):
     if expected:
         required_tools = (*required_tools, "read_file")
         required_files = (*required_files, "composer.json")
@@ -357,7 +379,7 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
     started = time.monotonic()
     answer, error, error_kind = "", None, None
     try:
-        answer = Agent(ChatModel("http://127.0.0.1:11434/v1", model_name), local,
+        answer = Agent(benchmark_model(model_name), local,
                        max_steps=max_steps, on_event=events.append, tool_protocol=tool_protocol,
                        strict_json_profile=strict_json_profile,
                        progress_guidance=progress_guidance,
@@ -406,7 +428,8 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
         result["model_write_scope_ok"] = writes_only_target_verified(
             local.operations, required_sequence[1][1])
     if expected:
-        result["facts_correct"] = all(value in answer for value in expected)
+        result["facts_correct"] = (answer.strip().splitlines() == list(expected) if exact_facts
+                                   else all(value in answer for value in expected))
         result["passed"] = (result["facts_correct"] and result["read_file_called"] and
                             result["final_answer"] and not result["missing_required_files"])
     result["failure_kind"] = _failure_kind(result, expected=bool(expected))
@@ -416,7 +439,9 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
 
 
 def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", progress_guidance="off",
-          fixture_seed=None, trial_number=1, max_steps=8):
+          fixture_seed=None, trial_number=1, max_steps=8, smoke_profile="historical"):
+    if smoke_profile not in ("historical", "hidden-facts-v1"):
+        raise ValueError("Unknown smoke profile")
     root.mkdir()
     # A shared, operator-owned seed permits matched inputs across separate
     # baseline/guided runs. This value and the generated identity are never
@@ -425,15 +450,33 @@ def smoke(root, models, tool_protocol="native", strict_json_profile="prompt", pr
                        hashlib.sha256).hexdigest()[:32] if fixture_seed is not None
               else uuid.uuid4().hex)
     package = "tinybuilder/" + suffix
-    (root / "composer.json").write_text(json.dumps({"name": package, "type": "project", "require": {
-        "php": "^8.2", "laravel/framework": "^12.0"}, "autoload": {"psr-4": {"App\\": "app/"}}}), encoding="utf-8")
+    data = {"name": package, "type": "project", "require": {
+        "php": "^8.2", "laravel/framework": "^12.0"}, "autoload": {"psr-4": {"App\\": "app/"}}}
+    prompt, expected = READ_TASK, [package, "^12.0"]
+    if smoke_profile == "hidden-facts-v1":
+        # Separate derivation domain prevents the second fact being inferred from the first.
+        token = (hmac.new(bytes.fromhex(fixture_seed), f"description:{trial_number}".encode(),
+                          hashlib.sha256).hexdigest()[:32] if fixture_seed is not None
+                 else uuid.uuid4().hex)
+        data["description"] = "fixture-" + token
+        prompt, expected = QUALIFICATION_READ_TASK, [package, data["description"]]
+    (root / "composer.json").write_text(json.dumps(data), encoding="utf-8")
     (root / "routes").mkdir()
     (root / "routes/web.php").write_text("<?php\nuse Illuminate\\Support\\Facades\\Route;\nRoute::get('/', fn () => view('welcome'));\n", encoding="utf-8")
     (root / "app").mkdir()
     (root / "app/Example.php").write_text("<?php\nnamespace App;\nclass Example {}\n", encoding="utf-8")
-    return [task(model, root, READ_TASK, expected=[package, "^12.0"], tool_protocol=tool_protocol,
-                 strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
-                  max_steps=max_steps) for model in models]
+    if smoke_profile == "hidden-facts-v1":
+        initial = project_summary(root) + "\n" + prompt
+        if any(value in initial for value in expected):
+            raise ValueError("Qualification fixture leaked expected facts")
+    results = [task(model, root, prompt, expected=expected, tool_protocol=tool_protocol,
+                    strict_json_profile=strict_json_profile, progress_guidance=progress_guidance,
+                    max_steps=max_steps, **({"exact_facts": True} if smoke_profile == "hidden-facts-v1" else {}))
+               for model in models]
+    if smoke_profile == "hidden-facts-v1":
+        for result in results:
+            result["smoke_profile"] = smoke_profile
+    return results
 
 
 def laravel(base, output, models, php, tool_protocol="native", strict_json_profile="prompt",
@@ -595,7 +638,7 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
                   "baseline_commit": revision, "worktree": root.name,
                   "composer_lock_sha256": hashlib.sha256((base / "composer.lock").read_bytes()).hexdigest(),
                   "baseline_test_exit": baseline.returncode,
-                  "baseline_health_exit": negative.returncode if not validation_case else None,
+                  "baseline_health_exit": negative.returncode if scenario in ("health", "repair") else None,
                   "baseline_repair_exit": (visible_negative.returncode if scenario == "repair" else None),
                   "baseline_validation_exit": (visible_negative.returncode if validation_case else None),
                   "baseline_parameter_exit": (visible_negative.returncode if parameter_case else None),
@@ -637,6 +680,8 @@ def main():
                         help="constrained: compact prompt plus server JSON schema; requires strict-json")
     parser.add_argument("--progress-guidance", choices=("off", "checklist"), default="off",
                         help="opt-in bounded checklist; requires constrained strict-json")
+    parser.add_argument("--smoke-profile", choices=("historical", "hidden-facts-v1"), default="historical",
+                        help="hidden-facts-v1: two unseen randomized Composer values; exact two-line answer")
     parser.add_argument("--trials", type=int, default=1, help="1–10 independent random-name trials")
     parser.add_argument("--max-steps", type=int, default=8,
                         help="opt-in tool-round budget from 4 to 20 (default 8)")
@@ -656,6 +701,8 @@ def main():
         parser.error("--strict-json-profile constrained requires --tool-protocol strict-json")
     if args.progress_guidance != "off" and (args.tool_protocol != "strict-json" or args.strict_json_profile != "constrained"):
         parser.error("--progress-guidance checklist requires constrained strict-json")
+    if len(set(args.models)) != len(args.models):
+        parser.error("Duplicate model aliases are not allowed")
     if not 1 <= args.trials <= 10:
         parser.error("--trials must be between 1 and 10")
     if not 4 <= args.max_steps <= 20:
@@ -696,7 +743,8 @@ def main():
                                 strict_json_profile=args.strict_json_profile,
                                 progress_guidance=args.progress_guidance,
                                 fixture_seed=args.fixture_seed, trial_number=trial_number,
-                                 max_steps=args.max_steps)}
+                                 max_steps=args.max_steps,
+                                **({"smoke_profile": args.smoke_profile} if args.smoke_profile != "historical" else {}))}
         if args.laravel:
             trial["laravel"] = laravel(args.laravel.resolve(), trial_root, args.models, args.php,
                                       tool_protocol=args.tool_protocol, strict_json_profile=args.strict_json_profile,
@@ -715,6 +763,9 @@ def main():
                                          "strict_json_profile": args.strict_json_profile,
                                          "progress_guidance": args.progress_guidance,
                                          "max_steps": args.max_steps,
+                                         "smoke_profile": args.smoke_profile,
+                                         "backend": ("managed" if os.environ.get("TB_BENCH_MANAGED_URL") is not None
+                                                     or os.environ.get("TB_BENCH_MANAGED_KEY") is not None else "historical"),
                                          "paired_fixture_id": (hashlib.sha256(bytes.fromhex(args.fixture_seed)).hexdigest()[:16]
                                                                if args.fixture_seed else None)},
                       "trials": all_trials}

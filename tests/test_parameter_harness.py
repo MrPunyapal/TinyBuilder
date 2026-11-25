@@ -113,6 +113,8 @@ class ParameterHarnessTests(unittest.TestCase):
                                  tool_protocol="strict-json", strict_json_profile="constrained")[0]
             self.assertTrue(result["passed"], json.dumps(result, indent=2))
             self.assertTrue(result["parameter_reference_passed"])
+            self.assertIsNone(result["baseline_health_exit"])
+            self.assertEqual(result["baseline_parameter_exit"], 1)
             self.assertTrue(result["write"]["required_reads_before_edit"])
             self.assertTrue(result["write"]["tests_after_last_edit"])
             self.assertEqual(result["validation_test_exit"], 0)
