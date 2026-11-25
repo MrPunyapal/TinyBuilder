@@ -1,0 +1,32 @@
+# Temporary application-owner interface qualification; no release/build jobs.
+name: Application integration contract
+on:
+  push:
+    branches: [feat/terminal-app]
+permissions:
+  contents: read
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Overlay reviewed dependency source in runner only
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin 7c01dfab47dcd440338b8723a38597345a1b6ba1
+          git archive FETCH_HEAD tinybuilder/runtime | tar -x
+          git fetch --no-tags --depth=1 origin 5d10bbd78cf12d16a521b444b53e914e90ba1fe2
+          git archive FETCH_HEAD tinybuilder/models | tar -x
+          git fetch --no-tags --depth=1 origin cea17b9cd5509ac50bf9a110652662a5a3182fba
+          git archive FETCH_HEAD tinybuilder/model.py | tar -x
+      - name: Combined deterministic tests (no native model or weights)
+        env:
+          TINYBUILDER_REQUIRE_INTEGRATION: '1'
+        run: python -m unittest discover -s tests -v

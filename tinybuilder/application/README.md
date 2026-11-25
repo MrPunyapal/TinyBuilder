@@ -1,6 +1,7 @@
 # Application orchestration (draft)
 
-The existing CLI and unpublished terminal prototype are not replaced. Session
+The legacy CLI commands and unpublished terminal prototype are not replaced.
+An additive line renderer lives in tinybuilder/ui/guided.py. Session
 is a framework-neutral, in-memory service. Frontends run download, start,
 run_task and stop on a worker and poll immutable snapshots. Only one operation
 is allowed; cancel signals the operation's Event, and cancelling remains
@@ -65,4 +66,34 @@ user-provided model provenance, consent metadata, current phase, permissions,
 activity and sanitized error. Only CPU is currently exposed by the runtime interface; actual qualification
 requires hardware tests. Catalog entries are provisional unless the benchmark
 owner qualifies them. Use inspect_model on the worker for local provenance.
-No auto-fallback. The existing unpublished renderer is not replaced.
+No auto-fallback. The unpublished renderer is not replaced; preserve it as a separate commit
+before choosing or reconciling renderers.
+
+## Installed launcher contract (all packages)
+
+Entry point remains tinybuilder.cli:main. Frozen no-argument launch dispatches
+to app; explicit app works too. Existing chat, doctor, memory and --help remain.
+The source command is python -m tinybuilder app --runtime-root ABSOLUTE_PATH.
+Runtime discovery is executable-relative, never cwd, PATH or the chosen project:
+
+- Linux <bundle>/app/tinybuilder -> <bundle>/runtime
+- macOS <stage>/tinybuilder/tinybuilder -> <stage>/runtime
+- Windows <install>/TinyBuilder.exe -> <install>/runtime
+
+Require runtime-manifest.json; runtime manager validates the inventory.
+Windows prototype owner must confirm the actual layout before packaging.
+External LocalTools/MCP subprocesses on frozen Linux receive copied env with
+LD_LIBRARY_PATH restored from LD_LIBRARY_PATH_ORIG or removed. Managed runtime
+uses its own environment; Windows DLL search and macOS frozen hook behavior
+need native acceptance. See PyInstaller common issues documentation.
+
+Consent shows source, revision, filename, bytes, SHA-256, license, destination
+and provisional qualification. Imported model provenance is displayed; runtime
+rechecks selection. Ctrl+C requests cancellation without implying immediate
+termination; model hashing and blocked HTTP/subprocess calls may delay return.
+No terminal markup; controls escaped, model output/diffs prefixed.
+
+Application-only integration contract workflow overlays reviewed dependency
+source in an isolated runner checkout, never on a Git branch. Remove this
+temporary workflow after the CI owner runs equivalent integrated coverage.
+No model weights or actual runtime binary required.
