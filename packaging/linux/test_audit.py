@@ -50,3 +50,11 @@ class AuditTests(unittest.TestCase):
     def test_escaping_link(self):
         (self.root / "app/escape").symlink_to("/etc/passwd")
         self.assertNotEqual(self.audit().returncode, 0)
+
+    def test_absolute_internal_link_is_not_relocatable(self):
+        (self.root / "app/absolute").symlink_to(self.root / "app/tinybuilder")
+        self.assertNotEqual(self.audit().returncode, 0)
+
+    def test_relative_internal_link(self):
+        (self.root / "app/relative").symlink_to("tinybuilder")
+        self.assertEqual(self.audit().returncode, 0)
