@@ -27,8 +27,9 @@ file exists. Absent tests or fixture inputs are BLOCKED in the job summary;
 a suite with zero tests fails and a suite with skips is PARTIAL, not qualified.
 The macOS fixture requires the owner's script and an independently reviewed
 fully hash-locked Python 3.12 ARM64 dependency list at
-`acceptance/locks/macos-arm64-py312.txt` (not supplied yet). CI installs only
-hash-matching wheels from PyPI and checks PyInstaller 6.22.2 before calling
+`acceptance/locks/macos-arm64-py312.txt` (not supplied yet). CI creates a disposable isolated build venv, installs only
+hash-matching wheels from PyPI while ignoring preinstalled packages, and checks
+PyInstaller 6.22.2 in that interpreter before calling
 the actual script. No runtime assets, models, secrets, signing credentials,
 fixture uploads or releases are involved. Do not populate this path with an
 unreviewed lock. Windows/Linux owner tests run without a build dependency lock.

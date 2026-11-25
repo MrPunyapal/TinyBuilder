@@ -93,12 +93,21 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
+def walk_entries(root):
+    # Yield each entry before traversing it, so forbidden directories and
+    # junctions are rejected before any descendants are enumerated.
+    for path in sorted(root.iterdir()):
+        yield path
+        if not path.is_symlink() and not path.is_junction() and path.is_dir():
+            yield from walk_entries(path)
+
+
 def inspect(root, expected, required, *, allow_contained_links=False):
     if not root.is_dir() or root.is_symlink() or root.is_junction():
         raise ValueError("Expected extracted directory")
     root = root.resolve(strict=True)
     records, links = {}, {}
-    for path in sorted(root.rglob("*")):
+    for path in walk_entries(root):
         relative = path.relative_to(root)
         if forbidden(relative) or path.is_junction():
             raise ValueError("Forbidden path or junction in distribution")

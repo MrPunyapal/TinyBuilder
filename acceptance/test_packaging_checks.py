@@ -50,7 +50,7 @@ class PackagingChecksTests(unittest.TestCase):
                 run_tests(root, "linux")
 
     def test_fixture_requires_lock_and_exact_pin(self):
-        with tempfile.TemporaryDirectory() as tmp, patch("packaging_checks.subprocess.run") as call, patch("packaging_checks.importlib.metadata.version") as version:
+        with tempfile.TemporaryDirectory() as tmp, patch("packaging_checks.subprocess.run") as call:
             root = Path(tmp)
             (root / MAC_FIXTURE).parent.mkdir(parents=True)
             (root / MAC_FIXTURE).touch()
@@ -58,11 +58,17 @@ class PackagingChecksTests(unittest.TestCase):
             call.assert_not_called()
             (root / MAC_LOCK).parent.mkdir(parents=True)
             (root / MAC_LOCK).touch()
-            version.return_value = "6.0"
-            with self.assertRaises(RuntimeError):
+            call.side_effect = [None, None, subprocess.CalledProcessError(1, ["python"])]
+            with self.assertRaises(subprocess.CalledProcessError):
                 run_fixture(root)
-            self.assertIn("--require-hashes", call.call_args.args[0])
+            self.assertEqual(call.call_count, 3)
+            self.assertIn("--require-hashes", call.call_args_list[1].args[0])
+            self.assertIn("--ignore-installed", call.call_args_list[1].args[0])
             call.reset_mock()
-            version.return_value = "6.22.2"
+            call.side_effect = None
             self.assertTrue(run_fixture(root).startswith("PASS"))
-            self.assertEqual(call.call_args_list[1].args[0], ["bash", str(MAC_FIXTURE)])
+            self.assertEqual(call.call_count, 4)
+            self.assertEqual(call.call_args_list[0].args[0][:4], [sys.executable, "-I", "-m", "venv"])
+            self.assertIn("6.22.2", call.call_args_list[2].args[0][-1])
+            self.assertEqual(call.call_args_list[3].args[0], ["bash", str(MAC_FIXTURE)])
+            self.assertEqual(call.call_args_list[3].kwargs["env"]["PYTHON"], call.call_args_list[1].args[0][0])

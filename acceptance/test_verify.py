@@ -147,3 +147,18 @@ class VerificationTests(unittest.TestCase):
         report["files"]["SBOM"]["bytes"] = 0
         with self.assertRaises(ValueError):
             required_metadata(report, ["LICENSE", "NOTICE", "SBOM"])
+
+    def test_forbidden_directory_is_not_traversed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            bad = root / "private"
+            bad.mkdir()
+            original = Path.iterdir
+
+            def guarded(path):
+                if path == bad:
+                    self.fail("Forbidden directory was traversed")
+                return original(path)
+
+            with patch.object(Path, "iterdir", guarded), self.assertRaises(ValueError):
+                inspect(root, "x64", [])

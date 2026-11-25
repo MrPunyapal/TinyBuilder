@@ -1,11 +1,11 @@
 """Call platform-owned checks only when their actual inputs are present."""
 import argparse
-import importlib.metadata
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
 TESTS = {
     "windows": ("packaging/windows/verification", "test_payload.py"),
@@ -46,13 +46,23 @@ def run_fixture(root):
         return "BLOCKED (owner fixture absent)"
     if not (root / MAC_LOCK).is_file():
         return "BLOCKED (reviewed hash-locked build dependencies absent)"
-    subprocess.run([sys.executable, "-m", "pip", "--isolated", "install",
-                    "--index-url", "https://pypi.org/simple", "--require-hashes",
-                    "--only-binary=:all:", "-r", str(MAC_LOCK)],
-                   cwd=root, check=True, timeout=600)
-    if importlib.metadata.version("pyinstaller") != MAC_PIN:
-        raise RuntimeError("macOS fixture requires owner's exact PyInstaller pin")
-    subprocess.run(["bash", str(MAC_FIXTURE)], cwd=root, check=True, timeout=900)
+    # Do not trust preinstalled build packages, even on hosted runners.
+    with tempfile.TemporaryDirectory(prefix="tinybuilder-macos-build-") as tmp:
+        environment = Path(tmp) / "venv"
+        subprocess.run([sys.executable, "-I", "-m", "venv", str(environment)],
+                       cwd=root, check=True, timeout=120)
+        python = str(environment / "bin" / "python")
+        subprocess.run([python, "-I", "-m", "pip", "--isolated", "install",
+                        "--index-url", "https://pypi.org/simple", "--require-hashes",
+                        "--ignore-installed", "--only-binary=:all:", "-r", str(MAC_LOCK)],
+                       cwd=root, check=True, timeout=600)
+        subprocess.run([python, "-I", "-c",
+                        "import importlib.metadata as m; assert m.version('pyinstaller') == " + repr(MAC_PIN)],
+                       cwd=root, check=True, timeout=30)
+        env = {key: value for key, value in os.environ.items()
+               if key.upper() not in {"PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"}}
+        env["PYTHON"] = python  # packaging/macos/build.sh's documented interpreter input
+        subprocess.run(["bash", str(MAC_FIXTURE)], cwd=root, env=env, check=True, timeout=900)
     return "PASS (test-double DMG/relocation only; NOT real runtime or release)"
 
 
