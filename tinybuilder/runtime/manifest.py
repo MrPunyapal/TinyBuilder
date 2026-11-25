@@ -59,7 +59,7 @@ def resolve_runtime(root: Path, backend: str) -> Path:
         raise RuntimeFailure("unsupported_platform")
     # Accelerator payloads need separate reviewed catalog entries and device
     # qualification. Do not pretend that a CPU archive supports acceleration.
-    if backend not in BACKENDS or backend != "cpu":
+    if not isinstance(backend, str) or backend not in BACKENDS or backend != "cpu":
         raise RuntimeFailure("unsupported_backend", cpu_recovery=True)
     root = absolute_directory(root)
     manifest = root / MANIFEST_NAME

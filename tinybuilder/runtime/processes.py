@@ -1,4 +1,5 @@
 """Private process adapter. No shell, inherited server flags or raw logs."""
+import errno
 import os
 import signal
 import subprocess
@@ -9,10 +10,17 @@ from .errors import RuntimeFailure
 
 def child_environment(executable: Path, key: str) -> dict[str, str]:
     # Do not inherit LLAMA_*, LD_*, DYLD_*, PYTHON*, proxy or project variables.
+    if os.pathsep in str(executable.parent):
+        raise RuntimeFailure("runtime_missing")
     env = {"LLAMA_API_KEY": key}
     if os.name == "nt":
         # Windows needs SystemRoot; do not trust the caller's PATH.
-        system = os.environ.get("SystemRoot", r"C:\Windows")
+        import ctypes
+        buffer = ctypes.create_unicode_buffer(32768)
+        size = ctypes.windll.kernel32.GetWindowsDirectoryW(buffer, len(buffer))
+        if not 0 < size < len(buffer):
+            raise RuntimeFailure("native_loader")
+        system = buffer.value
         env.update(SystemRoot=system, WINDIR=system,
                    PATH=str(executable.parent) + os.pathsep + str(Path(system) / "System32"))
     else:
@@ -35,7 +43,13 @@ def spawn(executable, model, port, alias, key):
             argv, cwd=str(executable.parent), env=child_environment(executable, key),
             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL, shell=False, **options)
-    except (OSError, ValueError):
+    except OSError as exc:
+        # Only known executable-format/dependency errors are classified as
+        # loader errors; ENOENT can mean missing executable, cwd or interpreter.
+        kind = "native_loader" if (exc.errno == errno.ENOEXEC or
+                                   getattr(exc, "winerror", None) in (126, 193, 216)) else "process_spawn"
+        raise RuntimeFailure(kind) from None
+    except ValueError:
         raise RuntimeFailure("process_spawn") from None
 
 

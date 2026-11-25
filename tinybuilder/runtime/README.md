@@ -77,7 +77,9 @@ CPU uses --device none and zero GPU layers. CUDA/Vulkan/Metal/ROCm are reserved
 backend names, deliberately rejected with cpu_recovery=True pending separately
 qualified payloads and hardware detection. No silent fallback or downloads.
 
-Windows uses absolute executable and trusted cwd with a restricted PATH.
+Windows uses absolute executable and trusted cwd with a restricted PATH based
+on the OS Windows-directory API, not inherited SystemRoot. Runtime paths
+containing the platform search-path separator are rejected.
 POSIX uses a new process session and bounded TERM/KILL; Linux limits
 LD_LIBRARY_PATH to the trusted runtime, macOS requires verified install names
 and rpaths. These measures are not a complete native loader sandbox. Windows

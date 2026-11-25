@@ -114,14 +114,15 @@ class RuntimeManager:
     def start(self, model_path, backend="cpu", timeout=180.0):
         if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
             raise ValueError("timeout must be finite and positive")
-        if not self._operation.acquire(blocking=False):
-            raise RuntimeFailure("busy")
-        try:
-            if self._process is not None:
+        with self._state_lock:
+            if not self._operation.acquire(blocking=False):
                 raise RuntimeFailure("busy")
-            with self._state_lock:
-                self._cancel.clear()
-                self._status = RuntimeStatus("starting")
+            if self._process is not None:
+                self._operation.release()
+                raise RuntimeFailure("busy")
+            self._cancel.clear()
+            self._status = RuntimeStatus("starting")
+        try:
             try:
                 model = _model_path(model_path)
                 executable = resolve_runtime(self._root, backend)
