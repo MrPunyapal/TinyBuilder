@@ -43,7 +43,7 @@ while IFS= read -r -d '' f; do
   # ldd only on trusted build outputs, never untrusted downloaded executables.
   if grep -q '(NEEDED)' <<< "$dynamic"; then
     if [[ "$f" == "$root/runtime/"* ]]; then
-      deps=$(env -u LD_PRELOAD -u LD_LIBRARY_PATH ldd "$f" 2>&1) || exit 1
+      deps=$(env -u LD_PRELOAD LD_LIBRARY_PATH="$root/runtime" ldd "$f" 2>&1) || exit 1
     else
       deps=$(env -u LD_PRELOAD LD_LIBRARY_PATH="$root/app/_internal" ldd "$f" 2>&1) || exit 1
     fi

@@ -16,7 +16,7 @@ coreutils, gzip and tar. From repository root:
     source /tmp/tinybuilder-linux-build/bin/activate
     python -m pip install 'pyinstaller==6.15.0'
     python -m pip install .
-    bash packaging/linux/build.sh /absolute/verified-runtime /absolute/runtime-SHA256SUMS /tmp/tinybuilder-linux-output
+    bash packaging/linux/build.sh /absolute/verified-runtime /absolute/runtime-SHA256SUMS /tmp/tinybuilder-linux-output /absolute/llama-b6500-bin-ubuntu-x64.zip
 
 The runtime directory must be a flat payload containing llama-server, LICENSE,
 required native libraries and their notices (only llama-server, lib*.so[.N...],
@@ -25,10 +25,14 @@ from the shared runtime owner's reviewed pin, not be generated from arbitrary
 downloaded files. No model weights. Build does not fetch runtime assets.
 Use a CPU build with portable instruction-set configuration, no GPU dependency,
 and $ORIGIN-relative runtime library resolution or static linking as appropriate.
-Shared runtime owner must provide the exact upstream commit, asset digest,
-CPU feature floor, manifest schema, and redistribution terms. These do not
-exist on the base commit. This staging interface is provisional and not
-a substitute for the shared runtime manifest.
+The build requires the shared runtime branch to be integrated. It imports the
+shared CPU_ARCHIVES and REVISION, verifies the original upstream ZIP digest,
+checks that staged binaries are byte-identical to unique regular ZIP members,
+writes schema-1 runtime-manifest.json and calls the shared resolve_runtime.
+Notices not present in the ZIP require independently reviewed checksums.
+The currently proposed shared pin is b6500. CPU feature floor, actual ZIP
+layout, native dependency inventory and redistribution terms remain unverified.
+No modified or rebuilt binaries may be substituted under this archive pin.
 
 The entry wrapper currently calls tinybuilder.cli:main (the existing console
 script). Guided startup, runtime discovery and XDG paths are integration gates.

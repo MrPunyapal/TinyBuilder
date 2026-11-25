@@ -4,10 +4,13 @@ set -euo pipefail
 export LC_ALL=C
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 repo=$(cd "$here/../.." && pwd)
-[[ $# == 3 ]] || { echo "usage: $0 VERIFIED_RUNTIME_DIR SHA256SUMS NEW_OUTPUT_DIR" >&2; exit 2; }
+[[ $# == 4 ]] || { echo "usage: $0 VERIFIED_RUNTIME_DIR SHA256SUMS NEW_OUTPUT_DIR PINNED_UPSTREAM_ZIP" >&2; exit 2; }
 runtime=$(realpath "$1")
 sums=$(realpath "$2")
 out=$(realpath -m "$3")
+archive=$(realpath "$4")
+# The shared runtime must be integrated before a distribution can be built.
+[[ -f "$repo/tinybuilder/runtime/catalog.py" && -f "$repo/tinybuilder/runtime/manifest.py" ]] || { echo "shared runtime integration missing" >&2; exit 1; }
 [[ $(uname -m) == x86_64 && $(getconf GNU_LIBC_VERSION) == 'glibc 2.39' ]]
 python -c 'import sys; assert sys.version_info[:2] == (3,12)'
 [[ ! -e "$out" ]] || { echo "output must not exist" >&2; exit 2; }
@@ -30,6 +33,7 @@ python "$here/verify_runtime.py" "$bundle/runtime" "$sums"
 # Drop inherited special mode bits; only the server needs execution.
 find "$bundle/runtime" -type f -exec chmod 644 {} +
 chmod 755 "$bundle/runtime/llama-server"
+python "$here/prepare_manifest.py" "$bundle/runtime" "$sums" "$archive"
 cp "$repo/LICENSE" "$bundle/licenses/TinyBuilder.txt"
 cp "$here/README.md" "$bundle/README.md"
 # Preserve upstream notices, including Python and all collected libraries.

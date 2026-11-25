@@ -12,5 +12,5 @@ env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C \
 env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C \
   XDG_DATA_HOME="$tmp/data" XDG_CONFIG_HOME="$tmp/config" \
   "$root/tinybuilder" doctor --project "$tmp/project"
-env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C "$root/runtime/llama-server" --version
-env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C "$root/runtime/llama-server" --help
+env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C LD_LIBRARY_PATH="$root/runtime" "$root/runtime/llama-server" --version
+env -i HOME="$tmp/home" PATH="$tmp/bin" LC_ALL=C LD_LIBRARY_PATH="$root/runtime" "$root/runtime/llama-server" --help
