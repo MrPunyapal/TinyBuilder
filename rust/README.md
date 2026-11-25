@@ -67,3 +67,20 @@ separate independent gates.
 
 No release, merge, new model downloads or local prototype modification is
 authorized by this draft.
+
+## Local offline read qualification
+
+Build with Rust 1.88 or later; native CI tests the declared minimum. Select an
+existing trusted runtime manifest and an existing GGUF. The model SHA-256 must
+be supplied explicitly from verified local/publisher evidence. This example
+starts one CPU runtime and runs ten disposable independently randomized
+pyproject.toml name/description reads, records only sanitized results, and
+requires exact answers plus actual file read evidence and no writes. It is a
+new Rust-specific profile, not directly comparable to historical Composer
+scores. No retries after a failed trial and no downloads. Exit 1 means failure.
+
+    cargo build --manifest-path rust/Cargo.toml --release --locked --example qualify_read
+    rust/target/release/examples/qualify_read --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF --expected-sha256 EXPECTED_HASH --output NEW_REPORT_DIRECTORY
+
+On Windows use qualify_read.exe. Existing research-license models are lab only.
+A passed campaign is not installer, license, edit, or general coding qualification.

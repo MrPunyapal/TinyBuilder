@@ -136,7 +136,7 @@ pub fn run(
     for _ in 0..options.max_rounds {
         ensure!(serde_json::to_vec(&messages)?.len() <= 160 * 1024, "Context budget exhausted");
         let msg = complete(payload(&messages, options.protocol, options.allow_write))?;
-        ensure!(msg["role"].as_str().unwrap_or("assistant") == "assistant", "Invalid model role");
+        ensure!(msg["role"].as_str() == Some("assistant"), "Invalid model role");
         let (action, call_id) = match options.protocol {
             Protocol::Native => native(&msg).map_err(|_| anyhow::anyhow!("Rejected native model action"))?,
             Protocol::StrictJson => {
@@ -229,6 +229,19 @@ mod tests {
         assert_eq!(result.answer, "hidden-token");
         assert_eq!(events, ["File read verified: a.txt"]);
         assert_eq!(result.edits, 0);
+    }
+    #[test]
+    fn denied_model_write_never_approves_or_changes_file() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("a.txt"), "old").unwrap();
+        let p = Project::new(dir.path()).unwrap();
+        let mut seq = vec![message(r#"{"type":"read","path":"a.txt"}"#),
+            message(r#"{"type":"replace","path":"a.txt","old":"old","new":"new"}"#),
+            message(r#"{"type":"final","content":"old"}"#)].into_iter();
+        let result = run(&p, "read only", options(), |_| Ok(seq.next().unwrap()),
+            |_,_| panic!("must not approve"), |_| {}).unwrap();
+        assert_eq!(result.edits, 0);
+        assert_eq!(fs::read_to_string(dir.path().join("a.txt")).unwrap(), "old");
     }
     #[test]
     fn native_argument_validation() {
