@@ -179,7 +179,8 @@ class Session:
             return True
 
     def download(self, consent: DownloadOffer,
-                 transfer: Callable[[DownloadOffer, Event, Callable[[int], None]], Path]):
+                 transfer: Callable[[DownloadOffer, Event, Callable[[int], None]], Path], *,
+                 cancel_event: Event | None = None):
         """Run on a worker. Consent must match the currently displayed offer.
 
         The injected transfer owns verification, partial files and cancellation.
@@ -189,7 +190,7 @@ class Session:
             self._idle()
             if self._phase != "consent" or self._offer != consent or self._offer is None:
                 raise RuntimeError("Confirm the current download offer")
-            event = self._cancel = Event()
+            event = self._cancel = cancel_event if cancel_event is not None else Event()
             self._phase = "downloading"
             self._progress = 0
             self._error = None
@@ -202,6 +203,8 @@ class Session:
                     self._progress = count
 
         try:
+            if event.is_set():
+                raise Cancelled()
             model = Path(transfer(consent, event, progress)).resolve(strict=True)
             if model != consent.destination.resolve() or not model.is_file():
                 raise ValueError("Unexpected download destination")
@@ -235,7 +238,8 @@ class Session:
                 raise RuntimeError("Choose a verified model first")
             self._backend = backend
 
-    def start(self, factory: Callable[[Path, str, Event], RunningBackend]) -> bool:
+    def start(self, factory: Callable[[Path, str, Event], RunningBackend], *,
+              cancel_event: Event | None = None) -> bool:
         """Worker operation. Factory verifies the model and starts the runtime.
 
         On failure before returning a handle, the factory owns cleanup.
@@ -245,10 +249,12 @@ class Session:
             self._idle()
             if self._phase != "backend_selection" or self._model is None or self._backend is None:
                 raise RuntimeError("Choose a model and backend first")
-            event = self._cancel = Event()
+            event = self._cancel = cancel_event if cancel_event is not None else Event()
             model, backend = self._model, self._backend
             self._phase, self._error = "starting", None
         try:
+            if event.is_set():
+                raise Cancelled()
             running = factory(model, backend, event)
         except CleanupRequired as exc:
             with self._lock:
@@ -275,14 +281,14 @@ class Session:
         self._stop_owned("Startup cancelled")
         return False
 
-    def run_task(self, task: str) -> str | None:
+    def run_task(self, task: str, *, cancel_event: Event | None = None) -> str | None:
         """Worker operation; answer returned to caller only, never persisted."""
         if not isinstance(task, str) or not task.strip():
             raise ValueError("Enter a non-empty task")
         with self._lock:
             if self._phase != "ready" or self._cancel is not None or self._running is None:
                 raise RuntimeError("Start a model before running a task")
-            event = self._cancel = Event()
+            event = self._cancel = cancel_event if cancel_event is not None else Event()
             running, project = self._running, self._project
             permissions, protocol = self._permissions, self._protocol
             self._permissions = Permissions()
@@ -297,6 +303,8 @@ class Session:
                         "write_file", "run_command") else "tool"
 
         try:
+            if event.is_set():
+                raise Cancelled()
             answer = running.run(project, task, permissions, protocol, event, activity)
             if not isinstance(answer, str):
                 raise ValueError("Invalid task result")

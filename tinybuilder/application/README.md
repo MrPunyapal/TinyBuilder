@@ -47,3 +47,20 @@ cancellation is relayed to RuntimeManager.cancel while the worker is active.
 Progress may decrease on a restarted download. Failed factory cleanup retains
 an owned handle for retry. No actual runtime/model execution has been verified. No production test double or automatic model download is provided.
 Keep draft until real integration and preserved prototype terminal acceptance.
+
+## Frontend wiring
+
+Create Session and Worker, then ManagedServices.from_installation with the
+trusted runtime directory and worker.approve as the callback. Use worker.start,
+download, task and stop; poll session.snapshot(), worker.pending() and
+worker.take_result() from the UI event loop. Display pending Approval as plain
+text (escape all path and argv control characters), then call worker.respond
+with the exact sequence and explicit decision. Ctrl+C calls worker.cancel;
+continue polling until completion. Consume every result. Disable session
+settings changes while busy. Do not close or exit until backend stop succeeds.
+Do not save answers, diffs or approval requests.
+
+The frontend must display the experimental status, project path, verified vs
+user-provided model provenance, consent metadata, current phase, permissions,
+activity and sanitized error. Only CPU is currently qualified by runtime
+interface; no auto-fallback. The existing unpublished renderer is not replaced.
