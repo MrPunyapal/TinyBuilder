@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from benchmarks.evaluate import benchmark_model, main, smoke
+from benchmarks.evaluate import benchmark_model, main, smoke, _managed_settings
 from benchmarks.compare import compare
 
 
@@ -52,11 +52,12 @@ class QualificationTests(unittest.TestCase):
                 self.assertNotEqual(data_value(root / "a", field), data_value(root / "c", field))
 
     def test_partial_managed_configuration_fails_closed(self):
-        with patch.dict(os.environ, {"TB_BENCH_MANAGED_URL": "http://127.0.0.1:8080/v1"}, clear=True):
-            with patch("benchmarks.evaluate.ChatModel") as model:
-                with self.assertRaisesRegex(ValueError, "requires URL and key"):
-                    benchmark_model("candidate")
-                model.assert_not_called()
+        with patch.dict(os.environ, {"TB_BENCH_MANAGED_URL": "http://127.0.0.1:8080/v1"}, clear=True), \
+             tempfile.TemporaryDirectory() as d, patch("benchmarks.evaluate.ChatModel") as model:
+            with self.assertRaises(SystemExit) as raised:
+                main(["--output", str(Path(d) / "out")])
+            self.assertEqual(raised.exception.code, 2)
+            model.assert_not_called()
 
     def test_require_managed_cannot_fall_back(self):
         with tempfile.TemporaryDirectory() as d, patch.dict(os.environ, {}, clear=True):
@@ -70,14 +71,66 @@ class QualificationTests(unittest.TestCase):
                 self.assertFalse(output.exists())
 
     def test_managed_delegates_to_shared_backend_without_key_in_report(self):
-        with patch.dict(os.environ, {"TB_BENCH_MANAGED_URL": "http://127.0.0.1:8080/v1",
-                                    "TB_BENCH_MANAGED_KEY": "test-key"}, clear=True), \
-             patch("tinybuilder.model.ManagedConnection", create=True) as connection, \
-             patch("benchmarks.evaluate.ChatModel") as model:
+        with patch("tinybuilder.model.ManagedConnection", create=True) as connection, \
+             patch("benchmarks.evaluate.ChatModel") as model, \
+             patch("benchmarks.evaluate._managed_settings") as settings:
+            settings.get.return_value = ("http://127.0.0.1:8080/v1", "test-key")
             self.assertIs(benchmark_model("candidate"), model.from_managed.return_value)
             connection.assert_called_once_with("http://127.0.0.1:8080/v1", "candidate", "test-key")
             model.from_managed.assert_called_once_with(connection.return_value)
             model.assert_not_called()
+
+    def test_fabricated_partial_wrong_file_and_prohibited_actions_fail(self):
+        for case in ("fabricated", "partial", "wrong-file", "write", "exec"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as d:
+                root = Path(d) / "smoke"
+                call_count = 0
+
+                def complete(messages, tools, **kwargs):
+                    nonlocal call_count
+                    call_count += 1
+                    facts = json.loads((root / "composer.json").read_text(encoding="utf-8"))
+                    if call_count == 1:
+                        self.assertNotIn(facts["name"], json.dumps(messages))
+                        self.assertNotIn(facts["description"], json.dumps(messages))
+                    def tool(name, args):
+                        return {"content": json.dumps({"type": "tool", "name": name, "arguments": args})}
+                    if call_count == 1 and case != "fabricated":
+                        return tool("read_file", {"path": "routes/web.php" if case == "wrong-file" else "composer.json"})
+                    if call_count == 2 and case == "write":
+                        return tool("write_file", {"path": "unauthorized.txt", "content": "not allowed"})
+                    if call_count == 2 and case == "exec":
+                        return tool("run_command", {"argv": ["php", "artisan", "test"]})
+                    answer = facts["name"] if case == "partial" else facts["name"] + "\n" + facts["description"]
+                    return {"content": json.dumps({"type": "final", "content": answer})}
+
+                with patch("benchmarks.evaluate.ChatModel") as model, patch("builtins.print"), \
+                     patch("tinybuilder.tools.subprocess.run") as execute, \
+                     patch.dict(os.environ, {"HOME": d, "USERPROFILE": d}):
+                    model.return_value.complete.side_effect = complete
+                    result = smoke(root, ["fake"], tool_protocol="strict-json",
+                                   smoke_profile="hidden-facts-v1")[0]
+                    execute.assert_not_called()
+                self.assertFalse(result["passed"])
+                self.assertEqual(result["read_only_ok"], case not in ("write", "exec"))
+                self.assertEqual({p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()},
+                                 {"composer.json", "routes/web.php", "app/Example.php"})
+                self.assertEqual(list(Path(d).iterdir()), [root])
+
+    def test_credentials_consumed_before_campaign_and_reset_after(self):
+        with patch.dict(os.environ, {"TB_BENCH_MANAGED_URL": "http://127.0.0.1:8080/v1",
+                                    "TB_BENCH_MANAGED_KEY": "test-secret"}, clear=True), \
+             patch("benchmarks.evaluate._main") as run:
+            def check(argv, managed_alias=None):
+                self.assertNotIn("TB_BENCH_MANAGED_KEY", os.environ)
+                self.assertNotIn("TB_BENCH_MANAGED_URL", os.environ)
+                self.assertEqual(_managed_settings.get(), ("http://127.0.0.1:8080/v1", "test-secret"))
+                raise RuntimeError("simulated failure")
+            run.side_effect = check
+            with self.assertRaises(RuntimeError):
+                main([])
+            self.assertEqual(_managed_settings.get(), (None, None))
+            self.assertNotIn("TB_BENCH_MANAGED_KEY", os.environ)
 
     def test_comparer_rejects_mixed_profiles(self):
         with tempfile.TemporaryDirectory() as d:

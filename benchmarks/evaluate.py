@@ -15,6 +15,7 @@ import sys
 import time
 import uuid
 from pathlib import Path
+from contextvars import ContextVar
 
 from tinybuilder.agent import Agent
 from tinybuilder.context import project_summary
@@ -54,10 +55,12 @@ QUALIFICATION_READ_TASK = ("Use read_file to inspect composer.json. Report its e
                            "Do not guess or change any files.")
 
 
+_managed_settings = ContextVar("benchmark_managed_settings", default=(None, None))
+
+
 def benchmark_model(model_name):
     """Use the shared managed backend when explicitly requested; never fall back."""
-    endpoint = os.environ.get("TB_BENCH_MANAGED_URL")
-    key = os.environ.get("TB_BENCH_MANAGED_KEY")
+    endpoint, key = _managed_settings.get()
     if endpoint is None and key is None:
         return ChatModel("http://127.0.0.1:11434/v1", model_name)
     if not endpoint or not key:
@@ -432,7 +435,14 @@ def task(model_name, root, prompt, write=False, expected=None, php="php", tool_p
                                    else all(value in answer for value in expected))
         result["passed"] = (result["facts_correct"] and result["read_file_called"] and
                             result["final_answer"] and not result["missing_required_files"])
+    if exact_facts:
+        # A correct answer after an attempted prohibited action is not a clean read qualification.
+        result["read_only_ok"] = not any(event.get("tool") in ("write_file", "run_command")
+                                         for event in calls)
+        result["passed"] = result["passed"] and result["read_only_ok"]
     result["failure_kind"] = _failure_kind(result, expected=bool(expected))
+    if exact_facts and not result["read_only_ok"]:
+        result["failure_kind"] = "read_only_violation"
     # Answers and observations stay in RAM. Metadata alone goes to the report.
     print(json.dumps(result), flush=True)
     return result
@@ -673,7 +683,22 @@ def laravel(base, output, models, php, tool_protocol="native", strict_json_profi
     return results
 
 
-def main():
+def main(argv=None, *, connection=None):
+    """Scope session credentials to this synchronous campaign, never child environments."""
+    endpoint = os.environ.pop("TB_BENCH_MANAGED_URL", None)
+    key = os.environ.pop("TB_BENCH_MANAGED_KEY", None)
+    if connection is not None:
+        if endpoint is not None or key is not None:
+            raise ValueError("Use only one managed connection source")
+        endpoint, key = connection.base_url, connection.api_key
+    token = _managed_settings.set((endpoint, key))
+    try:
+        return _main(argv, managed_alias=connection.model_alias if connection is not None else None)
+    finally:
+        _managed_settings.reset(token)
+
+
+def _main(argv=None, managed_alias=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--models", nargs="+", default=["qwen2.5-coder:0.5b", "qwen2.5-coder:1.5b"])
     parser.add_argument("--tool-protocol", choices=("native", "strict-json"), default="native",
@@ -700,7 +725,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True, help="New directory for disposable fixtures and metadata")
     parser.add_argument("--laravel", type=Path, help="Explicitly marked disposable Laravel baseline Git repository")
     parser.add_argument("--php", default="php", help="PHP binary for evaluator checks")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.strict_json_profile != "prompt" and args.tool_protocol != "strict-json":
         parser.error("--strict-json-profile constrained requires --tool-protocol strict-json")
     if args.progress_guidance != "off" and (args.tool_protocol != "strict-json" or args.strict_json_profile != "constrained"):
@@ -719,11 +744,13 @@ def main():
     if args.controls_only and (args.scenario not in ("validation", "parameter") or
                                not args.laravel or args.trials != 1):
         parser.error("--controls-only requires --scenario validation/parameter --laravel and --trials 1")
-    managed_requested = (args.require_managed or os.environ.get("TB_BENCH_MANAGED_URL") is not None
-                         or os.environ.get("TB_BENCH_MANAGED_KEY") is not None)
+    endpoint, key = _managed_settings.get()
+    managed_requested = args.require_managed or endpoint is not None or key is not None
     if managed_requested and not args.controls_only:
-        if not os.environ.get("TB_BENCH_MANAGED_URL") or not os.environ.get("TB_BENCH_MANAGED_KEY"):
+        if not endpoint or not key:
             parser.error("Managed benchmark requires URL and key")
+        if managed_alias is not None and args.models != [managed_alias]:
+            parser.error("Managed connection alias must match the single requested model")
         try:
             for model in args.models:
                 benchmark_model(model)
@@ -778,8 +805,7 @@ def main():
                                          "progress_guidance": args.progress_guidance,
                                          "max_steps": args.max_steps,
                                          "smoke_profile": args.smoke_profile,
-                                         "backend": ("managed" if os.environ.get("TB_BENCH_MANAGED_URL") is not None
-                                                     or os.environ.get("TB_BENCH_MANAGED_KEY") is not None else "historical"),
+                                         "backend": "managed" if managed_requested else "historical",
                                          "paired_fixture_id": (hashlib.sha256(bytes.fromhex(args.fixture_seed)).hexdigest()[:16]
                                                                if args.fixture_seed else None)},
                       "trials": all_trials}
