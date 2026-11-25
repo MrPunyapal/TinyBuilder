@@ -309,6 +309,38 @@ mod windows {
 mod tests {
     use super::*;
     use std::{fs, thread, time::{Duration, Instant}};
+    #[test]
+    fn listener_helper() {
+        let Some(path) = std::env::var_os("TB_TEST_LISTENER") else { return; };
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        fs::write(path, listener.local_addr().unwrap().port().to_string()).unwrap();
+        loop { thread::sleep(Duration::from_millis(100)); }
+    }
+
+    #[test]
+    fn listener_identity_accepts_owned_and_rejects_foreign() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("port");
+        let foreign = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let exe = std::env::current_exe().unwrap();
+        let mut cmd = command(&exe);
+        cmd.args(["--exact", "process::tests::listener_helper"])
+            .env("TB_TEST_LISTENER", &file);
+        let mut owned = Owned::spawn(&mut cmd).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(8);
+        let port = loop {
+            if let Ok(value) = fs::read_to_string(&file) {
+                if let Ok(port) = value.parse::<u16>() { break port; }
+            }
+            assert!(Instant::now() < deadline, "Owned listener did not start");
+            assert!(owned.try_wait().unwrap().is_none());
+            thread::sleep(Duration::from_millis(30));
+        };
+        assert!(owned.listener_owned(port).unwrap(), "Owned listener not identified");
+        assert!(!owned.listener_owned(foreign.local_addr().unwrap().port()).unwrap(),
+            "Foreign listener accepted");
+    }
+
     // A test subprocess is the heartbeat producer, not an inference server.
     #[test]
     fn heartbeat_helper() {
