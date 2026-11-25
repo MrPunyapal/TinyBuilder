@@ -63,7 +63,7 @@ def _get(port, path, timeout, key=None):
         conn.request("GET", path, headers=headers)
         with conn.getresponse() as response:
             # Only bounded metadata from /v1/models is parsed.
-            if path == "/v1/models" and key is not None and response.status == 200:
+            if path == "/v1/models" and response.status == 200:
                 body = response.read(65537)
                 if len(body) > 65536:
                     raise RuntimeFailure("authentication")
@@ -150,7 +150,6 @@ class RuntimeManager:
             self._operation.release()
 
     def _wait_ready(self, port, alias, key, deadline):
-        saw_health = False
         while True:
             self._check_cancel()
             if self._process.poll() is not None:
@@ -169,20 +168,26 @@ class RuntimeManager:
 
             try:
                 status, _ = request("/health")
-                if status in (200, 503):
-                    saw_health = True
-                elif status not in (401, 403):
+                if status not in (200, 503):
                     raise RuntimeFailure("port_conflict")
                 if status == 200:
-                    denied, _ = request("/v1/models")
-                    if denied not in (401, 403):
-                        raise RuntimeFailure("authentication")
-                    accepted, data = request("/v1/models", key)
+                    # b6500 deliberately exposes /v1/models publicly. Check the
+                    # random alias before sending credentials to a listener.
+                    accepted, data = request("/v1/models")
                     if accepted != 200 or not isinstance(data, dict):
-                        raise RuntimeFailure("authentication")
+                        raise RuntimeFailure("port_conflict")
                     models = data.get("data")
                     if (not isinstance(models, list) or not any(
                             isinstance(m, dict) and m.get("id") == alias for m in models)):
+                        raise RuntimeFailure("port_conflict")
+                    # /props is protected even when the POST mutation feature
+                    # is disabled. Require both absent and invalid key denial.
+                    denied, _ = request("/props")
+                    wrong, _ = request("/props", "invalid-" + secrets.token_hex(16))
+                    if denied not in (401, 403) or wrong not in (401, 403):
+                        raise RuntimeFailure("authentication")
+                    accepted, _ = request("/props", key)
+                    if accepted != 200:
                         raise RuntimeFailure("authentication")
                     if self._process.poll() is not None:
                         raise RuntimeFailure("server_crash")

@@ -61,8 +61,10 @@ on the revision and generate the manifest from their audited staged files.
 ## Security and lifecycle limitations
 
 Explicit loopback, no redirects/proxies for readiness, random alias and secret,
-public health plus rejection of unauthenticated models and successful authenticated
-alias match. The temporary free-port selection has an unavoidable bind race;
+public health plus public /v1/models random alias match, then protected /props
+rejection of absent and invalid bearer keys and acceptance of the session key.
+The pinned b6500 server intentionally makes /v1/models public; it cannot be
+used as an authentication test. The temporary free-port selection has an unavoidable bind race;
 fail closed for unexpected replies and never kill another process. A hostile
 local process could impersonate the server, including capturing a key during
 that race; this is not an OS sandbox. A child exit during startup is classified
@@ -94,5 +96,4 @@ No baseline CI model downloads.
 Do not change the uncommitted installer. Resolve executable, GGUF and cwd
 absolutely; run llama-server --version and --help first. Record only stage and
 OS error code, not private paths, raw output or secrets. Check native DLLs and
-architecture before model loading; then verify health and authenticated
-/v1/models before chat completion. Errno 2 alone does not identify the cause.
+architecture before model loading; then verify health, public alias and authenticated /props before chat completion. Errno 2 alone does not identify the cause.

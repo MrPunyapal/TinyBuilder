@@ -48,6 +48,7 @@ class RuntimeTests(unittest.TestCase):
         self.manager = RuntimeManager(self.root)
         self.process = FakeProcess()
         self.credentials = {}
+        self.auth_headers = []
         self.mode = "ready"
         self.cleaned = 0
         outer = self
@@ -60,14 +61,17 @@ class RuntimeTests(unittest.TestCase):
                 if self.path == "/health":
                     status, body = (503 if outer.mode == "loading" else 200), {}
                 elif self.path == "/v1/models":
+                    alias = outer.credentials["alias"] if outer.mode != "wrong_alias" else "other"
+                    status, body = 200, {"data": [{"id": alias}]}
+                elif self.path == "/props":
+                    outer.auth_headers.append(self.headers.get("Authorization"))
                     expected = "Bearer " + outer.credentials.get("key", "")
                     if outer.mode == "open":
                         status, body = 200, {}
-                    elif self.headers.get("Authorization") != expected:
+                    elif self.headers.get("Authorization") != expected or outer.mode == "deny_all":
                         status, body = 401, {}
                     else:
-                        alias = outer.credentials["alias"] if outer.mode != "wrong_alias" else "other"
-                        status, body = 200, {"data": [{"id": alias}]}
+                        status, body = 200, {}
                 else:
                     status, body = 404, {}
                 payload = json.dumps(body).encode()
@@ -115,19 +119,25 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(connection.api_key, self.credentials["key"])
         self.assertNotIn(connection.api_key, repr(connection))
         self.assertEqual(self.manager.status().state, "ready")
+        self.assertEqual(self.auth_headers[0], None)
+        self.assertNotEqual(self.auth_headers[1], "Bearer " + connection.api_key)
+        self.assertEqual(self.auth_headers[2], "Bearer " + connection.api_key)
         self.manager.stop()
         self.manager.stop()
         self.assertEqual(self.cleaned, 1)
         self.assertEqual(self.manager.status().state, "stopped")
 
     def test_rejects_unauthenticated_server_and_wrong_alias(self):
-        for mode in ("open", "wrong_alias"):
+        for mode in ("open", "deny_all", "wrong_alias"):
             self.mode = mode
             self.process = FakeProcess()
             with self.assertRaises(RuntimeFailure) as exc:
                 self.manager.start(self.model)
-            self.assertEqual(exc.exception.kind, "authentication")
-        self.assertEqual(self.cleaned, 2)
+            self.assertEqual(exc.exception.kind, "port_conflict" if mode == "wrong_alias" else "authentication")
+            if mode == "wrong_alias":
+                self.assertEqual(self.auth_headers, [])
+            self.auth_headers.clear()
+        self.assertEqual(self.cleaned, 3)
 
     def test_timeout(self):
         self.mode = "loading"
