@@ -1,7 +1,7 @@
 name: Rust native rewrite
 on:
   push:
-    branches: ['feat/rust-native-rewrite', 'integration/standalone-preview-20261125']
+    branches: [main, 'feat/rust-native-rewrite', 'integration/standalone-preview-20261125']
     paths: ['rust/**', '.github/workflows/rust-native.yml']
   pull_request:
     paths: ['rust/**', '.github/workflows/rust-native.yml']
