@@ -1,5 +1,7 @@
 # TinyBuilder
 
+> **Product target: 0.1.0 experimental native read-only assistant (not released).** See [release contract](docs/RELEASE_0_1.md) and [research knowledge base](docs/research/2026-11-26-release-audit.md). Existing Python workflows below are historical reference/development instructions, not the standalone supported product.
+
 **Experimental local-first coding agent** built around small language models, real developer tools, Laravel Boost MCP and opt-in project preferences. Free and MIT licensed. Soup can be used later for fine-tuning; training is not needed to try the first version.
 
 > Status: v0.1 research prototype, not a trained model or a proven replacement for frontier coding agents. A 0.5B model may fail at tool calling and multi-step edits even when tools provide good information. Evaluate before relying on it.

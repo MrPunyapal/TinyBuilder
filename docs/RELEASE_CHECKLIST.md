@@ -1,5 +1,7 @@
 # Experimental-preview release checklist
 
+For the current narrower native 0.1.0 product target, see [release contract](RELEASE_0_1.md) and [research handoff](research/2026-11-26-release-audit.md). This historical checklist remains evidence and broader reference; no gate is transferred automatically.
+
 **Standalone preview: NOT QUALIFIED.** See the [standalone release gate](#separate-standalone-release-gate--not-qualified) below. No downloadable standalone artifact is approved by this checklist.
 
 ## Historical source CLI assessment

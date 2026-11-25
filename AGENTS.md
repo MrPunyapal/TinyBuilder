@@ -21,3 +21,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q tinybuilder
 python -m tinybuilder doctor --project .
 ```
+
+## Release/0.1 scope
+
+Read docs/RELEASE_0_1.md and docs/research/2026-11-26-release-audit.md before release work. Keep the normal native product CLI read-only. Python and mutation examples are reference/lab only. Preserve the exact model qualification oracle and all failed evidence; do not tag or publish without authorization.

@@ -1,4 +1,4 @@
-# TinyBuilder native Rust rewrite (draft)
+# TinyBuilder native 0.1 experimental candidate (not qualified)
 
 This is a separate executable, not a Python extension. The original Python
 implementation and benchmark history remain available for regression and
@@ -22,11 +22,9 @@ The CI-generated lock is committed and builds require it. Full dependency securi
     rust/target/release/tinybuilder chat "Explain this project's structure" --project PATH --runtime ABSOLUTE_RUNTIME --model EXISTING_GGUF
 
 Use tinybuilder.exe on Windows. The app defaults to native tools; /strict is
-explicit session consent to experimental constrained JSON. /write applies
-to the next model task only; every exact replacement requires human approval.
-Commands are not implemented in this draft. /read requests an AI-assisted read with a required file and one-time strict JSON consent. /cat is deterministic display and never counts as model qualification.
+explicit session consent to experimental constrained JSON. The product CLI has no write/create/exec options. The original write-capable CLI is retained as a development-only agent_lab example and must not be distributed. /read requests an AI-assisted read with a required file and one-time strict JSON consent. /cat is deterministic display and never counts as model qualification.
 
-## Implemented
+## Implementation inventory (includes lab-only library capabilities)
 
 - Bounded UTF-8 reads, ignore-aware discovery, Rayon parallel literal search.
 - Exact unique replacements, reviewable diffs, stale-content SHA-256 checks,
@@ -128,3 +126,5 @@ model-generated replacement in a fully read file, binds proposals to the exact s
 not guarantee that a model proposal is semantically correct. Use disposable
 projects only; ACL and extended attribute preservation remain unqualified.
 No default CLI behavior changed. No real model trials were performed remotely.
+
+Use `tinybuilder inspect QUESTION --project PATH` for model-free context, and `tinybuilder grounded QUESTION --project PATH --runtime RUNTIME --model MODEL` for read-only context-first answers. See [0.1 release contract](../docs/RELEASE_0_1.md).
