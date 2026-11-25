@@ -73,3 +73,18 @@ PHP and successful model-visible tests. Fresh Composer inspections passed 2/3
 with actual reads in all three, and the targeted native MCP experiment made no
 model-selected call (0/1). These observations preserve the experimental-only
 classification; earlier benchmark reports and their historical counts are unchanged.
+
+## Separate standalone release gate — NOT QUALIFIED
+
+The completed checklist above is historical source-CLI evidence only. For each of Windows x64, macOS ARM64 and Linux x64 independently, record the candidate commit, artifact digest, native runner/OS version, hardware, runtime build and model digest, test report links and reviewer. Mark unsupported or untested combinations explicitly.
+
+- [ ] Native build and clean-machine install/launch/doctor without system Python, Git or Ollama; verify architecture and minimum OS/glibc/CPU requirements.
+- [ ] Bundled runtime CPU baseline, loopback authentication, cleanup, offline inspection and no unintended network activity; qualify acceleration separately.
+- [ ] Existing GGUF reuse, exact byte size/digest/license/catalog revision, destination choice, consent, cancellation, corrupt/partial download recovery and disk-full behavior.
+- [ ] Read-only defaults, write/exec denial, exact argv enforcement, traversal/symlink tests, sanitized diagnostics and optional MCP trust boundaries.
+- [ ] Upgrade and uninstall preserve projects, models, preferences and unrelated files; no unsafe recursive deletion.
+- [ ] Real model task qualification on the exact standalone candidate; keep failures and denominators, distinguish reference controls from model success.
+- [ ] Final artifact names, sizes, SHA-256, signing/notarization status, third-party notices and upstream model license rights verified; test public download links before publication.
+- [ ] Documentation and actual UI agree; independently rehearse demo or record a verified fallback; explicit maintainer publication authorization.
+
+No platform or model is approved by this draft. See [proposed notes](PREVIEW_RELEASE_NOTES.md) and [demo runbook](LARACON_DEMO.md).

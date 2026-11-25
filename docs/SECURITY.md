@@ -38,3 +38,9 @@ data in a public GitHub issue. Prefer GitHub's private vulnerability-reporting
 option under this repository's Security tab **if available**. Otherwise ask
 the maintainer for a non-public contact channel without exposing sensitive
 details publicly. No formal penetration-test certification is claimed.
+
+## Standalone preview release requirements (not yet verified)
+
+The managed inference process must bind to loopback, authenticate the application client, avoid exposing credentials in diagnostics, and terminate only processes it owns. Loopback and authentication are not an OS sandbox or protection from all same-user processes. Project content and model output remain untrusted. Exact argv restrictions do not constrain behavior of an allowed executable or its children; use a disposable project and OS isolation where appropriate. Read-only does not mean secret-free or side-effect-free when optional MCP servers are configured.
+
+The model downloader must require explicit consent, verify a pinned digest and byte count before use, and handle cancellation and incomplete files safely. A user-selected GGUF is not automatically a verified or licensed model. Never disable Gatekeeper, SmartScreen, antivirus or other OS protections to launch an unknown artifact. Verify published checksums and signing status; a checksum alone does not establish publisher identity. Do not share raw transcripts, source, absolute personal paths, environment variables, tokens, model weights, memory databases or private benchmark fixtures. Review sanitized logs before reporting bugs. See [standalone onboarding](STANDALONE.md) for reporting guidance. These requirements are not claims about the current source CLI.
