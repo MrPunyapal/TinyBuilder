@@ -152,9 +152,10 @@ class RuntimeManager:
                 failure = exc.kind if isinstance(exc, RuntimeFailure) else "startup_failure"
                 try:
                     self._cleanup()
-                except RuntimeFailure:
-                    self._set("failed", "cleanup_failed", stage="cleanup")
-                    raise RuntimeFailure("cleanup_failed", stage="cleanup") from None
+                except RuntimeFailure as cleanup:
+                    self._set("failed", "cleanup_failed", stage=cleanup.stage or "cleanup",
+                              os_code=cleanup.os_code, exit_code=cleanup.exit_code)
+                    raise cleanup from None
                 if isinstance(exc, RuntimeFailure):
                     exc.stage = exc.stage or stage
                     self._set("failed", failure, stage=exc.stage, os_code=exc.os_code,

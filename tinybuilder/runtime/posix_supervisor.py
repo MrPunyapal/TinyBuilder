@@ -54,7 +54,10 @@ class PosixOwned:
 
     def stop(self, grace):
         if not self.process.stdin.closed:
-            self.process.stdin.close()
+            try:
+                self.process.stdin.close()
+            except OSError:
+                raise RuntimeFailure("cleanup_failed", stage="supervisor_pipe") from None
         try:
             self.process.wait(timeout=max(2.0, grace + 1.5))
         except subprocess.TimeoutExpired:

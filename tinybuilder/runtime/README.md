@@ -24,7 +24,13 @@ OS account.
 
 ## Packaging contract
 
-Use installed_runtime_root(absolute_installation_root) to resolve the explicit\nlauncher-provided installation root / runtime. It never discovers from project\ncwd, PATH, sys._MEIPASS or an implicit executable location. App #3 can pass\nthat absolute result to ManagedServices.from_installation(runtime_root, approve).\nPackaging #4/#5/#8 own the explicit installation root and final staged bytes.\n\nSupply a flat runtime directory (as staged by Linux/macOS packaging) containing
+Use installed_runtime_root(absolute_installation_root) to resolve the explicit
+launcher-provided installation root / runtime. It never discovers from project
+cwd, PATH, sys._MEIPASS or an implicit executable location. App #3 can pass
+that absolute result to ManagedServices.from_installation(runtime_root, approve).
+Packaging #4/#5/#8 own the explicit installation root and final staged bytes.
+
+Supply a flat runtime directory (as staged by Linux/macOS packaging) containing
 the executable, LICENSE, native dependencies and runtime-manifest.json.
 The JSON schema version is 1. Required keys:
 
@@ -71,9 +77,9 @@ that race; this is not an OS sandbox. A child exit during startup is classified
 as server_crash with readiness stage and numeric exit code, not guessed to be a
 loader, bind or model error. RuntimeFailure and RuntimeStatus expose optional
 stage, os_code and exit_code; OS errors from process creation are distinguished
-from known loader-format failures. POSIX shell status 126/127 is not proof of
-a loader cause. No raw output is retained. Raw server
-output is discarded, not written to disk. No arbitrary extra flags, no web UI
+from known loader-format failures of the executable being spawned directly
+(on POSIX that is the supervisor shell). POSIX shell status 126/127 is not proof of
+a loader cause. Raw server output is discarded, not written to disk. No arbitrary extra flags, no web UI
 or slots, no server-side tool execution enabled by this pinned server. Native
 tool call formatting uses Jinja; TinyBuilder still authorizes and runs tools.
 
@@ -86,7 +92,8 @@ on the OS Windows-directory API, not inherited SystemRoot. Runtime paths
 containing the platform search-path separator are rejected.
 POSIX uses a new process session and bounded TERM/KILL; Linux limits
 LD_LIBRARY_PATH to the trusted runtime, macOS requires verified install names
-and rpaths. These measures are not a complete native loader sandbox. Windows uses an unnamed non-inheritable Job Object with KILL_ON_JOB_CLOSE,
+and rpaths. These measures are not a complete native loader sandbox. Windows
+uses an unnamed non-inheritable Job Object with KILL_ON_JOB_CLOSE,
 assigned immediately after Popen. It fails closed if assignment fails (e.g.
 incompatible enclosing job). There is a launch-to-assignment race; atomic
 STARTUPINFOEX job assignment is not implemented. TerminateJobObject and
@@ -94,11 +101,12 @@ accounting plus direct child wait bound ordinary cleanup; native nested jobs
 and descendant handle-signaling need platform acceptance.
 POSIX launches a fixed /bin/sh supervisor in a fresh session. The private
 parent pipe closes on parent exit; the supervisor sends TERM then KILL to its
-own group while it remains group leader. The native child receives no pipe
-handles and its output is discarded; only a bounded numeric shell exit status
-is returned. Descendants deliberately escaping the session/group, kernel
+own group while it remains group leader. The native child receives neither supervision pipe and its output is discarded; only a bounded numeric shell exit status
+is returned. Fork-only application descendants retaining the parent pipe, descendants
+deliberately escaping the session/group, kernel
 uninterruptible processes and system crashes are outside the guarantee.
-Actual target OS tests are required; atexit alone is not a hard-crash solution. Application must use finally
+Actual target OS tests are required; atexit alone is not a hard-crash solution.
+Application must use finally
 or context manager for normal exits. A stop after failed cleanup can be retried.
 
 Actual target binaries, OS loader dependencies, minimum OS/CPU features,

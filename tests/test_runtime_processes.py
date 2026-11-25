@@ -68,7 +68,9 @@ class ProcessTests(unittest.TestCase):
         # No PID lookup or signals to unrelated processes; observe a private file.
         with tempfile.TemporaryDirectory() as directory:
             heartbeat = Path(directory) / "heartbeat"
-            leaf = ("import pathlib,sys,time; p=pathlib.Path(sys.argv[1]); "
+            leaf = ("import pathlib,sys,time,signal,os; "
+                    "signal.signal(signal.SIGTERM,signal.SIG_IGN) if os.name!=\"nt\" else None; "
+                    "p=pathlib.Path(sys.argv[1]); "
                     "f=p.open('ab', buffering=0); "
                     "exec('while True:\\n f.write(b\"x\")\\n time.sleep(.05)')")
             server = ("import subprocess,sys,time; "
@@ -79,12 +81,13 @@ class ProcessTests(unittest.TestCase):
                       "p=spawn_owned([sys.executable,'-c',sys.argv[1],sys.argv[2],sys.argv[3]],"
                       "os.getcwd(),dict(os.environ)); "
                       "f=pathlib.Path(sys.argv[3]); end=time.monotonic()+8; "
-                      "exec('while not f.exists() and time.monotonic()<end:\\n time.sleep(.05)'); "
-                      "os._exit(0 if f.exists() else 2)")
+                      "exec('while (not f.exists() or f.stat().st_size<3) and time.monotonic()<end:\\n time.sleep(.05)'); "
+                      "os._exit(0 if f.exists() and f.stat().st_size>=3 else 2)")
             result = subprocess.run([sys.executable, "-c", parent, server, leaf, str(heartbeat)],
                                     timeout=12, capture_output=True)
             self.assertEqual(result.returncode, 0)
             self.assertTrue(heartbeat.exists())
+            self.assertGreaterEqual(heartbeat.stat().st_size, 3)
             time.sleep(2.5)
             size = heartbeat.stat().st_size
             time.sleep(0.4)
