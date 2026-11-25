@@ -1,6 +1,10 @@
-# Public experimental-preview release checklist
+# Experimental-preview release checklist
 
-**PUBLIC EXPERIMENTAL PREVIEW READY** — local validation completed on
+**Standalone preview: NOT QUALIFIED.** See the [standalone release gate](#separate-standalone-release-gate--not-qualified) below. No downloadable standalone artifact is approved by this checklist.
+
+## Historical source CLI assessment
+
+**Source-based experimental preview readiness (historical)** — local validation completed on
 2026-11-16. See the [Windows validation report](../benchmarks/results/2026-11-16-windows-preview-validation.md).
 This recommendation covers the documented experimental CLI, with unreliable
 validation edits and unproven model-selected MCP use disclosed. Official package,
@@ -55,7 +59,7 @@ An earlier [November 13 report](../benchmarks/results/2026-11-13-local-release-v
 records health/repair task successes on the then-current setup. Those are
 different scenarios and cannot substitute for final candidate validation.
 
-**Decision:** share only the documented experimental preview. No package-index
+**Historical decision:** share only the documented source-based experimental preview. No package-index
 publication or official tag/release without explicit maintainer sign-off. The
 three-trial task results do not establish broad autonomous coding reliability.
 
@@ -87,4 +91,22 @@ The completed checklist above is historical source-CLI evidence only. For each o
 - [ ] Final artifact names, sizes, SHA-256, signing/notarization status, third-party notices and upstream model license rights verified; test public download links before publication.
 - [ ] Documentation and actual UI agree; independently rehearse demo or record a verified fallback; explicit maintainer publication authorization.
 
-No platform or model is approved by this draft. See [proposed notes](PREVIEW_RELEASE_NOTES.md) and [demo runbook](LARACON_DEMO.md).
+Record each gate as PASS, FAIL, BLOCKED or NOT RUN, with exact evidence. No platform or model is approved by this draft. See [proposed notes](PREVIEW_RELEASE_NOTES.md) and [demo runbook](LARACON_DEMO.md).
+
+### Integrated evidence record (one per platform and model)
+
+Copy this template into a sanitized acceptance report. Do not mark a gate PASS based on another branch, mock inference, a packaging unit test or another operating system.
+
+| Field | Required value |
+|---|---|
+| Candidate | Integrated commit SHA, build/run URL, reviewer and date |
+| Platform | OS version, architecture, CPU features, RAM, GPU/driver (if relevant) |
+| Artifact | Exact filename, bytes, SHA-256, signing/notarization status and verification |
+| Runtime | Pinned source revision, payload digest/manifest, backend and context settings |
+| Model | Immutable source revision, filename, bytes, SHA-256, license and quantization |
+| Lifecycle | Clean-machine launch, model reuse/download, offline inspection, shutdown, upgrade and removal |
+| Safety | Denied writes/commands, approved exact argv, containment limits, diagnostics review |
+| Qualification | Trial counts, actual tool events, independent acceptance, measured elapsed time and resource peaks or explicitly unmeasured |
+| Decision | PASS / FAIL / BLOCKED / NOT RUN for each gate; specific unresolved findings |
+
+Keep the public support matrix tied to the integrated candidate. A platform can pass independently, but shared application or security failures block every affected combination. A Laravel edit demonstration requires independent qualification of that task; it is not a substitute for a safe read-only preview.
