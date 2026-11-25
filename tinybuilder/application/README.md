@@ -41,6 +41,9 @@ remain pending. MCP is not configured by this adapter.
 
 PR 3 backend exposes ChatModel.from_managed and a cancel_event argument but
 currently checks cancellation around a blocking request; the application adapter stops subsequent tool dispatch but cannot interrupt an
-already blocking HTTP call or subprocess. Runtime and model manager interfaces are
-pending. No production test double or automatic model download is provided.
+already blocking HTTP call or subprocess. ManagedServices adapts the published ModelManager/RuntimeManager interfaces
+and ChatModel.from_managed, using deferred imports until integration. Startup
+cancellation is relayed to RuntimeManager.cancel while the worker is active.
+Progress may decrease on a restarted download. Failed factory cleanup retains
+an owned handle for retry. No actual runtime/model execution has been verified. No production test double or automatic model download is provided.
 Keep draft until real integration and preserved prototype terminal acceptance.

@@ -75,6 +75,14 @@ class RunningBackend(Protocol):
         ...
 
 
+class CleanupRequired(Exception):
+    """A failed factory retained an owned backend requiring shutdown."""
+
+    def __init__(self, running: RunningBackend):
+        super().__init__("Backend cleanup required")
+        self.running = running
+
+
 class Session:
     """Single operation at a time; never report cancellation before worker exit."""
 
@@ -189,7 +197,7 @@ class Session:
         def progress(count):
             with self._lock:
                 if self._cancel is event and not event.is_set():
-                    if type(count) is not int or not self._progress <= count <= consent.size_bytes:
+                    if type(count) is not int or not 0 <= count <= consent.size_bytes:
                         raise ValueError("Invalid download progress")
                     self._progress = count
 
@@ -242,6 +250,13 @@ class Session:
             self._phase, self._error = "starting", None
         try:
             running = factory(model, backend, event)
+        except CleanupRequired as exc:
+            with self._lock:
+                self._running = exc.running
+                self._phase, self._cancel = "cleanup_failed", None
+                self._permissions = Permissions()
+                self._error = "Backend cleanup failed; retry shutdown"
+            return False
         except BaseException as exc:
             with self._lock:
                 self._phase = "backend_selection"
