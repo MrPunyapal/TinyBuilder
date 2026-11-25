@@ -10,12 +10,10 @@ The public preview remains on hold.
 
 From the repository root, on a native supported builder:
 
-    cargo generate-lockfile --manifest-path rust/Cargo.toml
     cargo test --manifest-path rust/Cargo.toml --locked
     cargo build --manifest-path rust/Cargo.toml --release --locked
 
-The lock must be reviewed and committed before distribution. The workflow
-generates candidate lock evidence if absent; no release artifacts are published.
+The CI-generated lock is committed and builds require it. Full dependency security and license review remains a release gate; no release artifacts are published.
 
     rust/target/release/tinybuilder doctor --project .
     rust/target/release/tinybuilder read README.md --project .
@@ -26,8 +24,7 @@ generates candidate lock evidence if absent; no release artifacts are published.
 Use tinybuilder.exe on Windows. The app defaults to native tools; /strict is
 explicit session consent to experimental constrained JSON. /write applies
 to the next model task only; every exact replacement requires human approval.
-Commands are not implemented in this draft. /read is deterministic display,
-not model intelligence or evidence of a qualified model.
+Commands are not implemented in this draft. /read requests an AI-assisted read with a required file and one-time strict JSON consent. /cat is deterministic display and never counts as model qualification.
 
 ## Implemented
 
@@ -53,8 +50,7 @@ downloads, persistent explicit preferences, MCP and approved exact-argv command
 execution, creation of new files, installer packaging, and independent Rust
 benchmark/clean-machine acceptance. No training or weights are downloaded.
 Writes are existing text files only; this is not an OS sandbox, filesystem
-operations are not race-proof, and metadata/ACL/hard-link preservation requires
-native review. The current Rust app deliberately does not replace the Python
+operations are not race-proof, and metadata/ACL preservation requires native review. Hard-linked updates are rejected; Unix ownership changes and special mode bits are rejected. The current Rust app deliberately does not replace the Python
 installer or claim compatibility with the unpublished Windows prototype.
 
 Native tool arguments require a single OpenAI string-shaped call per round.

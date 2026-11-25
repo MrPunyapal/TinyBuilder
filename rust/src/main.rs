@@ -78,7 +78,7 @@ fn task(project: &Project, server: &Runtime, text: &str, protocol: Protocol, all
     Ok(())
 }
 fn help() {
-    println!("/read PATH (display real file without inference), /search TEXT, /strict, /write, /help, /quit");
+    println!("/read PATH (verified AI-assisted read), /cat PATH (no inference), /search TEXT, /strict, /write, /help, /quit");
 }
 fn app(project: Option<PathBuf>, runtime_dir: Option<PathBuf>, model: Option<PathBuf>) -> Result<()> {
     println!("TinyBuilder native Rust — experimental. Read-only by default. No automatic downloads.");
@@ -108,7 +108,25 @@ fn app(project: Option<PathBuf>, runtime_dir: Option<PathBuf>, model: Option<Pat
                 allow_write = yes("Allow patch proposals for the next task? Every patch still needs approval. Type yes: ");
             }
             _ if line.starts_with("/read ") => {
-                match project.read(line[6..].trim()) {
+                // This explicit read flow uses constrained actions only after
+                // session consent, never inherits a pending write permission.
+                allow_write = false;
+                let path = line[6..].trim();
+                if protocol != Protocol::StrictJson {
+                    if !yes("Enable experimental strict JSON for verified reads this session? Type yes: ") {
+                        println!("Read cancelled; no inference requested.");
+                        continue;
+                    }
+                    protocol = Protocol::StrictJson;
+                }
+                let Some(question) = input("Question about this file (blank = summarize): ")? else { break; };
+                let question = if question.is_empty() { "Summarize the file based on its actual contents.".to_owned() } else { question };
+                if task(&project, &server, &question, protocol, false, Some(path.to_owned())).is_err() {
+                    println!("Read failed or required evidence missing; no final answer.");
+                }
+            }
+            _ if line.starts_with("/cat ") => {
+                match project.read(line[5..].trim()) {
                     Ok(read) => { println!("File read verified: {}", terminal(&read.path)); show(&read.text); if read.truncated { println!("[Truncated]"); } }
                     Err(_) => println!("Read rejected or unavailable."),
                 }

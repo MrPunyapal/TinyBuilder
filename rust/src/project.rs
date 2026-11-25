@@ -78,6 +78,28 @@ fn utf8(bytes: &[u8], truncated: bool) -> Result<String> {
         Err(_) => bail!("Not UTF-8 text"),
     }
 }
+#[cfg(unix)]
+fn ensure_single_link(file: &File) -> Result<()> {
+    use std::os::unix::fs::MetadataExt;
+    ensure!(file.metadata()?.nlink() == 1, "Hard-linked file rejected");
+    Ok(())
+}
+
+#[cfg(windows)]
+fn ensure_single_link(file: &File) -> Result<()> {
+    use std::{ffi::c_void, os::windows::io::AsRawHandle};
+    // BY_HANDLE_FILE_INFORMATION consists of 13 DWORDs (FILETIMEs are
+    // pairs of DWORDs). nNumberOfLinks is DWORD index 10.
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetFileInformationByHandle(handle: *mut c_void, info: *mut u32) -> i32;
+    }
+    let mut info = [0u32; 13];
+    let ok = unsafe { GetFileInformationByHandle(file.as_raw_handle(), info.as_mut_ptr()) };
+    ensure!(ok != 0 && info[10] == 1, "Cannot verify single-link file");
+    Ok(())
+}
+
 fn hash(bytes: &[u8]) -> [u8; 32] {
     Sha256::digest(bytes).into()
 }
@@ -111,6 +133,12 @@ impl Project {
         }
         let path = path.canonicalize()?;
         ensure!(path.starts_with(&self.root), "Path escapes project");
+        // Check canonical names too, including Windows short-name aliases.
+        for part in path.strip_prefix(&self.root)?.components() {
+            if let Component::Normal(name) = part {
+                ensure!(!forbidden_name(name.to_str().context("Non-UTF-8 path")?), "Restricted canonical path");
+            }
+        }
         Ok(path)
     }
     fn relative(&self, path: &Path) -> Result<String> {
@@ -204,7 +232,10 @@ impl Project {
         let (bytes, truncated) = read_bounded(&resolved, PATCH_MAX)?;
         ensure!(!truncated, "File too large for patch");
         let content = utf8(&bytes, false)?;
-        ensure!(content.match_indices(old).count() == 1, "Replacement must match exactly once");
+        ensure!(old != new, "No change");
+        // Count overlapping occurrences as ambiguous too.
+        ensure!(content.char_indices().filter(|(i, _)| content[*i..].starts_with(old)).take(2).count() == 1,
+            "Replacement must match exactly once");
         let replacement = content.replacen(old, new, 1);
         ensure!(replacement.len() <= PATCH_MAX, "Replacement too large");
         let diff = TextDiff::from_lines(&content, &replacement).unified_diff()
@@ -219,15 +250,28 @@ impl Project {
         ensure!(path.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&path, PATCH_MAX)?;
         ensure!(!truncated && hash(&bytes) == patch.original_hash, "File changed after review");
-        let permissions = fs::metadata(&path)?.permissions();
+        let original = File::open(&path)?;
+        ensure_single_link(&original)?;
+        let metadata = original.metadata()?;
+        let permissions = metadata.permissions();
         ensure!(!permissions.readonly(), "File is read-only");
         let mut tmp = NamedTempFile::new_in(path.parent().context("Missing parent")?)?;
         tmp.write_all(patch.replacement.as_bytes())?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let staged = tmp.as_file().metadata()?;
+            ensure!(metadata.uid() == staged.uid() && metadata.gid() == staged.gid(),
+                "Ownership would change");
+            ensure!(metadata.mode() & 0o7000 == 0, "Special mode bits rejected");
+        }
         tmp.as_file().set_permissions(permissions)?;
         tmp.as_file().sync_all()?;
         let current = self.resolve(&patch.path)?;
         let (bytes, truncated) = read_bounded(&current, PATCH_MAX)?;
         ensure!(current == path && !truncated && hash(&bytes) == patch.original_hash, "File changed before commit");
+        ensure_single_link(&File::open(&current)?)?;
+        drop(original);
         tmp.persist(&path).map_err(|_| anyhow::anyhow!("Atomic replacement failed"))?;
         Ok(())
     }
@@ -264,6 +308,19 @@ mod tests {
         assert!(p.apply(patch, true).is_err());
         assert!(p.read(".env").is_err());
         assert_eq!(p.read("a.txt").unwrap().text, "changed");
+    }
+    #[test]
+    fn rejects_hardlink_and_overlapping_replacements() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a.txt");
+        let b = dir.path().join("b.txt");
+        fs::write(&a, "aaa").unwrap();
+        fs::hard_link(&a, &b).unwrap();
+        let p = Project::new(dir.path()).unwrap();
+        assert!(p.propose("a.txt", "aa", "x").is_err());
+        assert!(p.apply(p.propose("a.txt", "aaa", "b").unwrap(), true).is_err());
+        assert_eq!(fs::read_to_string(&a).unwrap(), "aaa");
+        assert_eq!(fs::read_to_string(&b).unwrap(), "aaa");
     }
     #[cfg(unix)]
     #[test]
