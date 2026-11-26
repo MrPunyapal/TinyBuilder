@@ -34,3 +34,25 @@ supported interface. Release remains subject to the existing contract.
 The research track should compare ordinary prompts, deterministic workflow
 assistance and, only after approval and a credible baseline, adapter tuning.
 Do not equate success on narrow synthetic fixtures with general coding ability.
+
+## Coding intelligence is the primary research goal
+
+TinyBuilder is not a workflow compiler or an incident-triage imitation.
+External projects are references for ideas only. Fixed workflows are optional
+scaffolds for repeated operations, not the limit of what the model can do.
+The model must reason about unfamiliar repositories, generate and repair code,
+choose useful tools, interpret test failures and request missing evidence.
+
+Prioritize the next measurable milestones:
+1. Unassisted repair location and cross-file understanding on held-out tasks.
+2. Token-budgeted repository maps and dependency-aware PHP symbol retrieval;
+   compare lexical and structural retrieval before adding an index or embeddings.
+3. Laravel Boost integration through opt-in MCP, package-aware documentation
+   and on-demand skills. Keep remote content transient and treat it as data.
+4. Approved edits and independent test execution in a research lab.
+5. Benchmark small permissively licensed base models, then investigate
+   task-validated SFT/QLoRA only if the results justify it.
+6. Thin TUI over the reusable Rust core and plugin interfaces; do not hardcode
+   framework policy into the core or freeze the product to a particular model.
+
+These milestones may overlap. Existing 0.1 acceptance stays independent.
