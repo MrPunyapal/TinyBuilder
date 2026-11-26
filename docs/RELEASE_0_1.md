@@ -39,6 +39,7 @@ redistribution, signing and security review remain outstanding. Authenticated re
 sending the key or project context on that same socket. Native CI and real
 runtime compatibility remain necessary; this is not an OS sandbox.
 See [candidate quickstart](CANDIDATE_QUICKSTART.md).
+Linux x64 packaging builds and smoke-tests the archive on Ubuntu 22.04 with glibc 2.35. The clean Linux lifecycle is a separate gate.
 
 ## Security continuation (2026-11-26)
 
