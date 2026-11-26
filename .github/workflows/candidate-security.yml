@@ -1,8 +1,10 @@
 name: Candidate security evidence
 on:
   push:
-    branches: ['release/0.1']
-    paths: ['rust/Cargo.lock', 'acceptance/audit_cargo.py', 'acceptance/test_audit_cargo.py', 'acceptance/runtime_upgrade_evidence.py', 'acceptance/test_runtime_upgrade_evidence.py', 'acceptance/runtime_evidence.py', '.github/workflows/candidate-security.yml']
+    branches: [main, 'release/0.1']
+    # Audit the lock and patched runtime for every candidate commit.
+
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths: ['rust/**', 'acceptance/**', '.github/workflows/candidate-security.yml']
