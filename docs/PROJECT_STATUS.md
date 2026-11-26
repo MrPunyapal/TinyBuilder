@@ -18,8 +18,8 @@ release contract.
 | --- | --- |
 | Native 0.1 | Main `9d4343141bab4d710f7d16450105673c994d5c51`; read-only, not qualified for publication. All five retrieved push workflows passed. Fresh candidate artifacts available for all three platforms; continue clean-machine acceptance and release review. |
 | Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Draft at `3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4`; all retrieved workflows passed at this head. Reconcile with current main and review evaluator changes before approval. |
-| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Draft at `c536508bdb1345b380ac2c88e01640120e70d25e`; retrieved Python push workflow passed; full native qualification not established. Local Codex has the Coding Intelligence v1 handoff; reconcile stacked ancestry and preserve evidence. Uncommitted local progress unknown. |
-| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Archival review and decision notes complete at `7363b2dbd86d7fb7c6a5bc88820f83c836125f10`; retrieved CI passed. Documentation branch synchronization and status refresh proposed here; no approval to merge or train implied. |
+| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Draft preserved at `c536508bdb1345b380ac2c88e01640120e70d25e`. Integrated branch `codex/coding-intelligence-v1` at `8dec0b35f73560820fd709014ddef5064386b56c` replays the experimental tree on the tested #18 base. Retrieved exact-head Python workflow passed; local Rust and acceptance checks reported by Codex, not independently rerun. Reconcile with current main without losing work; no new integrated PR yet. |
+| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Archival review and decision notes complete at `7363b2dbd86d7fb7c6a5bc88820f83c836125f10`; retrieved CI passed. Synchronized with main at `75840cf88baefa14b8e045b82f7440de29ee1e7c`; all four retrieved workflows passed. This status refresh incorporates Codex's separate [status proposal](https://github.com/MrPunyapal/TinyBuilder/commit/7b6e0938859cf9ff88c371f571c6812c45cd0619). Recheck current-head CI; no approval to merge or train implied. |
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
 
 ## Evidence to read first
@@ -47,13 +47,34 @@ release contract.
   repository-reported 1.5B 0/6, research 3B 5/6; one-line repairs using multiple
   source files, not general multi-file editing. Replacement matching and
   irrelevant retrieved context are the leading diagnosed bottlenecks.
+- [Coding Intelligence v1 matched experiment](https://github.com/MrPunyapal/TinyBuilder/blob/8dec0b35f73560820fd709014ddef5064386b56c/docs/research/2026-11-27-coding-v1-experiment.md):
+  30 repository-reported trials, 3B exact-text 3/3, both models' model-selected
+  line repairs 0/3 with supplied evidence, one operator-selected repair per
+  model. Both retrieval strategies used the failing line protocol; selective
+  lexical retrieval retained required files in all 12 retrieval trials and
+  reduced observed median prompt tokens about 87%, not an established repair
+  gain. Keep exact text as lab baseline; test retrieval under it separately.
+  Incomplete responses lack usage/finish details; do not infer stop reason.
+  [Corpus control evidence](https://github.com/MrPunyapal/TinyBuilder/blob/8dec0b35f73560820fd709014ddef5064386b56c/benchmarks/results/2026-11-27-coding-v1-corpus.json):
+  12 tasks across three original applications with separate Git histories
+  sharing a Laravel skeleton; seeded/wrong repairs fail and references pass.
+  This is oracle validation, not model qualification or a private holdout.
+  Contained execution and private lineage-disjoint holdout remain open.
+  [Integrated branch Python CI](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45890427075).
 
 ## Next handoff
 
-Check the local agent's latest results before assigning new work. Reconcile
-existing branches; compare model-selected source-range edits with exact-text
-replacements and compare selective lexical retrieval with the current baseline.
-Report all attempts and independently verified behavior. Keep clean release
+Continue on the integrated coding branch after checking local ownership.
+Hold exact-text edit protocol fixed and compare supplied, baseline lexical
+and selective lexical evidence on matched cases. Freeze settings; measure
+functional outcomes, recall, tokens and latency. Test visible stable source
+identifiers separately on development cases; preserve all failures and
+incomplete-response diagnostics without retaining model text. Defer new PHP
+parser dependencies until measured need. Review integration diff and CI
+before preparing one successor PR; retain original drafts until reviewed
+supersession. Require real execution containment before arbitrary generated
+PHP or broader multi-file evaluation; do not use public corpus as private
+holdout. No downloads or training authorized. Keep clean release
 qualification separate. Use the current release candidates for clean-host
 acceptance when available; do not transfer earlier development-host passes
 onto a new exact candidate. Do not merge or publish without approval.
