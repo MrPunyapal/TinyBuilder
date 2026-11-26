@@ -248,12 +248,54 @@ See [maintainer handoff](2026-11-26-maintainer-handoff.md) and [updated model re
   only. No suitable clean Windows guest or macOS host was available.
 - Exact Windows notice checks verified 206 crate notice files across 111
   inventoried crate records and four runtime notices, including LLVM OpenMP.
-  No declared notice files were missing. The exact-main OSV scan covered 129
+  No declared notice files were missing. macOS and Linux verified 200 and
+  204 crate notice files respectively, with no missing declared notice files.
+  The exact-main OSV scan covered 129
   lock entries with zero known matches. Independent redistribution and
   signing review remain pending.
 - The Linux x64 archive failed to launch in the existing Ubuntu 22.04 WSL
-  guest. The application requires `GLIBC_2.39` and the guest has 2.35.
+  guest. The application requires `GLIBC_2.39` and the guest has 2.35. The packaged b12359 runtime itself could print its version in that guest.
   Decide and document the supported Linux baseline before publication or
   build and test the package against an older compatible toolchain. WSL
   does not stand in for a clean Linux host. This compatibility failure
   applies to the exact archive above.
+
+## Rust patch-lab experiments — 2026-11-26
+
+These proposal diagnostics are separate from the unchanged product read gate.
+The baseline PR #18 head `696e6a6e37ffbdd5a1ef5c02ee50fe9b52539224`
+passed 19 GitHub checks with one skipped. Windows offline locked Rust tests
+passed 36/36 after adding the file and line selection controls. Tests cover
+denied, stale, ambiguous, overlapping and hard-linked replacements, traversal
+and rejection of a proposed file outside the selected evidence.
+
+- On the original lab binary, the existing 1.5B returned 2/3 exact
+  proposals (Python and Rust). The local 3B research-only control returned
+  0/3, with wrong Python and Rust proposals and an invalid PHP proposal.
+  After exact-copy prompt changes the 1.5B remained at 2/3, with a no-op
+  PHP proposal. The evaluator retained all failures and applied nothing.
+- On the explicitly disposable Laravel baseline
+  `b8f1471d477b127cc62674e9f37110e2dc80d8c4`, independently fixed
+  PHPUnit controls scored untouched suite 0, broken endpoint 1, correct
+  reference repair 0 and incorrect presence-only email validation 1.
+  The original general-context 1.5B proposal and the single-file retry
+  both failed exact replacement matching before approval, with no file
+  change. The older Python evaluator also stopped once at the reference
+  control. An isolated rerun of that same reference and route listing
+  passed, so that initial failure remains recorded separately.
+- A selected-line 1.5B trial produced a reviewable, safe PHP diff but
+  returned HTTP 422 for every request. The evaluator approved it on the
+  disposable worktree only to test behavior independently. PHP lint and
+  route registration passed, PHPUnit exited 1 and the project scope and
+  model were preserved. A second selected-line trial on a standalone
+  PHP boundary helper produced the wrong boolean expression and was
+  explicitly declined. That source remained unchanged.
+  The existing research-license 3B was also tested with a selected line.
+  It explicitly returned HTTP 200 for every request. PHP lint and route
+  registration passed, PHPUnit exited 1 and scope was preserved. No
+  model repair passed across these four Laravel trials.
+- The selected-line experiment removes model transcription of the old
+  bytes while retaining exact uniqueness, snapshot and human approval
+  checks. Both tested models still failed semantic Laravel repair.
+  Use varied held-out Laravel repairs with the same independent controls
+  before broadening editing or considering any training.

@@ -40,7 +40,10 @@ repair before prompting for approval. The lab receives only
 `routes/web.php` as complete evidence. Review the exact diff and approve
 only the intended safe change in the test project. The runner keeps hidden
 assertions out of the project during inference and scores approved changes
-with PHP lint, Laravel route listing and the full PHPUnit suite. Keep
+with PHP lint, Laravel route listing and the full PHPUnit suite. Add
+`--select-line` to compare operator-selected replacement anchors on the
+same benchmark. This mode leaves the choice of exact old text to the
+evaluator and still requires a reviewed diff and explicit approval. Keep
 `laravel-patch.json` with the report, including failed and declined trials.
 
 Lab apply requires explicit permission plus per-patch approval, complete
