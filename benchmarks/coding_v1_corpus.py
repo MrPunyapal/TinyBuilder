@@ -3,6 +3,7 @@ import argparse
 from dataclasses import dataclass
 from io import BytesIO
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -195,11 +196,15 @@ def main():
         source_dir.mkdir()
         for cls, text in files.items():
             (source_dir / f"{cls}.php").write_bytes(text.encode("utf-8"))
-        require(["git", "init", "-q"], repo)
-        require(["git", "-c", "core.autocrlf=false", "add", "-A"], repo)
-        require(["git", "-c", "user.name=TinyBuilder Benchmarks", "-c",
-                 "user.email=benchmarks@example.invalid", "-c", "core.hooksPath=.git/no-hooks",
-                 "commit", "-qm", f"Original {name} benchmark baseline"], repo)
+        require(["git", "init", "-q", "--initial-branch=main", "--object-format=sha1"], repo)
+        require(["git", "config", "--local", "core.autocrlf", "false"], repo)
+        require(["git", "add", "-A"], repo)
+        commit_env = {**os.environ, "GIT_AUTHOR_DATE": "2026-11-27T00:00:00Z",
+                      "GIT_COMMITTER_DATE": "2026-11-27T00:00:00Z"}
+        subprocess.run(["git", "-c", "user.name=TinyBuilder Benchmarks", "-c",
+                        "user.email=benchmarks@example.invalid", "-c", "core.hooksPath=.git/no-hooks",
+                        "commit", "--no-gpg-sign", "-qm", f"Original {name} benchmark baseline"],
+                       cwd=repo, env=commit_env, check=True, timeout=30)
         shutil.copytree(base / "vendor", repo / "vendor")
         shutil.copyfile(repo / ".env.example", repo / ".env")
         require([args.php, "artisan", "key:generate", "--no-interaction"], repo)
