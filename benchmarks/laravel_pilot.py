@@ -205,38 +205,62 @@ def main():
         parser.add_argument(f"--{key}", type=Path, required=True)
     parser.add_argument("--model", nargs=3, action="append", metavar=("LABEL", "GGUF", "SHA256"), required=True)
     parser.add_argument("--php", required=True)
+    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval"), default="original")
     args = parser.parse_args()
+    cases, wrong_controls = CASES, {}
+    if args.suite != "original":
+        from .workflow_slm import FIXTURES, validate_fixtures
+        validate_fixtures()
+        fixtures = [f for f in FIXTURES if f.split == args.suite.removeprefix("workflow-")]
+        cases = tuple(f.case for f in fixtures)
+        wrong_controls = {f.case.name: f.wrong for f in fixtures}
     base, output = args.baseline.resolve(), args.output.resolve()
     revision = validate_laravel_baseline(base, output)
     args.runtime, args.lab = args.runtime.resolve(strict=True), args.lab.resolve(strict=True)
     output.mkdir()
     proof = output / "pilot.json"
-    report = {"profile": "laravel-v1-pilot-20261127", "baseline": revision, "control_order": ["behavior", "regression"],
+    report = {"profile": "laravel-v1-pilot-20261127" if args.suite == "original" else args.suite, "baseline": revision, "control_order": ["behavior", "regression"],
               "runtime_manifest_sha256": digest(args.runtime / "runtime-manifest.json"), "lab_sha256": digest(args.lab),
               "configuration": {"temperature": 0, "selection_max_tokens": 128, "replacement_max_tokens": 512,
                                 "context": "one complete file with exact selected line; b12359 CPU runtime defaults"},
-              "requested_per_model": len(CASES)*len(ARMS), "controls": {}, "models": []}
+              "requested_per_model": len(cases)*len(ARMS), "controls": {}, "models": []}
     def save():
         proof.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    projects = {case.name: output / case.name for case in CASES}
+    projects = {case.name: output / case.name for case in cases}
     try:
-        for case in CASES:
+        for case in cases:
             controls = prepare(case, base, projects[case.name], revision, args.php)
             report["controls"][case.name] = controls
             if controls != {"broken": [1, 0], "reference": [0, 0]}:
                 raise ValueError(f"Oracle controls failed for {case.name}: {controls}")
+            if case.name in wrong_controls:
+                wrong = {"preview": case.source.replace(case.broken, wrong_controls[case.name])}
+                evaluate_preview(wrong, case, projects[case.name], args.php)
+                controls["wrong"] = wrong["category"]
+                if controls["wrong"] != "reasoning":
+                    raise ValueError(f"Wrong-repair control failed for {case.name}")
         with TemporaryDirectory(prefix="laravel-pilot-plan-", dir=output) as scratch:
             jobs = Path(scratch) / "jobs.json"
             jobs.write_text(json.dumps([{"case": c.name, "project": str(projects[c.name]), "task": c.task,
-                                         "target": c.path, "line": 7, "source": c.source} for c in CASES]), encoding="utf-8")
+                                         "target": c.path, "line": 7, "source": c.source} for c in cases]), encoding="utf-8")
             for label, name, pin in args.model:
                 model = Path(name).resolve(strict=True)
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
                     raise ValueError("Model identity does not match preselected hash")
                 responses, metrics = infer(args.lab, args.runtime, model, jobs)
-                indexed = {(row["case"], row["arm"]): row for row in responses if "case" in row}
+                indexed = {}
+                expected = {(case.name, arm) for case in cases for arm in ARMS}
+                for response in responses:
+                    if "case" not in response:
+                        continue
+                    key = (response["case"], response.get("arm"))
+                    if key not in expected or key in indexed:
+                        raise ValueError("Unexpected or duplicate trial in model output")
+                    if response.get("category") == "pass" or ("preview" in response) != (response.get("category") == "proposal"):
+                        raise ValueError("Model driver cannot assert evaluator success")
+                    indexed[key] = response
                 rows = []
-                for case in CASES:
+                for case in cases:
                     for arm in ARMS:
                         row = indexed.get((case.name, arm), {"case": case.name, "arm": arm,
                                                             "category": "not_run", "driver_failure": metrics["driver_failure"]})
