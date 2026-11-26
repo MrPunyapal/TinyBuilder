@@ -31,3 +31,17 @@ Retrieval parsing dependencies, patch representations, context budgets and
 numerical promotion thresholds need measured evidence. Defer model downloads
 and training. The first measured experiment compares patch location selection
 and lexical context selection separately.
+
+
+## Follow-up maintainer decision — 2026-11-27
+
+The completed [exact-retrieval](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-exact-retrieval-ablation.md)
+and [source-ID](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-source-id-comparison.md)
+experiments justify retaining exact-text plus selective lexical retrieval as
+the lab baseline; defer the tested line/source-ID representations. No
+generalization or model reasoning claim from rejected previews. The highest
+value prerequisite is live isolation qualification followed by broader
+existing-model development evaluation. See the [Phase 2 maintainer decision](https://github.com/MrPunyapal/TinyBuilder/blob/74aba166d1ad38d87621b518638180fdfe85ae44/docs/research/2026-11-27-model-specialization-roadmap.md#maintainer-decision)
+for candidate dossiers, hardware assumptions and training gates. This note
+records maintainer direction, not user approval for downloads, training,
+merging or release. Preserve the original archival research.

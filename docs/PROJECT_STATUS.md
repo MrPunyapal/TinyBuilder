@@ -17,10 +17,12 @@ release contract.
 | Workstream | Snapshot and next action |
 | --- | --- |
 | Native 0.1 | Main `9d4343141bab4d710f7d16450105673c994d5c51`; read-only, not qualified for publication. All five retrieved push workflows passed. Fresh candidate artifacts available for all three platforms; continue clean-machine acceptance and release review. |
-| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Draft at `3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4`; all retrieved workflows passed at this head. Reconcile with current main and review evaluator changes before approval. |
-| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Draft preserved at `c536508bdb1345b380ac2c88e01640120e70d25e`. Integrated branch `codex/coding-intelligence-v1` at `8dec0b35f73560820fd709014ddef5064386b56c` replays the experimental tree on the tested #18 base. Retrieved exact-head Python workflow passed; local Rust and acceptance checks reported by Codex, not independently rerun. Reconcile with current main without losing work; no new integrated PR yet. |
-| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Archival review and decision notes complete at `7363b2dbd86d7fb7c6a5bc88820f83c836125f10`; retrieved CI passed. Synchronized with main at `75840cf88baefa14b8e045b82f7440de29ee1e7c`; all four retrieved workflows passed. This status refresh incorporates Codex's separate [status proposal](https://github.com/MrPunyapal/TinyBuilder/commit/7b6e0938859cf9ff88c371f571c6812c45cd0619). Recheck current-head CI; no approval to merge or train implied. |
+| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Retain draft for provenance; candidate superseded by #23 after integration review and explicit approval. |
+| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Retain original research draft; candidate successor #23 replays and extends its work. Verify overlap before supersession. |
+| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Phase 1 archive and this canonical status refresh. Previous reviewed head `a0c4fe0b6ee254da6afbe8e0801350f332210f31` passed all four workflows; recheck revised head. |
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
+| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Local checkpoint `560e2ce7f04fb04fce288566cda5444a00232826`; remote follow-up `4559cec5f62590ebccd440885ec2b998462dbde8` reconciles main ancestry and accounts for blocked probe denominators. Revised CI and guest qualification pending. |
+| Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Phase 2 archive and maintainer corrections at `74aba166d1ad38d87621b518638180fdfe85ae44`; candidate dossier and isolated evaluation plan, no downloads or training authorized. |
 
 ## Evidence to read first
 
@@ -59,25 +61,42 @@ release contract.
   12 tasks across three original applications with separate Git histories
   sharing a Laravel skeleton; seeded/wrong repairs fail and references pass.
   This is oracle validation, not model qualification or a private holdout.
-  Contained execution and private lineage-disjoint holdout remain open.
+  Broader contained model evaluation remains open; see subsequent private controls below.
   [Integrated branch Python CI](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45890427075).
+
+- [Exact-text retrieval ablation](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-exact-retrieval-ablation.md):
+  12 trials, required-file recall 12/12; 3B 3/3 per arm, 1.5B 0/3 per arm;
+  median prompts 1,818 to 258. Narrow development fixtures only.
+- [Source-ID comparison](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-source-id-comparison.md):
+  18 trials; source ID 0/3 each, all six PHP lint rejections; exact text 3/3
+  for 3B, 0/3 for 1.5B. The initial blocked run is retained. Do not promote
+  source IDs or repeat the same smoke ablation by default.
+- [Adversarial corpus controls](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-corpus-adversarial-controls.md):
+  12 public and two private trusted-control tasks passed; no private live
+  model score. [Contained evaluator](https://github.com/MrPunyapal/TinyBuilder/blob/4559cec5f62590ebccd440885ec2b998462dbde8/docs/research/2026-11-27-contained-php-evaluator.md):
+  model-free infrastructure only, live guest unqualified, blocked probes
+  now reported conservatively; candidate/infrastructure exit attribution open.
+- [Phase 2 roadmap and maintainer decision](https://github.com/MrPunyapal/TinyBuilder/blob/74aba166d1ad38d87621b518638180fdfe85ae44/docs/research/2026-11-27-model-specialization-roadmap.md):
+  conditional MiniCPM5-2B, Qwen3.5-2B and Granite 4.2-3B dossiers; Qwen3.5-4B
+  only if justified. No measured ranking or local QLoRA feasibility.
+- [Exact-main rehearsal](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-exact-main-release-rehearsal.md):
+  local agent reports three verified inner archives and Windows 10/10 genuine
+  reads on an elevated development PC. Clean-host gates remain open.
 
 ## Next handoff
 
-Continue on the integrated coding branch after checking local ownership.
-Hold exact-text edit protocol fixed and compare supplied, baseline lexical
-and selective lexical evidence on matched cases. Freeze settings; measure
-functional outcomes, recall, tokens and latency. Test visible stable source
-identifiers separately on development cases; preserve all failures and
-incomplete-response diagnostics without retaining model text. Defer new PHP
-parser dependencies until measured need. Review integration diff and CI
-before preparing one successor PR; retain original drafts until reviewed
-supersession. Require real execution containment before arbitrary generated
-PHP or broader multi-file evaluation; do not use public corpus as private
-holdout. No downloads or training authorized. Keep clean release
-qualification separate. Use the current release candidates for clean-host
-acceptance when available; do not transfer earlier development-host passes
-onto a new exact candidate. Do not merge or publish without approval.
+Review and qualify the integrated evaluator on an explicitly approved,
+disposable offline Linux VM (see Phase 2 roadmap). Complete structured
+failure attribution and benchmark bridges, run trusted containment smoke
+tests and broaden existing-model development scoring with exact-text plus
+selective retrieval. Freeze settings and keep private evaluation independent.
+Do not execute arbitrary generated PHP on the ordinary development host or
+use the private set to tune. Defer new parser dependencies, model downloads
+and training until evidence warrants. Recheck exact-head CI and complete
+integration/security review before considering #23 and superseding #18/#20.
+Recommended merge order: #21, #24, then #23 after its additional gates;
+reconcile main and rerun applicable CI each time. No merge or publication
+authorized. Native clean-host qualification stays separate.
 
 See [Agent guide](AGENT_GUIDE.md) for stable mission and authority boundaries,
 and [knowledge-maintenance](../.agents/skills/tinybuilder-knowledge-maintenance/SKILL.md)
