@@ -1,6 +1,6 @@
 //! Existing, trusted installed llama.cpp runtime. No downloads or remote API.
 use anyhow::{bail, ensure, Context, Result};
-use crate::process::{self, Owned};
+use crate::{process::{self, Owned}, loopback::{self, Endpoint}};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use serde_json::Value;
@@ -74,6 +74,9 @@ fn valid_name(name: &str) -> bool {
         && ![".gguf", ".safetensors", ".db", ".sqlite", ".sqlite3", ".pem", ".key", ".env"].iter().any(|s| name.to_ascii_lowercase().ends_with(s))
 }
 pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
+    verify_inventory(root).map(|(exe, _)| exe)
+}
+fn verify_inventory(root: &Path) -> Result<(PathBuf, String)> {
     ensure!(root.is_absolute(), "Use an absolute trusted runtime directory");
     let root_meta = root.symlink_metadata()?;
     ensure!(root_meta.is_dir() && !root_meta.file_type().is_symlink(), "Runtime root must be a real directory");
@@ -86,7 +89,15 @@ pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
     let manifest_path = root.join("runtime-manifest.json");
     regular(&manifest_path)?;
     ensure!(manifest_path.metadata()?.len() <= 1024 * 1024, "Oversized runtime manifest");
-    let data: Manifest = serde_json::from_reader(File::open(manifest_path)?)?;
+    // Candidate builds bind the full runtime inventory to the executable.
+    // Unpinned source/lab builds still require a separately trusted root.
+    let bytes = fs::read(&manifest_path)?;
+    ensure!(bytes.len() <= 1024 * 1024, "Oversized runtime manifest");
+    if let Some(expected) = option_env!("TINYBUILDER_RUNTIME_MANIFEST_SHA256") {
+        ensure!(format!("{:x}", Sha256::digest(&bytes)) == expected,
+            "Packaged runtime manifest authentication failed");
+    }
+    let data: Manifest = serde_json::from_slice(&bytes)?;
     let (os, arch, archive, sha) = pin(&data.revision)?;
     let exe = if os == "windows" { "llama-server.exe" } else { "llama-server" };
     ensure!(data.schema == 1 && data.os == os
@@ -111,7 +122,14 @@ pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
         ensure!(valid_name(&name) && name != "runtime-manifest.json", "Invalid runtime filename");
         ensure!(digest(&root.join(name))? == expected, "Runtime digest mismatch");
     }
-    Ok(root.join(exe))
+    Ok((root.join(exe), data.revision))
+}
+
+// b6500 remains inspectable for historical package evidence, but it must
+// not parse model files: published GGUF parser advisories affect this pin.
+fn inference_revision_allowed(revision: &str) -> Result<()> {
+    ensure!(revision == "b12359", "Runtime revision blocked for inference: use a separately verified patched runtime; model-free mode remains available");
+    Ok(())
 }
 
 pub fn model_path(path: &Path) -> Result<PathBuf> {
@@ -127,6 +145,7 @@ pub fn model_path(path: &Path) -> Result<PathBuf> {
 pub struct Runtime {
     child: Owned,
     base: String,
+    port: u16,
     alias: String,
     key: String,
 }
@@ -134,12 +153,6 @@ fn client(timeout: Duration) -> ureq::Agent {
     // No proxy-from-env feature and no redirects. Managed URLs are constructed
     // internally and are never sourced from model or project text.
     ureq::AgentBuilder::new().redirects(0).timeout(timeout).build()
-}
-fn bounded_json(response: ureq::Response) -> Result<Value> {
-    let mut buf = Vec::new();
-    response.into_reader().take(2 * 1024 * 1024 + 1).read_to_end(&mut buf)?;
-    ensure!(buf.len() <= 2 * 1024 * 1024, "Response too large");
-    serde_json::from_slice(&buf).map_err(|_| anyhow::anyhow!("Invalid server JSON"))
 }
 fn status(result: std::result::Result<ureq::Response, ureq::Error>) -> Option<u16> {
     match result {
@@ -149,9 +162,21 @@ fn status(result: std::result::Result<ureq::Response, ureq::Error>) -> Option<u1
     }
 }
 
+fn server_command(exe: &Path, model: &Path, port: u16, alias: &str, key: &str) -> std::process::Command {
+    let mut command = process::command(exe);
+    command.env_clear().env("LLAMA_API_KEY", key)
+        .arg("--model").arg(model)
+        .args(["--host", "127.0.0.1", "--port"]).arg(port.to_string())
+        .args(["--alias", alias, "--device", "none", "--n-gpu-layers", "0"])
+        .args(["--offline", "--no-agent", "--no-webui-mcp-proxy", "--no-webui",
+               "--no-slots", "--jinja", "--log-disable"]);
+    command
+}
+
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
-        let exe = verify_runtime(root)?;
+        let (exe, revision) = verify_inventory(root)?;
+        inference_revision_allowed(&revision)?;
         let model = model_path(model)?;
         let socket = TcpListener::bind(("127.0.0.1", 0))?;
         let port = socket.local_addr()?.port();
@@ -159,11 +184,8 @@ impl Runtime {
         let key: String = rand::thread_rng().sample_iter(&Alphanumeric).take(48).map(char::from).collect();
         let alias: String = format!("tinybuilder-{}", rand::thread_rng().sample_iter(&Alphanumeric).take(24).map(char::from).collect::<String>());
         let dir = exe.parent().context("Missing runtime directory")?;
-        let mut command = process::command(&exe);
-        command.current_dir(dir).env_clear().env("LLAMA_API_KEY", &key)
-            .args(["--model"]).arg(&model)
-            .args(["--host", "127.0.0.1", "--port"]).arg(port.to_string())
-            .args(["--alias", &alias, "--device", "none", "--n-gpu-layers", "0", "--no-webui", "--no-slots", "--jinja", "--log-disable"]);
+        let mut command = server_command(&exe, &model, port, &alias, &key);
+        command.current_dir(dir);
         #[cfg(windows)]
         {
             let system = std::env::var_os("SystemRoot").context("SystemRoot missing")?;
@@ -175,7 +197,7 @@ impl Runtime {
         #[cfg(target_os = "linux")]
         command.env("LD_LIBRARY_PATH", dir);
         let child = Owned::spawn(&mut command).map_err(|_| anyhow::anyhow!("Runtime spawn failed"))?;
-        let mut runtime = Self { child, base: format!("http://127.0.0.1:{port}"), alias, key };
+        let mut runtime = Self { child, base: format!("http://127.0.0.1:{port}"), port, alias, key };
         runtime.ready()?;
         Ok(runtime)
     }
@@ -186,16 +208,17 @@ impl Runtime {
             ensure!(self.child.try_wait()?.is_none(), "Runtime exited before readiness");
             match status(http.get(&format!("{}/health", self.base)).call()) {
                 Some(200) => {
+                    ensure!(self.child.listener_owned(self.port)?, "Unexpected loopback listener owner");
                     let url = format!("{}/props", self.base);
                     ensure!(matches!(status(http.get(&url).call()), Some(401 | 403)), "Runtime accepted missing authentication");
                     ensure!(matches!(status(http.get(&url).set("Authorization", "Bearer invalid-session").call()), Some(401 | 403)), "Runtime accepted invalid authentication");
-                    ensure!(status(http.get(&url).set("Authorization", &format!("Bearer {}", self.key)).call()) == Some(200), "Runtime authentication failed");
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
+                    loopback::authorized(&self.child,self.port,&self.key,Endpoint::Props,None,Duration::from_secs(5)).context("Runtime authentication probe failed")?;
                     // b12359 protects /v1/models; b6500 accepts authenticated
                     // access too. Require the random session alias after auth.
-                    let models = http.get(&format!("{}/v1/models", self.base))
-                        .set("Authorization", &format!("Bearer {}", self.key)).call()
-                        .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
-                    let data = bounded_json(models)?;
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
+                    let data=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Models,None,Duration::from_secs(5)).context("Runtime identity probe failed")?;
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during identity probe");
                     ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     ensure!(self.child.try_wait()?.is_none(), "Runtime exited during readiness");
                     return Ok(());
@@ -207,16 +230,10 @@ impl Runtime {
         bail!("Runtime startup timed out")
     }
     pub fn complete(&self, mut payload: Value) -> Result<Value> {
+        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         payload["model"] = Value::String(self.alias.clone());
-        let response = client(Duration::from_secs(120))
-            .post(&format!("{}/v1/chat/completions", self.base))
-            .set("Authorization", &format!("Bearer {}", self.key))
-            .send_json(payload)
-            .map_err(|err| match err {
-                ureq::Error::Status(code, _) => anyhow::anyhow!("Model HTTP status {code}"),
-                _ => anyhow::anyhow!("Local model transport failed"),
-            })?;
-        let response = bounded_json(response)?;
+        let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120)).context("Local model transport failed")?;
+        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during response");
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
         ensure!(choice["message"].is_object(), "Missing model message");
@@ -227,6 +244,22 @@ impl Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn model_runtime_explicitly_disables_network_and_agent_surfaces() {
+        let command = server_command(Path::new("llama-server"), Path::new("test.gguf"), 1234, "test", "test-key");
+        let args: Vec<_> = command.get_args().collect();
+        for disabled in ["--offline", "--no-agent", "--no-webui-mcp-proxy", "--no-webui", "--no-slots"] {
+            assert!(args.iter().any(|arg| *arg == disabled), "Missing {disabled}");
+        }
+        assert!(!args.iter().any(|arg| *arg == "test-key"));
+    }
+
+    #[test]
+    fn known_affected_runtime_cannot_start_inference() {
+        assert!(inference_revision_allowed("b6500").is_err());
+        assert!(inference_revision_allowed("unknown").is_err());
+        assert!(inference_revision_allowed("b12359").is_ok());
+    }
     #[test]
     fn approved_pin_and_inventory_only() {
         for revision in ["b6500", "b12359"] {

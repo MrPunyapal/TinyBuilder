@@ -1,0 +1,47 @@
+# TinyBuilder 0.1.0 experimental release contract
+
+**NOT QUALIFIED.** Candidate preparation only. See [research handoff](research/2026-11-26-release-audit.md).
+Target: native offline read-only assistant on Windows x64, macOS ARM64,
+Linux x64. Deterministic read/search/inspect, grounded Q&A, guided existing GGUF
+reuse and trusted pinned bundled CPU runtime. No mutation, execution, MCP,
+automatic downloads, training or persisted transcripts in supported interface.
+Python and write-capable examples remain reference/lab only.
+
+| Gate | Status | Required evidence |
+| --- | --- | --- |
+| Scope and version | IMPLEMENTED | Read-only normal CLI, canonical product version and regression tests |
+| Exact candidate CI | VERIFY EXACT HEAD | Locked native tests/build/smoke all three targets |
+| Runtime provenance | WINDOWS DEV-HOST PASS; OTHER TARGETS PENDING | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
+| Clean-machine lifecycle | CI SMOKE IMPLEMENTED; CLEAN HOST BLOCKED | Each target installs/unpacks and runs offline without developer tools, exit/remove preserve user files |
+| Model quality and license | WINDOWS LOCAL 10/10; RELEASE EVIDENCE PENDING | Permissively licensed model, preselected shipped engine, unchanged 10/10 exact two-fact genuine-read trials |
+| Read-only safety | REGRESSION TESTS; REVIEW PENDING | Denial of mutation/exec options, no project mutation, traversal/hardlink/symlink/reparse protection and containment review |
+| Artifacts | BASELINE CI PACKAGES VERIFIED; VERIFY EXACT HEAD | Exact sizes/hashes, source commit, runtime identity, notices, signing status, no weights |
+| Docs and publication | BLOCKED | Accurate onboarding, independent review and explicit approval |
+
+Do not substitute mock or direct controls for actual model qualification, or
+native unit tests for clean-machine lifecycle. Preserve failures and denominators.
+Do not automatically transfer historical checklist passes to the RC.
+
+Product version is distinct from Rust 0.2.0-alpha.1 and Python 0.1.0 package
+metadata. External registry history is unverified; preserve internal semver.
+Final 0.1.0 needs explicit authorization and completed gates. Keep PR #14
+separate, and do not distribute lab executables with supported artifacts.
+
+## Candidate packaging
+
+The native-package workflow builds unsigned portable ZIP (Windows) or tar.gz
+(macOS/Linux) archives from a locked Rust build and the pinned b12359 archive.
+It retains exact source SHA, file and archive hashes, runtime and crate notice
+inventories, and exercises unpacked model-free launch and removal. The build
+binds the runtime manifest to the executable. No weights or lab executables
+are staged. Hosted CI is not clean-machine qualification; system dependency,
+redistribution, signing and security review remain outstanding. Authenticated requests now verify the established server-side TCP tuple before
+sending the key or project context on that same socket. Native CI and real
+runtime compatibility remain necessary; this is not an OS sandbox.
+See [candidate quickstart](CANDIDATE_QUICKSTART.md).
+
+## Security continuation (2026-11-26)
+
+The b6500 package is affected by upstream [GHSA-96jg-mvhq-q7q7](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-96jg-mvhq-q7q7) and [GHSA-3p4r-fq3f-q74v](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-3p4r-fq3f-q74v). New Rust builds reject b6500 at inference startup; doctor and model-free tools remain available. Historical packages lack this guard. The package staging code now uses b12359 after verifying its official archives. Exact-head native package CI, loader/redistribution and all applicable advisory review remain necessary. A patched version is not automatically a secure runtime. Only use known trustworthy model files, never arbitrary GGUF. The new same-connection transport mitigates the listener check/connect race: it verifies the exact established server-side socket owner before sending credentials or context. It rejects unsupported HTTP framing, redirects, chunked responses and compression. Actual runtime compatibility, cross-platform regression results, and independent threat review remain outstanding. It does not defend against privileged or malicious same-user process manipulation. See candidate security evidence workflow and the [model research PR #16](https://github.com/MrPunyapal/TinyBuilder/pull/16), which is not a release dependency.
+
+The exact packaged CLI can be evaluated using acceptance/qualify_packaged_read.py on a disposable acceptance host. This is separate evaluator tooling, not a product runtime dependency. The original Rust lab qualification oracle remains unchanged. See [clean-machine acceptance](CLEAN_MACHINE_ACCEPTANCE.md). The OSV scan found advisories in anyhow 1.0.98 and rand 0.8.5; updated to 1.0.103 and 0.8.6, respectively. The dependency-updated head a0c4ae3 passed [security evidence](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45797085981). Zero known OSV matches does not establish absence of vulnerabilities.

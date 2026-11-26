@@ -1,10 +1,12 @@
 # TinyBuilder
 
+> **Product target: 0.1.0 experimental native read-only assistant (not released).** See [release contract](docs/RELEASE_0_1.md) and [research knowledge base](docs/research/2026-11-26-release-audit.md). Existing Python workflows below are historical reference/development instructions, not the standalone supported product.
+
 **Experimental local-first coding agent** built around small language models, real developer tools, Laravel Boost MCP and opt-in project preferences. Free and MIT licensed. Soup can be used later for fine-tuning; training is not needed to try the first version.
 
 > Status: v0.1 research prototype, not a trained model or a proven replacement for frontier coding agents. A 0.5B model may fail at tool calling and multi-step edits even when tools provide good information. Evaluate before relying on it.
 
-**Start here:** [Quick start](docs/QUICKSTART.md) · [Security boundaries](docs/SECURITY.md) · [Public-preview checklist](docs/RELEASE_CHECKLIST.md).
+**Start here for the native candidate:** [Candidate quickstart](docs/CANDIDATE_QUICKSTART.md) · [Rust build instructions](rust/README.md) · [Release contract](docs/RELEASE_0_1.md). No public download is announced. The [Python quickstart](docs/QUICKSTART.md) and [historical checklist](docs/RELEASE_CHECKLIST.md) remain research reference.
 
 The [November 16 Windows validation](benchmarks/results/2026-11-16-windows-preview-validation.md) observed **18/18 factual read inspections**, **3/3 health edits**, and **3/3 route repairs** using an installed Qwen2.5-Coder 3B model with opt-in constrained JSON. All **12 request-validation edits failed PHP parsing**, and model-selected Boost MCP calls remained **0/3**. These small task samples supported a historical *source-based experimental preview*, not standalone qualification, reliable autonomous coding or a stable release. Python CI cannot validate Ollama inference.
 

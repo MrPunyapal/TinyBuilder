@@ -1,7 +1,7 @@
 name: Rust native rewrite
 on:
   push:
-    branches: [main, 'feat/rust-native-rewrite', 'integration/standalone-preview-20261125']
+    branches: [main, 'feat/rust-native-rewrite', 'integration/standalone-preview-20261125', 'release/0.1']
     paths: ['rust/**', '.github/workflows/rust-native.yml']
   pull_request:
     paths: ['rust/**', '.github/workflows/rust-native.yml']
@@ -48,6 +48,8 @@ jobs:
           "$binary" doctor --project .
           "$binary" read Cargo.toml --project .
           "$binary" search 'tinybuilder' --project .
+          "$binary" inspect "Explain Cargo.toml" --project .
+          "$binary" --version
       - name: Model-free file operation benchmark
         if: runner.os == 'Linux'
         run: |
