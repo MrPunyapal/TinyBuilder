@@ -47,7 +47,7 @@ FIXTURES = (
              r"return\s+\$seats\s*(?:>=|>|<=|<|===)\s*(?:SeatPolicy::MINIMUM|[0-9]{1,2})\s*;",
              r"$this->assertFalse(SeatEligibility::allows(\App\Pilot\SeatPolicy::MINIMUM - 1)); "
              r"$this->assertTrue(SeatEligibility::allows(\App\Pilot\SeatPolicy::MINIMUM));",
-             "$this->assertTrue(SeatEligibility::allows(\App\Pilot\SeatPolicy::MINIMUM + 5));"),
+             r"$this->assertTrue(SeatEligibility::allows(\App\Pilot\SeatPolicy::MINIMUM + 5));"),
         "SeatPolicy",
         policy("SeatPolicy", "public const MINIMUM = 7;"),
         "return $seats > SeatPolicy::MINIMUM;",
