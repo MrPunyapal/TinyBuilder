@@ -6,6 +6,36 @@ with the claimed OS baseline and no Python, Git, Ollama or Rust installed for
 the product test. Do not disable OS protections or use untrusted model files.
 Unsigned CI archives are development-only; no signing approval implied.
 
+## One-command Windows QA run
+
+Copy the exact Windows ZIP, its trusted `artifact.json`, a vetted existing
+GGUF, and the two Python scripts below to the evaluator. Use Python 3.12+
+for QA. From PowerShell, run:
+
+```powershell
+python .\windows_acceptance.py `
+  --archive .\candidate.zip --artifact-json .\artifact.json `
+  --expected-commit FULL_SHA --expected-archive-sha256 ZIP_SHA256 `
+  --model .\approved.gguf --expected-model-sha256 MODEL_SHA256 `
+  --output .\windows-qa-report
+```
+
+Use the ZIP's original filename in place of `candidate.zip`. Keep
+`acceptance/windows_acceptance.py` and `acceptance/qualify_packaged_read.py`
+side by side. Use a new output directory for each run. The runner verifies
+the ZIP and extracted inventory, tests model-free onboarding, checks the
+actual runtime process and listener after normal and forced exit, runs the
+unchanged qualification, and checks removal and preservation. It saves
+`windows-acceptance.json` and the evaluator's `qualification/campaign.json`
+when available.
+
+Disconnect the test machine's network adapters before running. Use
+`--dev-host` only to rehearse on a connected development PC. Record the
+first interactive launch and any Windows security prompts manually on the
+clean, standard-user host before adding Python or using a separate evaluator.
+A development rehearsal or restricted subprocess PATH cannot establish
+clean-machine readiness.
+
 ## Manual product run
 
 1. On a trusted download machine, obtain the matching GitHub Actions artifact
