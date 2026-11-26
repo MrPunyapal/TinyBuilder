@@ -10,7 +10,7 @@ Important constraints:
 - Do not silently call paid APIs or download multi-GB weights in tests. Keep baseline CI deterministic and cheap.
 - Keep Soup isolated from inference/agent runtime. Validate changes to `training/soup.yaml` against the installed Soup schema.
 - Laravel Boost's MCP command is `php artisan boost:mcp` inside an existing Laravel app. Handle missing Boost gracefully.
-- Focus the next engineering milestone on a repeatable benchmark harness using disposable Git worktrees and real Pest/PHPUnit pass/fail signals. Only train when baseline failures and evaluation data justify it.
+- For current engineering sequencing, consult docs/PROJECT_STATUS.md and reviewed decisions; retain the repeatable benchmark harness using disposable Git worktrees and real Pest/PHPUnit pass/fail signals as a core requirement. Only train when baseline failures and evaluation data justify it.
 
 - Tool protocol fallback is explicitly opt-in (`--tool-protocol strict-json`), limited to known local tools, with strict JSON and argument validation. Never parse arbitrary markdown/prose/fenced JSON as actions. Preserve native calls and all permission/argv controls.
 
