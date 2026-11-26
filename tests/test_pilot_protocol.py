@@ -27,6 +27,7 @@ class PHPUnitProofTests(unittest.TestCase):
                 output = Path(argv[argv.index("--log-junit") + 1])
                 if marker is not None:
                     output.write_text("<testsuites><testsuite>" + marker + "</testsuite></testsuites>", encoding="utf-8")
+                self.assertEqual(argv[1:3], ["-d", "opcache.enable_cli=0"])
                 self.assertTrue(argv[-1].endswith("TinyBuilderPilotTest.php"))
                 return SimpleNamespace(returncode=code)
             return run

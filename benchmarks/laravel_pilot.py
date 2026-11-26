@@ -89,7 +89,8 @@ def test(php, project, suffix):
     with TemporaryDirectory(prefix="tinybuilder-phpunit-") as tmp:
         junit = Path(tmp) / "result.xml"
         runner = project / "vendor/phpunit/phpunit/phpunit"
-        result = command([php, str(runner), "--filter=" + suffix + "$",
+        # Each run must execute the source just written by the evaluator.
+        result = command([php, "-d", "opcache.enable_cli=0", str(runner), "--filter=" + suffix + "$",
                           "--log-junit", str(junit), TEST], project)
         try:
             cases = ElementTree.parse(junit).getroot().findall(".//testcase")
