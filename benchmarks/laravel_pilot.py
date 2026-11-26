@@ -210,13 +210,17 @@ def infer(lab, runtime, model, jobs):
         finally:
             stop.set()
             thread.join(timeout=12)
-    rows = [json.loads(line) for line in output.splitlines() if line.startswith("{")]
+    try:
+        rows = [json.loads(line) for line in output.splitlines() if line.strip()]
+    except ValueError:
+        rows, error = [], "driver_protocol"
     return rows, {"wall_seconds": round(monotonic()-start, 2),
                   "runtime_peak_working_set_bytes": max(samples, default=None),
                   "driver_failure": error}
 
 
 def main():
+    cases, arms = CASES, ARMS
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ("baseline", "lab", "runtime", "output"):
         parser.add_argument(f"--{key}", type=Path, required=True)
@@ -251,7 +255,11 @@ def main():
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
                     raise ValueError("Model identity does not match preselected hash")
                 responses, metrics = infer(args.lab, args.runtime, model, jobs)
-                indexed = index_rows(responses, {(case.name, arm) for case in CASES for arm in ARMS})
+                try:
+                    indexed = index_rows(responses, {(case.name, arm) for case in cases for arm in arms})
+                except (TypeError, ValueError):
+                    indexed = {}
+                    metrics["driver_failure"] = "driver_protocol"
                 rows = []
                 for case in CASES:
                     for arm in ARMS:
@@ -267,7 +275,9 @@ def main():
                 save()
     finally:
         save()
-    return 0
+    return int(any(not model["unchanged"] or model["driver_failure"] or
+                   model["counts"].get("not_run") or model["counts"].get("evaluator") or
+                   model["counts"].get("safety") for model in report["models"]))
 
 
 if __name__ == "__main__":
