@@ -220,3 +220,43 @@ The archival session directly read GitHub metadata and repository files. Main at
 **Additional model references from the original search record:** [Qwen2.5-Coder family](https://qwenlm.github.io/blog/qwen2.5-coder-family/), [1.5B license at pinned revision](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct/blob/49f4d684e8fee582b8549e38affa457cc71b0e6c/LICENSE), [1.5B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/tree/main), [3B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/tree/main), [7B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/blob/main/README.md), [Phi-4-mini publisher card](https://huggingface.co/microsoft/Phi-4-mini-instruct/blob/main/README.md), [Phi community conversion](https://huggingface.co/tensorblock/Phi-4-mini-instruct-GGUF), [OpenCoder card at pinned revision](https://huggingface.co/infly/OpenCoder-1.5B-Instruct/blob/db8f58869ca1b157e451a27d202982cc21da4be2/README.md), [MiniCPM repository](https://github.com/openbmb/minicpm), [TRL quickstart](https://huggingface.co/docs/trl/en/quickstart). No weights fetched. Research report did not complete exhaustive candidate comparisons, per-model quantization sensitivity/CPU profiling, training memory breakdowns, full legal audits, or current account-level free-GPU eligibility; these remain qualification tasks.
 
 **Knowledge maintenance:** main's existing model-research and benchmark skills already cover the broad procedures proposed in the original report. Rather than duplicate skills or conflict with the active agent, propose a focused extension to the existing model-research skill in the companion roadmap, pending maintainer review and evidence. PR #21 owns canonical status refresh. No canonical guidance or production code changed.
+
+
+## Maintainer reconciliation — 2026-11-27
+
+This section supersedes stale sequencing and proposed candidate priorities above,
+without rewriting historical evidence. See [current cross-PR decision record](2026-11-27-model-specialization-roadmap.md#maintainer-decision).
+
+The source-ID retry is complete: [PR #23 report](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-source-id-comparison.md)
+records 18 trials; both models scored 0/3 with source IDs, all six rejected by
+PHP lint after location resolution. Exact text scored 3/3 for 3B and 0/3 for
+1.5B; operator control 1/3 each. Retain exact text plus selective lexical
+retrieval as the lab baseline. Do not rerun the same ablations by default.
+No live private model qualification yet. The 12 public and two private trusted
+controls and fake-daemon tests are not model or containment qualification.
+
+The immediate prerequisite is a qualified isolated guest and broader
+development evaluation with the existing weights, not another model download.
+Publisher MiniCPM5-2B results (including SWE-bench Verified 46.4 and BFCL v4
+66.6) are confirmed as reported in its [revision-pinned card](https://huggingface.co/openbmb/MiniCPM5-2B/blob/abe115e887989b14f05e64a3b260648329324c3f/README.md);
+not independently reproduced and not directly comparable to TinyBuilder's
+Q4_K_M CPU setup. MiniCPM5 remains first candidate for a dossier, not approved
+weights. Also evaluate the metadata of [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B)
+(Apache-2.0 card) before escalating to larger models; its text-only runtime and
+quantization path require verification. Granite 4.2-3B remains an independent
+candidate, Qwen3.5-4B a conditional larger control. No winner presumed.
+Publisher [MiniCPM GGUF](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF),
+[Granite card](https://huggingface.co/ibm-granite/granite-4.2-3b),
+[Qwen3.5-4B license](https://huggingface.co/Qwen/Qwen3.5-4B/blob/main/LICENSE)
+and [Qwen2.5-Coder 3B GGUF license](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/blob/main/LICENSE)
+support preliminary classification, not an exhaustive legal or exact-artifact
+audit. The 3B research weights are excluded from product distribution and
+commercial training/distillation unless rights are separately cleared; do not
+assume generated trajectories are cleared for commercial reuse. Generic
+llama.cpp support is not proof of support by pinned b12359 or TinyBuilder's
+strict JSON/template contract.
+
+Hardware estimates remain illustrative. 4 GB VRAM is not a demonstrated
+QLoRA capacity; use measured free VRAM, effective throughput and complete
+memory accounting. Cloud quotas and privacy are unverified. No training
+authorization. All numerical thresholds are proposed, not achieved gates.

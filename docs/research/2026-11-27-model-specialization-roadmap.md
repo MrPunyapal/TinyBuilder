@@ -71,3 +71,66 @@ This is proposed procedural text, not an accepted change; no skill or guideline 
 ## Maintainer decisions required
 
 Review/archive research; approve any canonical skill change, private corpus and containment criteria, new model downloads one by one, actual qualification gates and resource budgets, any cloud data transfer, then any separate calibrated training authorization. No merge/tag/release/paid compute authorized here.
+
+
+## Maintainer decision
+
+Adopt verified exact-text/selected lexical lab baseline and rights/provenance
+admission rules. Adapt the numerical gates into staged development and
+confirmatory evaluation, not a requirement to run every candidate or reach
+60–100 tasks before a small feasibility check. Defer training, source-ID
+promotion, structural retrieval dependencies, distillation and paid/cloud
+compute. Reject using the private holdout for tuning or selecting a winner.
+
+Sequence: (1) qualify the isolated evaluator and complete structured failure
+accounting; (2) run frozen existing-model development tasks including multi-file
+and feedback cases, report unconditional passes and infrastructure blocks;
+(3) freeze candidate dossier and sequentially seek named download approval
+only if useful, first MiniCPM5-2B, with Qwen3.5-2B as smaller comparison and
+Granite 4.2-3B as independent fallback (order subject to artifact/runtime
+readiness); (4) select on development, lock protocol and run a private
+confirmatory comparison once. Existing two private tasks are a pilot, not
+adequate statistical promotion evidence. Expand without exposing tests.
+Only then consider one authorized small SFT pilot if residual behavioral
+deficits remain. Report paired counts and uncertainty; do not treat 95% or
+98% on tiny denominators as stable. On 60 tasks, one error is 1.67 points.
+A block remains in the unconditional denominator and is not attributed to
+model reasoning without evidence. Zero unauthorized actual actions is a hard
+stop; preserve attempts and separate from behavioral success. Keep release
+acceptance independent.
+
+### Local evaluator environment recommendation
+
+Use an up-to-date GPLv3 VirtualBox base package, no Extension Pack, a
+minimal Ubuntu 22.04 or 24.04 x64 server guest (22.04 aligns with release
+baseline; patch before freezing), and Docker Engine inside the guest.
+Windows 11 Home does not support the full Hyper-V role. Existing development
+WSL has host interoperability and is not our outer isolation boundary.
+VirtualBox may be slow with the Windows hypervisor active; do not disable
+VBS, memory integrity, WSL or other protections to make it faster. If
+compatibility fails, use a separate clean physical Linux tester or stop.
+Initial unmeasured budget: 2 vCPU, 3–4 GiB RAM, 25–40 GB dynamically allocated
+disk, no GPU passthrough. The 512 MiB container limit is nested within the VM.
+Keep inference sequential on the host with approved model; if transfer needs
+a new driver, implement it separately and freeze it before evaluation.
+Setup only with user authorization. Provision trusted OS, patches, Docker and
+reviewed image while online, verify versions and hashes, then remove guest
+network adapters, shared folders, clipboard/drag-drop, USB forwarding and
+host credential access. Use a detached read-only transfer medium for vetted
+inputs; export only schema-validated small reports through a reviewed offline
+procedure. No host Docker socket or host mounts; Docker socket belongs to
+trusted guest controller only (current adapter expects /var/run/docker.sock).
+Keep private verifier and answers out of candidate environment. Snapshot a
+clean guest, smoke actual network/mount/privilege/cgroup/seccomp/resource/
+deadline/cleanup controls before any generated PHP; discard after escape,
+cleanup failure or unexplained state. A VM plus containers reduces risk, not
+absolute sandbox proof. Start with trusted public tax controls, then complete
+family bridges and private controls. No live guest was tested remotely.
+
+Sources: [Oracle base package and GPL license](https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/Introduction.html),
+[Oracle security guide](https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/Security.html),
+[hypervisor compatibility](https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/AdvancedTopics.html),
+[Microsoft Hyper-V requirements](https://learn.microsoft.com/en-us/windows-server/virtualization/hyper-v/get-started/Install-Hyper-V),
+[WSL interoperability](https://learn.microsoft.com/en-us/windows/wsl/wsl-config),
+[Docker security](https://docs.docker.com/engine/security/),
+[Docker seccomp](https://docs.docker.com/engine/security/seccomp).

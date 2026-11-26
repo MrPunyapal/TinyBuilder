@@ -49,3 +49,44 @@ Target Windows 11/i7 12th gen/16 GB RAM/RTX 3050 4 GB. CPU inference established
 5. Prepare a small licensed original dataset, then separately request one calibrated QLoRA SFT pilot if residual errors justify it. Compare untouched base, two seeds, no weakened oracle. Stop if gains fail the agreed gates.
 
 Numerical gates in the full report are proposed post-training promotion and stop criteria, not evidence or accepted engineering policy. No production source or canonical status changes; proposed procedural extension in roadmap. No new weights, training, compute, merging or release actions.
+
+
+
+## Maintainer reconciliation — 2026-11-27
+
+This section supersedes stale sequencing and proposed candidate priorities above,
+without rewriting historical evidence. See [current cross-PR decision record](2026-11-27-model-specialization-roadmap.md#maintainer-decision).
+
+The source-ID retry is complete: [PR #23 report](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-source-id-comparison.md)
+records 18 trials; both models scored 0/3 with source IDs, all six rejected by
+PHP lint after location resolution. Exact text scored 3/3 for 3B and 0/3 for
+1.5B; operator control 1/3 each. Retain exact text plus selective lexical
+retrieval as the lab baseline. Do not rerun the same ablations by default.
+No live private model qualification yet. The 12 public and two private trusted
+controls and fake-daemon tests are not model or containment qualification.
+
+The immediate prerequisite is a qualified isolated guest and broader
+development evaluation with the existing weights, not another model download.
+Publisher MiniCPM5-2B results (including SWE-bench Verified 46.4 and BFCL v4
+66.6) are confirmed as reported in its [revision-pinned card](https://huggingface.co/openbmb/MiniCPM5-2B/blob/abe115e887989b14f05e64a3b260648329324c3f/README.md);
+not independently reproduced and not directly comparable to TinyBuilder's
+Q4_K_M CPU setup. MiniCPM5 remains first candidate for a dossier, not approved
+weights. Also evaluate the metadata of [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B)
+(Apache-2.0 card) before escalating to larger models; its text-only runtime and
+quantization path require verification. Granite 4.2-3B remains an independent
+candidate, Qwen3.5-4B a conditional larger control. No winner presumed.
+Publisher [MiniCPM GGUF](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF),
+[Granite card](https://huggingface.co/ibm-granite/granite-4.2-3b),
+[Qwen3.5-4B license](https://huggingface.co/Qwen/Qwen3.5-4B/blob/main/LICENSE)
+and [Qwen2.5-Coder 3B GGUF license](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/blob/main/LICENSE)
+support preliminary classification, not an exhaustive legal or exact-artifact
+audit. The 3B research weights are excluded from product distribution and
+commercial training/distillation unless rights are separately cleared; do not
+assume generated trajectories are cleared for commercial reuse. Generic
+llama.cpp support is not proof of support by pinned b12359 or TinyBuilder's
+strict JSON/template contract.
+
+Hardware estimates remain illustrative. 4 GB VRAM is not a demonstrated
+QLoRA capacity; use measured free VRAM, effective throughput and complete
+memory accounting. Cloud quotas and privacy are unverified. No training
+authorization. All numerical thresholds are proposed, not achieved gates.

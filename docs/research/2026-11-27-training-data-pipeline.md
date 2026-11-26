@@ -84,3 +84,7 @@ Start with 30–50 trusted development tasks and 60–100 private qualification 
 ## External knowledge
 
 Teach how to ask for relevant evidence, check composer.lock and installed package source, apply version-aware guidance, and repair after test feedback. Keep evolving framework docs, optional Boost/MCP and skills in bounded transient context, not persistent memory or training snapshots without rights. Use the [agent guide](../../docs/AGENT_GUIDE.md) for existing authority rules.
+
+## Maintainer clarification
+
+Keep research-license 3B outputs out of commercial-intended training and distillation unless exact teacher/output rights are cleared. Private fixtures remain outside Git, prompts, teacher generation and training exports. Development selects models and settings; the locked private set confirms a predeclared choice. Do not generate trajectories from weak, blocked or unqualified evaluators.
