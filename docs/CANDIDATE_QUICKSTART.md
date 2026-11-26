@@ -12,6 +12,7 @@ Only use trusted GGUF files with verified provenance and digest; unknown model
 files require isolation (this CLI is not a sandbox).
 No Python, Rust, Ollama or Git is needed at run time on a compatible host.
 OS/library prerequisites and clean-machine support are not yet established.
+The Linux x64 candidate targets Ubuntu 22.04 and glibc 2.35. Clean-machine acceptance remains pending.
 
 Extract the entire inner archive into a new directory (keep runtime next to
 tinybuilder). Verify the archive SHA-256 against artifact.json from trusted CI.
