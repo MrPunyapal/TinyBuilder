@@ -91,8 +91,11 @@ fn cross_file_trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
             } else {
                 let result = grounded::edit_request(&job.task,&files).and_then(|request| {
                     row["calls"] = json!(1);
-                    let message = runtime.complete(request).context("runtime_inference")?;
-                    grounded::prepare_edit(&project,&files,&message)
+                    row["request_json_bytes"] = json!(serde_json::to_vec(&request)?.len());
+                    let completion = runtime.complete_with_usage(request).context("runtime_inference")?;
+                    row["prompt_tokens"] = json!(completion.prompt_tokens);
+                    row["completion_tokens"] = json!(completion.completion_tokens);
+                    grounded::prepare_edit(&project, &files, &completion.message)
                 });
                 match result {
                     Ok(edit) => {
@@ -100,9 +103,20 @@ fn cross_file_trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
                         row["path"] = json!(edit.path);
                         row["preview"] = json!(edit.patch.preview_text());
                     }
-                    Err(error) => row["category"] = json!(category(&error, if error.to_string()=="No change" {
-                        "reasoning"
-                    } else { "protocol" })),
+                    Err(error) => {
+                        let detail = error.to_string();
+                        let local = match detail.as_str() {
+                            "No change" => "reasoning",
+                            "Replacement must match exactly once" => "replacement_match",
+                            "File changed since context selection" => "orchestration",
+                            _ => "protocol",
+                        };
+                        let kind = category(&error, local);
+                        row["category"] = json!(if kind == "runtime" && error.chain()
+                            .any(|cause| cause.to_string() == "Incomplete model response") {
+                                "output_limit"
+                            } else { kind.as_str() });
+                    }
                 }
             }
         }

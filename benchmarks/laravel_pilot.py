@@ -9,12 +9,14 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+from xml.etree import ElementTree
 from tempfile import TemporaryDirectory
 from threading import Event, Thread
 from time import monotonic
 
 from .evaluate import command, require, validate_laravel_baseline
 from .validation_case import fresh_fixture_path
+from .pilot_protocol import index_rows
 
 ARMS = ("A", "B", "C", "D")
 TEST = "tests/Feature/TinyBuilderPilotTest.php"
@@ -88,8 +90,23 @@ def patch_category(case, preview):
 
 
 def test(php, project, suffix):
-    result = command([php, "artisan", "test", "--filter=" + suffix], project)
-    return result.returncode
+    # Run the exact evaluator file and method. Exit 1 alone does not prove an assertion failed.
+    with TemporaryDirectory(prefix="tinybuilder-phpunit-") as tmp:
+        junit = Path(tmp) / "result.xml"
+        runner = project / "vendor/phpunit/phpunit/phpunit"
+        result = command([php, str(runner), "--filter=" + suffix + "$",
+                          "--log-junit", str(junit), TEST], project)
+        try:
+            cases = ElementTree.parse(junit).getroot().findall(".//testcase")
+        except (OSError, ElementTree.ParseError):
+            return 2
+    if (len(cases) != 1 or cases[0].get("name") != suffix
+            or cases[0].find("error") is not None or cases[0].find("skipped") is not None):
+        return 2
+    failed = cases[0].find("failure") is not None
+    if failed and result.returncode == 1:
+        return 1
+    return 0 if not failed and result.returncode == 0 else 2
 
 
 def prepare(case, base, root, revision, php, related=None):
@@ -165,15 +182,19 @@ def monitor(process, stop, samples):
     if os.name != "nt":
         return
     system = Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"
-    script = (f"$child=Get-CimInstance Win32_Process -Filter \"ParentProcessId = {process.pid} "
-              "AND Name = 'llama-server.exe'\"; if($child){(Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue).PeakWorkingSet64}")
+    script = (f'$app=Get-Process -Id {process.pid} -ErrorAction SilentlyContinue; '
+              f'$child=Get-CimInstance Win32_Process -Filter "ParentProcessId = {process.pid} '
+              "AND Name = 'llama-server.exe'\"; "
+              "if($app -and $child){$runtime=Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue; "
+              "if($runtime){@{server_peak=$runtime.PeakWorkingSet64;"
+              "combined=$app.WorkingSet64+$runtime.WorkingSet64}|ConvertTo-Json -Compress}}")
     while not stop.is_set():
         try:
             result = subprocess.run([system, "-NoProfile", "-NonInteractive", "-Command", script],
                                     capture_output=True, text=True, timeout=10)
-            if result.stdout.strip().isdigit():
-                samples.append(int(result.stdout.strip()))
-        except (OSError, subprocess.SubprocessError):
+            if result.stdout.strip():
+                samples.append(json.loads(result.stdout))
+        except (OSError, ValueError, subprocess.SubprocessError):
             return
         stop.wait(0.5)
 
@@ -195,9 +216,13 @@ def infer(lab, runtime, model, jobs):
         finally:
             stop.set()
             thread.join(timeout=12)
-    rows = [json.loads(line) for line in output.splitlines() if line.startswith("{")]
+    try:
+        rows = [json.loads(line) for line in output.splitlines() if line.strip()]
+    except ValueError:
+        rows, error = [], "driver_protocol"
     return rows, {"wall_seconds": round(monotonic()-start, 2),
-                  "runtime_peak_working_set_bytes": max(samples, default=None),
+                  "runtime_peak_working_set_bytes": max((sample["server_peak"] for sample in samples), default=None),
+                  "app_runtime_peak_sampled_bytes": max((sample["combined"] for sample in samples), default=None),
                   "driver_failure": error}
 
 
@@ -259,17 +284,11 @@ def main():
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
                     raise ValueError("Model identity does not match preselected hash")
                 responses, metrics = infer(args.lab, args.runtime, model, jobs)
-                indexed = {}
-                expected = {(case.name, arm) for case in cases for arm in arms}
-                for response in responses:
-                    if "case" not in response:
-                        continue
-                    key = (response["case"], response.get("arm"))
-                    if key not in expected or key in indexed:
-                        raise ValueError("Unexpected or duplicate trial in model output")
-                    if response.get("category") == "pass" or ("preview" in response) != (response.get("category") == "proposal"):
-                        raise ValueError("Model driver cannot assert evaluator success")
-                    indexed[key] = response
+                try:
+                    indexed = index_rows(responses, {(case.name, arm) for case in cases for arm in arms})
+                except (TypeError, ValueError):
+                    indexed = {}
+                    metrics["driver_failure"] = "driver_protocol"
                 rows = []
                 for case in cases:
                     for arm in arms:
@@ -288,7 +307,9 @@ def main():
                 save()
     finally:
         save()
-    return 0
+    return int(any(not model["unchanged"] or model["driver_failure"] or
+                   model["counts"].get("not_run") or model["counts"].get("evaluator") or
+                   model["counts"].get("safety") for model in report["models"]))
 
 
 if __name__ == "__main__":
