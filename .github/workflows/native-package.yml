@@ -21,7 +21,7 @@ jobs:
             target: x86_64-pc-windows-msvc
           - os: macos-15
             target: aarch64-apple-darwin
-          - os: ubuntu-24.04
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
@@ -32,6 +32,12 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
+      - name: Verify Linux packaging baseline
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          glibc="$(getconf GNU_LIBC_VERSION)"
+          echo "Linux packaging baseline: $glibc"
+          test "$glibc" = "glibc 2.35"
       - run: rustup toolchain install 1.88.0 --profile minimal
       - run: rustup override set 1.88.0
       - run: python -m unittest discover -s acceptance -p test_runtime_evidence.py -v
