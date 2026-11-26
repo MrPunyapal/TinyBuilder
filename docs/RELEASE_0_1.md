@@ -9,13 +9,13 @@ Python and write-capable examples remain reference/lab only.
 
 | Gate | Status | Required evidence |
 | --- | --- | --- |
-| Scope and version | IMPLEMENTED; CI PENDING | Read-only normal CLI, canonical product version and regression tests |
-| Exact candidate CI | NEW HEAD PENDING | Locked native tests/build/smoke all three targets |
-| Runtime provenance | PATCHED RUNTIME STAGING; VALIDATION PENDING | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
+| Scope and version | IMPLEMENTED | Read-only normal CLI, canonical product version and regression tests |
+| Exact candidate CI | VERIFY EXACT HEAD | Locked native tests/build/smoke all three targets |
+| Runtime provenance | WINDOWS DEV-HOST PASS; OTHER TARGETS PENDING | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
 | Clean-machine lifecycle | CI SMOKE IMPLEMENTED; CLEAN HOST BLOCKED | Each target installs/unpacks and runs offline without developer tools, exit/remove preserve user files |
-| Model quality and license | BLOCKED | Permissively licensed model, preselected shipped engine, unchanged 10/10 exact two-fact genuine-read trials |
+| Model quality and license | WINDOWS LOCAL 10/10; RELEASE EVIDENCE PENDING | Permissively licensed model, preselected shipped engine, unchanged 10/10 exact two-fact genuine-read trials |
 | Read-only safety | REGRESSION TESTS; REVIEW PENDING | Denial of mutation/exec options, no project mutation, traversal/hardlink/symlink/reparse protection and containment review |
-| Artifacts | PACKAGING IMPLEMENTED; CI PENDING | Exact sizes/hashes, source commit, runtime identity, notices, signing status, no weights |
+| Artifacts | BASELINE CI PACKAGES VERIFIED; VERIFY EXACT HEAD | Exact sizes/hashes, source commit, runtime identity, notices, signing status, no weights |
 | Docs and publication | BLOCKED | Accurate onboarding, independent review and explicit approval |
 
 Do not substitute mock or direct controls for actual model qualification, or

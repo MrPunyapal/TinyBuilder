@@ -148,3 +148,71 @@ new agent features. Original full research remains in the project conversation.
 
 - [2a5c248](https://github.com/MrPunyapal/TinyBuilder/commit/2a5c248fc81b9ca2d18d9f9b47c5132151fd7d58) implements the same-connection authenticated loopback transport, replacing the preflight-check-then-connect pattern for bearer credentials and project context. Linux procfs, Windows established TCP owner table and macOS lsof check the exact reversed client/server tuple before transmitting. HTTP framing is bounded, requires explicit content length and JSON on success, and rejects redirects, chunked encoding, ambiguous headers and compression. Added ownership and framing regression tests, including a foreign listener test requiring zero request bytes. Unauthenticated health and deliberately invalid-key probes carry no real secret or project data. This mitigates the original listener replacement race but is not a cryptographic peer identity or protection against malicious same-user/privileged process manipulation. Actual b12359 inference compatibility remains untested; unsupported framing fails closed. Transport failures are categorized as startup/transport failures, not intelligence failures.
 - Exact-head CI for 2a5c248: archive evidence passed; remaining jobs queued/in progress at inspection. Earlier runs superseded/cancelled; do not use them as acceptance. No upgraded package claimed before completed exact-head package CI. Continue with actual clean-host and permissively licensed GGUF qualification per [acceptance instructions](../CLEAN_MACHINE_ACCEPTANCE.md). No weights, training, paid compute, merge or publication.
+
+## Windows packaged acceptance — 2026-11-26
+
+- PR #15 baseline `97a4a7a03479a6f5890475813da916dc2fe9c006` passed
+  [native checks](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798269138),
+  [Rust](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798269239),
+  [Python](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798268911),
+  [archive evidence](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798269071),
+  [security evidence](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798269076)
+  and [packaging](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45798257192).
+  The downloaded Windows archive verified at 21,932,992 bytes and SHA-256
+  `7f5c60576f59f036362e4d242fc5ce5ebe20f748289fffb3ae9a7274e7a52c38`.
+  Local Windows packaging also succeeded at that source. The hosted package
+  failed the first packaged qualification trial in the transport/startup
+  category after 129 seconds, with zero verified reads. The evaluator stopped
+  with nine trials unattempted. Separately, the package reached authenticated
+  readiness and cleaned up on both normal and forced exit.
+- Paired diagnostics on one fresh fixture per model separated tool selection
+  from answering. With the pinned Apache-2.0 Qwen2.5-Coder 1.5B Q4_K_M, the
+  original agent spent eight rounds without a verified read. The 3B research
+  model read the file and returned both facts in the wrong format. Both
+  models answered exactly in the two direct controls and the two split-stage
+  arms, with genuine model-selected reads in both split-stage arms. The
+  controls are diagnostics. PR #16's two synthetic-pilot tests passed locally
+  and its model-free CI passed. Existing weights are sufficient for the
+  tested release task with the split-stage engine. Defer fine-tuning and use
+  fresh held-out codebase tasks for broader capability questions.
+- `0d39e39c820f5a958a73266a638d542a95cd9446` uses the existing split-stage
+  reader for explicit strict file reads in the product CLI. The first request
+  lets the model select a real project file. Its validated tool action must
+  succeed before a bounded answer-only request receives the file evidence.
+  Native and general multi-tool operation retain their existing path. The
+  runtime now explicitly uses b12359's offline mode and disables its built-in
+  agent and web MCP proxy. Local locked Rust tests passed 30/30, acceptance
+  tests 35/35, and Python tests 232 passed with one skipped. Compile check
+  and doctor succeeded.
+- The independently rebuilt Windows package at that code commit was
+  21,887,703 bytes, SHA-256
+  `15dac13cae728a43c349900b92fe45f889083c8751c624c395783d55ce213115`.
+  Its b12359 CPU archive SHA-256 was
+  `837c1655e87df3b66989f4be33a792a1399c785bf259038dc75c900096683e69`
+  and its bound runtime manifest SHA-256 was
+  `14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693`.
+  The unchanged packaged gate passed **10/10** on Windows 11 x64 with the
+  preselected 1.5B artifact (1,117,320,768 bytes, SHA-256
+  `cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046`).
+  All ten trials verified real reads and returned both facts exactly. All
+  fixture, model and package hashes were unchanged, with zero write attempts.
+  Total per-trial latency was 6.33–10.01 s, median 8.88 s, including fresh
+  process startup. This evidence applies to the recorded local build and
+  installed host configuration.
+- On the same i7-12700H Windows development PC, the fixed package reached
+  authenticated readiness in 2.41 s and 4.88 s. The sum of the app and
+  server startup peak working sets was about 2.45 GiB. Both an explicit quit
+  and a forced parent exit removed the exact child and its loopback listener.
+  Owned/foreign established-socket regression tests passed, including zero
+  bytes reaching a foreign socket. A separate direct CPU streaming control
+  returned HTTP 401/401/200 for absent/invalid/valid credentials, produced
+  26.2–26.8 tokens/s, and emitted its first text after 465 ms on the first
+  request and 44–46 ms on repeated requests. The product's buffered HTTP path
+  was used for qualification. Model-free first launch, read/search/inspect,
+  write-flag denial and removal of a disposable copy preserved the fixture
+  with only System32 on PATH.
+- Public release stays on hold pending clean-machine evidence on every
+  target, exact hosted candidate acceptance, and independent security,
+  signing and redistribution review. Windows host networking stayed enabled
+  during the developer checks. PR #14 was preserved separately. No new
+  weights, training, publication or merges.
