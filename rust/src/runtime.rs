@@ -173,6 +173,12 @@ fn server_command(exe: &Path, model: &Path, port: u16, alias: &str, key: &str) -
     command
 }
 
+pub struct ModelCompletion {
+    pub message: Value,
+    pub prompt_tokens: Option<u64>,
+    pub completion_tokens: Option<u64>,
+}
+
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
         let (exe, revision) = verify_inventory(root)?;
@@ -229,7 +235,12 @@ impl Runtime {
         }
         bail!("Runtime startup timed out")
     }
-    pub fn complete(&self, mut payload: Value) -> Result<Value> {
+    pub fn complete(&self, payload: Value) -> Result<Value> {
+        self.complete_with_usage(payload).map(|completion| completion.message)
+    }
+
+    /// The lab can record server-reported context consumption without retaining prompts.
+    pub fn complete_with_usage(&self, mut payload: Value) -> Result<ModelCompletion> {
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         payload["model"] = Value::String(self.alias.clone());
         let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120)).context("Local model transport failed")?;
@@ -237,7 +248,11 @@ impl Runtime {
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
         ensure!(choice["message"].is_object(), "Missing model message");
-        Ok(choice["message"].clone())
+        Ok(ModelCompletion {
+            message: choice["message"].clone(),
+            prompt_tokens: response["usage"]["prompt_tokens"].as_u64(),
+            completion_tokens: response["usage"]["completion_tokens"].as_u64(),
+        })
     }
 }
 
