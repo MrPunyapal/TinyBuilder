@@ -4,7 +4,7 @@ use clap::Parser;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::{collections::BTreeMap, fs, path::PathBuf, time::Instant};
-use tinybuilder::{grounded, project::{Project, ReadResult}, runtime::Runtime, workbench};
+use tinybuilder::{context, grounded, project::{Project, ReadResult}, runtime::Runtime, workbench};
 
 #[derive(Parser)]
 struct Args {
@@ -22,6 +22,7 @@ struct Job {
     line: usize,
     source: String,
     #[serde(default)] cross_file: bool,
+    #[serde(default)] compare_v1: bool,
     #[serde(default)] related: BTreeMap<String, String>,
 }
 
@@ -69,34 +70,47 @@ fn cross_file_trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
     let project = Project::new(&job.project)?;
     let start = Instant::now();
     let mut row = json!({"case":job.case,"arm":arm,"calls":0});
-    let evidence = if arm == "A" {
+    let provided = arm == "A" || (job.compare_v1 && matches!(arm, "B" | "C"));
+    let evidence = if provided {
         let mut files: Vec<_> = job.related.iter().map(|(path,text)| ReadResult {
             path:path.clone(), text:text.clone(), truncated:false
         }).collect();
         files.push(ReadResult {path:job.target.clone(),text:job.source.clone(),truncated:false});
         files.sort_by(|a,b| a.path.cmp(&b.path));
         Ok(files)
+    } else if arm == "S" {
+        context::retrieve_selective(&project, &job.task).map(|context| context.files)
     } else {
         workbench::collect(&project,&job.task).map(|context| context.files)
     };
     match evidence {
         Err(_) => row["category"] = json!("context_retrieval"),
         Ok(files) => {
-            row["event"] = json!(if arm == "A" { "provided_source" } else { "retrieved_source" });
+            row["event"] = json!(if provided { "provided_source" } else { "retrieved_source" });
             row["evidence_bytes"] = json!(files.iter().map(|f| f.text.len()).sum::<usize>());
             row["evidence_paths"] = json!(files.iter().map(|f| &f.path).collect::<Vec<_>>());
             let has_complete = |path: &str| files.iter().any(|f| f.path == path && !f.truncated);
             if !has_complete(&job.target) || !job.related.keys().all(|path| has_complete(path)) {
                 row["category"] = json!("context_retrieval");
             } else {
-                let result = grounded::edit_request(&job.task,&files).and_then(|request| {
+                let mut complete = |request| {
                     row["calls"] = json!(1);
                     row["request_json_bytes"] = json!(serde_json::to_vec(&request)?.len());
                     let completion = runtime.complete_with_usage(request).context("runtime_inference")?;
                     row["prompt_tokens"] = json!(completion.prompt_tokens);
                     row["completion_tokens"] = json!(completion.completion_tokens);
-                    grounded::prepare_edit(&project, &files, &completion.message)
-                });
+                    Ok(completion.message)
+                };
+                let result = if job.compare_v1 && arm == "C" {
+                    let source = files.iter().find(|file| file.path == job.target).context("Missing selected file")?;
+                    grounded::propose_edit_at_line(&project, &job.task, source, job.line, complete)
+                } else if job.compare_v1 && matches!(arm, "B" | "L" | "S") {
+                    grounded::located_line_request(&job.task, &files)
+                        .and_then(|request| grounded::prepare_located_line(&project, &files, &complete(request)?))
+                } else {
+                    grounded::edit_request(&job.task, &files)
+                        .and_then(|request| grounded::prepare_edit(&project, &files, &complete(request)?))
+                };
                 match result {
                     Ok(edit) => {
                         row["category"] = json!("proposal");
@@ -108,6 +122,7 @@ fn cross_file_trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
                         let local = match detail.as_str() {
                             "No change" => "reasoning",
                             "Replacement must match exactly once" => "replacement_match",
+                            "Selected line does not exist" | "Selected line is blank" => "invalid_location",
                             "File changed since context selection" => "orchestration",
                             _ => "protocol",
                         };
@@ -180,7 +195,12 @@ fn main() -> Result<()> {
     for job in &jobs {
         // Both models have the same order. No retries or interactive changes.
         if job.cross_file {
-            let arms = if job.case == "seat_policy" { ["C", "A"] } else { ["A", "C"] };
+            let arms: &[&str] = match (job.compare_v1, job.case.as_str()) {
+                (true, "seat_policy") => &["B", "A", "C", "S", "L"],
+                (true, _) => &["A", "B", "C", "L", "S"],
+                (false, "seat_policy") => &["C", "A"],
+                (false, _) => &["A", "C"],
+            };
             for arm in arms { println!("{}", cross_file_trial(job, arm, &runtime)?); }
             continue;
         }

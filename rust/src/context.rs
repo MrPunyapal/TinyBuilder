@@ -24,6 +24,15 @@ fn terms(task: &str) -> Vec<String> {
 }
 
 pub fn retrieve(project: &Project, task: &str) -> Result<Context> {
+    retrieve_with_minimum_score(project, task, 1)
+}
+
+/// Lab arm that excludes overview fallbacks and isolated single-term hits.
+pub fn retrieve_selective(project: &Project, task: &str) -> Result<Context> {
+    retrieve_with_minimum_score(project, task, 10)
+}
+
+fn retrieve_with_minimum_score(project: &Project, task: &str, minimum_score: u32) -> Result<Context> {
     ensure!(!task.trim().is_empty() && task.len()<=8192, "Invalid task");
     let words = terms(task);
     let (ranked, mut incomplete) = project.ranked_candidates(&words,task)?;
@@ -38,7 +47,7 @@ pub fn retrieve(project: &Project, task: &str) -> Result<Context> {
             }
         }
     }
-    let mut ranked: Vec<_> = ranks.into_iter().collect();
+    let mut ranked: Vec<_> = ranks.into_iter().filter(|(_, score)| *score >= minimum_score).collect();
     ranked.sort_by(|(pa,a),(pb,b)|b.cmp(a).then_with(||pa.cmp(pb)));
     incomplete |= ranked.len()>4;
     let mut files = Vec::new();
@@ -92,5 +101,18 @@ mod tests {
         let dir=tempfile::tempdir().unwrap();
         let p=Project::new(dir.path()).unwrap();
         assert!(retrieve(&p,"Explain frobnicator").is_err());
+    }
+    #[test]
+    fn selective_arm_keeps_named_source_and_drops_single_hit_and_overview() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(dir.path().join("README.md"), "overview").unwrap();
+        fs::write(dir.path().join("SeatPolicy.php"), "<?php class SeatPolicy {}").unwrap();
+        fs::write(dir.path().join("composer.lock"), "SeatPolicy").unwrap();
+        let project = Project::new(dir.path()).unwrap();
+        let task = "Fix SeatPolicy";
+        assert_eq!(retrieve(&project, task).unwrap().files.len(), 3);
+        let selected = retrieve_selective(&project, task).unwrap();
+        assert_eq!(selected.files.len(), 1);
+        assert_eq!(selected.files[0].path, "SeatPolicy.php");
     }
 }

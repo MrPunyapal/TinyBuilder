@@ -1,7 +1,7 @@
 """Validate pilot driver rows before independent PHP scoring."""
 ALLOWED = {
     "proposal", "context_retrieval", "protocol", "reasoning", "runtime",
-    "timeout", "orchestration", "replacement_match", "output_limit",
+    "timeout", "orchestration", "replacement_match", "output_limit", "invalid_location",
 }
 
 

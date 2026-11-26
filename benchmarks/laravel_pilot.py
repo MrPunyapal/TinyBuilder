@@ -233,11 +233,15 @@ def main():
         parser.add_argument(f"--{key}", type=Path, required=True)
     parser.add_argument("--model", nargs=3, action="append", metavar=("LABEL", "GGUF", "SHA256"), required=True)
     parser.add_argument("--php", required=True)
-    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file"), default="original")
+    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file", "coding-v1"), default="original")
     args = parser.parse_args()
     cases, wrong_controls, related = CASES, {}, {}
-    cross_file = args.suite == "coding-cross-file"
-    arms = ("A", "C") if cross_file else ARMS
+    compare_v1 = args.suite == "coding-v1"
+    cross_file = args.suite == "coding-cross-file" or compare_v1
+    if compare_v1:
+        arms = ("A", "B", "C", "L", "S")
+    elif cross_file:
+        arms = ("A", "C")
     if cross_file:
         from .coding_intelligence import FIXTURES, validate_fixtures
         validate_fixtures()
@@ -258,6 +262,7 @@ def main():
     report = {"profile": "laravel-v1-pilot-20261127" if args.suite == "original" else args.suite, "baseline": revision, "control_order": ["behavior", "regression"],
               "runtime_manifest_sha256": digest(args.runtime / "runtime-manifest.json"), "lab_sha256": digest(args.lab),
               "configuration": {"temperature": 0, "selection_max_tokens": 128, "replacement_max_tokens": 1024 if cross_file else 512,
+                                "arms": arms,
                                 "context": "multiple source files, no selected line; A supplied / C retrieved" if cross_file else "one complete file with exact selected line; b12359 CPU runtime defaults"},
               "requested_per_model": len(cases)*len(arms), "controls": {}, "models": []}
     def save():
@@ -279,7 +284,7 @@ def main():
             jobs = Path(scratch) / "jobs.json"
             jobs.write_text(json.dumps([{"case": c.name, "project": str(projects[c.name]), "task": c.task,
                                          "target": c.path, "line": 7, "source": c.source,
-                                         "cross_file": cross_file, "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
+                                         "cross_file": cross_file, "compare_v1": compare_v1, "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
             for label, name, pin in args.model:
                 model = Path(name).resolve(strict=True)
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:

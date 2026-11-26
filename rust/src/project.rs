@@ -332,17 +332,39 @@ impl Project {
     }
     fn propose_checked(&self,path: &str, old: &str, new: &str, expected: Option<[u8;32]>) -> Result<Patch> {
         ensure!(!old.is_empty() && old.len() <= PATCH_MAX && new.len() <= PATCH_MAX && !new.contains('\0'), "Invalid replacement");
+        self.build_patch(path, expected, |content| {
+            ensure!(old != new, "No change");
+            // Count overlapping occurrences as ambiguous too.
+            ensure!(content.char_indices().filter(|(i, _)| content[*i..].starts_with(old)).take(2).count() == 1,
+                "Replacement must match exactly once");
+            Ok(content.replacen(old, new, 1))
+        })
+    }
+    /// A model-selected line is resolved against the supplied complete snapshot.
+    pub fn propose_line_from_read(&self, read: &ReadResult, line: usize, new: &str) -> Result<Patch> {
+        ensure!(!read.truncated, "Cannot patch truncated evidence");
+        ensure!(line > 0 && !new.trim().is_empty() && new.len() <= PATCH_MAX
+            && !new.contains(['\r', '\n', '\0']), "Invalid line replacement");
+        self.build_patch(&read.path, Some(hash(read.text.as_bytes())), |content| {
+            let mut lines = content.split_inclusive('\n');
+            let start: usize = (&mut lines).take(line - 1).map(str::len).sum();
+            let selected = lines.next().context("Selected line does not exist")?;
+            let old = selected.strip_suffix("\r\n").or_else(|| selected.strip_suffix('\n')).unwrap_or(selected);
+            ensure!(!old.trim().is_empty(), "Selected line is blank");
+            let mut replacement = content.to_owned();
+            replacement.replace_range(start..start + old.len(), new);
+            Ok(replacement)
+        })
+    }
+    fn build_patch(&self, path: &str, expected: Option<[u8;32]>,
+        edit: impl FnOnce(&str) -> Result<String>) -> Result<Patch> {
         let resolved = self.resolve(path)?;
         ensure!(resolved.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&resolved, PATCH_MAX)?;
         ensure!(!truncated, "File too large for patch");
         ensure!(expected.is_none_or(|value|value==hash(&bytes)), "File changed since context selection");
         let content = utf8(&bytes, false)?;
-        ensure!(old != new, "No change");
-        // Count overlapping occurrences as ambiguous too.
-        ensure!(content.char_indices().filter(|(i, _)| content[*i..].starts_with(old)).take(2).count() == 1,
-            "Replacement must match exactly once");
-        let replacement = content.replacen(old, new, 1);
+        let replacement = edit(&content)?;
         ensure!(replacement.len() <= PATCH_MAX, "Replacement too large");
         let diff = TextDiff::from_lines(&content, &replacement).unified_diff()
             .header("before", "after").to_string();
