@@ -16,11 +16,11 @@ release contract.
 
 | Workstream | Snapshot and next action |
 | --- | --- |
-| Native 0.1 | Main `841a85fc4f12d10d38776b2bc9ff85232a6eab62`; read-only, not qualified for publication. Continue clean-machine acceptance and release review. |
-| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Draft at `3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4`; local agent to reconcile exact-head CI and evaluator changes. |
-| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Draft at `c536508bdb1345b380ac2c88e01640120e70d25e`; local Codex has the Coding Intelligence v1 implementation handoff. Reconcile stacked ancestry and preserve evidence. |
+| Native 0.1 | Main `9d4343141bab4d710f7d16450105673c994d5c51` passed five workflows. Publication remains blocked by clean-machine acceptance and release review. |
+| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Draft at `3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4`. Exact-head CI recorded 19 successful checks and one skip. |
+| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Draft preserved at `c536508bdb1345b380ac2c88e01640120e70d25e`. The Coding Intelligence v1 branch replays its experiment tree on the tested #18 base and adds the paired measurements and corpus controls. |
 | Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Draft at `7363b2dbd86d7fb7c6a5bc88820f83c836125f10`; archival review and decision notes, not approval to train. |
-| Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Separate documentation/QA workstream. Apply ChatGPT project instructions separately. |
+| Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main. Apply ChatGPT project instructions separately. |
 
 ## Evidence to read first
 
@@ -36,14 +36,19 @@ release contract.
   repository-reported 1.5B 0/6, research 3B 5/6; one-line repairs using multiple
   source files, not general multi-file editing. Replacement matching and
   irrelevant retrieved context are the leading diagnosed bottlenecks.
+- [Coding Intelligence v1 measured report](https://github.com/MrPunyapal/TinyBuilder/blob/8dec0b35f73560820fd709014ddef5064386b56c/docs/research/2026-11-27-coding-v1-experiment.md):
+  the 3B passed 3/3 exact-text trials. Both models scored 0/3 each with
+  model-selected lines and supplied evidence. Selective lexical ranking
+  retained full required-file recall on the smoke cases and cut median
+  prompt size about 87%. The 12-task corpus passed its independent controls
+  and awaits contained evaluation of model-generated code.
 
 ## Next handoff
 
-Check the local agent's latest results before assigning new work. Reconcile
-existing branches; compare model-selected source-range edits with exact-text
-replacements and compare selective lexical retrieval with the current baseline.
-Report all attempts and independently verified behavior. Keep clean release
-qualification separate. Do not merge or publish without approval.
+Compare baseline and selective lexical retrieval using the exact-text edit
+protocol. Test explicit source identifiers separately before moving to a
+private held-out split. Continue clean release qualification independently.
+Repository approvals still govern merging, publication, and model changes.
 
 See [Agent guide](AGENT_GUIDE.md) for stable mission and authority boundaries,
 and [knowledge-maintenance](../.agents/skills/tinybuilder-knowledge-maintenance/SKILL.md)
