@@ -121,10 +121,10 @@ REPOSITORIES = {
         Task("rural_quote", "service", "Add a 100-cent surcharge to rural pickups. Keep urban pricing intact.",
              (("PickupQuote", "450 + 25 * $kilometers", "450 + 25 * $kilometers + ($rural ? 100 : 0)"),),
              "$this->assertSame(600, PickupQuote::cents(2, true));", "$this->assertSame(500, PickupQuote::cents(2, false));"),
-        Task("parcel_weight", "multi_file_repair", "Accept positive parcel weights up to and including 20 kilograms.",
+        Task("parcel_weight", "multi_file_repair", "Set the shared parcel limit to 20 kilograms and accept only positive weights up to that limit.",
              (("ParcelLimit", "MAX_WEIGHT = 25", "MAX_WEIGHT = 20"),
               ("ParcelIntake", "return $weight <= ParcelLimit::MAX_WEIGHT;", "return $weight > 0 && $weight <= ParcelLimit::MAX_WEIGHT;")),
-             "$this->assertFalse(ParcelIntake::accepts(0)); $this->assertFalse(ParcelIntake::accepts(21));",
+             "$this->assertSame(20, ParcelLimit::MAX_WEIGHT); $this->assertFalse(ParcelIntake::accepts(0)); $this->assertFalse(ParcelIntake::accepts(21));",
              "$this->assertTrue(ParcelIntake::accepts(20)); $this->assertTrue(ParcelIntake::accepts(1));"),
     )),
 }
