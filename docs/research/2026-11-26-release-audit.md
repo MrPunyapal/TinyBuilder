@@ -216,3 +216,7 @@ new agent features. Original full research remains in the project conversation.
   signing and redistribution review. Windows host networking stayed enabled
   during the developer checks. PR #14 was preserved separately. No new
   weights, training, publication or merges.
+
+## Post-merge maintainer review
+
+See [maintainer handoff](2026-11-26-maintainer-handoff.md) and [updated model research](2026-11-26-specialized-model.md). All three main post-merge workflows passed at d4ea614; native packaging and security evidence must be run against the actual new candidate commit. PR #14 is superseded by selective lab-only work; PR #16 pilot stays on its research branch. No training or release approval.
