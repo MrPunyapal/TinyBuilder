@@ -6,17 +6,6 @@ Before acting, recheck [main](https://github.com/MrPunyapal/TinyBuilder/tree/mai
 Only local Codex can inspect its uncommitted work. Update this page when a
 milestone, owner, blocker or evidence changes materially.
 
-## Latest Coding Intelligence v1 evidence
-
-The branch continues from the reconciled PR #18 / PR #20 implementation and
-uses PR #22 guidance from main `9d4343141bab4d710f7d16450105673c994d5c51`.
-In the [exact-text retrieval comparison](research/2026-11-27-exact-retrieval-ablation.md),
-both strategies kept full required-file recall on the smoke fixtures. The
-3B scored 3/3 in each arm and the 1.5B scored 0/3 in each. Selective retrieval
-reduced median prompt use by 85.8%. The next step is private held-out
-evaluation in a contained runner and an isolated source-identifier
-comparison. Native 0.1 clean-machine acceptance remains open.
-
 ## Current milestone: Coding Intelligence v1
 
 Improve the edit representation and repository context before selecting or
