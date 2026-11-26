@@ -25,3 +25,30 @@ python -m tinybuilder doctor --project .
 ## Release/0.1 scope
 
 Read docs/RELEASE_0_1.md and docs/research/2026-11-26-release-audit.md before release work. Keep the normal native product CLI read-only. Python and mutation examples are reference/lab only. Preserve the exact model qualification oracle and all failed evidence; do not tag or publish without authorization.
+
+
+## Agent onboarding and reusable skills
+
+Start with [Agent guide](docs/AGENT_GUIDE.md) and the current repository/PR
+state before planning or changing anything. Do not use historical chat or
+benchmark reports as current branch status.
+
+Use the relevant repository skill under `.agents/skills/`:
+- `tinybuilder-onboard`: fresh sessions and workstream reconciliation.
+- `tinybuilder-maintainer`: PR, architecture and roadmap decisions.
+- `tinybuilder-benchmark`: executable coding experiments and failure attribution.
+- `tinybuilder-model-research`: model, dataset and training research.
+- `tinybuilder-release`: native read-only release qualification.
+- `tinybuilder-knowledge-maintenance`: required closeout of substantive work.
+
+**Knowledge maintenance is part of the definition of done.** After meaningful
+research or engineering work, record evidence and current decisions, then
+review affected skills and guidelines. Update an existing skill when a
+reusable procedure changes; create a narrowly scoped skill when a genuinely
+new recurring workflow is established. If no reusable change is warranted,
+state why in the handoff. Preserve negative evidence and explicit approval
+boundaries; never silently turn a hypothesis into policy. Do not persist
+private user data or session transcripts. See the knowledge-maintenance skill.
+
+[ChatGPT project instructions](docs/CHATGPT_PROJECT_INSTRUCTIONS.md) are a
+portable copy for project settings, not an override of this file.
