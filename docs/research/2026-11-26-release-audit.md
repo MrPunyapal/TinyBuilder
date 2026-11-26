@@ -299,3 +299,7 @@ and rejection of a proposed file outside the selected evidence.
   checks. Both tested models still failed semantic Laravel repair.
   Use varied held-out Laravel repairs with the same independent controls
   before broadening editing or considering any training.
+
+## Laravel v1 controlled pilot — 2026-11-27
+
+See the [Laravel benchmark protocol and dated results](../LARAVEL_BENCHMARK_V1.md). Both local models passed 8/8 tightly bounded trials after independent PHPUnit controls. Four-arm evidence and previous failed open-ended repairs remain separate.

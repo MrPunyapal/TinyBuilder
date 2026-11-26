@@ -1,0 +1,263 @@
+{
+  "profile": "laravel-v1-pilot-20261127",
+  "baseline": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+  "control_order": [
+    "behavior",
+    "regression"
+  ],
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "lab_sha256": "847e9ccd132e8b66ccb13fab18f44b8210b68cceb62f035dec05803b0903004f",
+  "configuration": {
+    "temperature": 0,
+    "selection_max_tokens": 128,
+    "replacement_max_tokens": 512,
+    "context": "one complete file with exact selected line; b12359 CPU runtime defaults"
+  },
+  "requested_per_model": 8,
+  "controls": {
+    "email_validation": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ]
+    },
+    "checkout_discount": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ]
+    }
+  },
+  "models": [
+    {
+      "model": "1.5B Q4_K_M",
+      "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "bytes": 1117320768,
+      "unchanged": true,
+      "ready_ms": 1802,
+      "counts": {
+        "pass": 8
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "provided_source",
+          "evidence_bytes": 140,
+          "latency_ms": 1527,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "known_path_read",
+          "evidence_bytes": 140,
+          "latency_ms": 700,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "retrieved_source",
+          "evidence_bytes": 140,
+          "latency_ms": 704,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "D",
+          "calls": 2,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "model_selected_read",
+          "evidence_bytes": 140,
+          "latency_ms": 1780,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "provided_source",
+          "evidence_bytes": 181,
+          "latency_ms": 611,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "known_path_read",
+          "evidence_bytes": 181,
+          "latency_ms": 619,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "retrieved_source",
+          "evidence_bytes": 181,
+          "latency_ms": 637,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "D",
+          "calls": 2,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "model_selected_read",
+          "evidence_bytes": 181,
+          "latency_ms": 2221,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        }
+      ],
+      "wall_seconds": 11.69,
+      "runtime_peak_working_set_bytes": 2689077248,
+      "driver_failure": null
+    },
+    {
+      "model": "3B research GGUF",
+      "sha256": "4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+      "bytes": 1929903072,
+      "unchanged": true,
+      "ready_ms": 3739,
+      "counts": {
+        "pass": 8
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "provided_source",
+          "evidence_bytes": 140,
+          "latency_ms": 2679,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "known_path_read",
+          "evidence_bytes": 140,
+          "latency_ms": 1207,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "retrieved_source",
+          "evidence_bytes": 140,
+          "latency_ms": 1322,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "D",
+          "calls": 2,
+          "case": "email_validation",
+          "category": "pass",
+          "event": "model_selected_read",
+          "evidence_bytes": 140,
+          "latency_ms": 3822,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "provided_source",
+          "evidence_bytes": 181,
+          "latency_ms": 1200,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "known_path_read",
+          "evidence_bytes": 181,
+          "latency_ms": 1187,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "retrieved_source",
+          "evidence_bytes": 181,
+          "latency_ms": 1270,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "D",
+          "calls": 2,
+          "case": "checkout_discount",
+          "category": "pass",
+          "event": "model_selected_read",
+          "evidence_bytes": 181,
+          "latency_ms": 4179,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        }
+      ],
+      "wall_seconds": 21.0,
+      "runtime_peak_working_set_bytes": 4611473408,
+      "driver_failure": null
+    }
+  ]
+}
