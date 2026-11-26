@@ -1,0 +1,262 @@
+# TinyBuilder Deep Research Phase 2: Small Coding Model Specialization
+
+> Archive note (2026-11-27, Asia/Kolkata): This is the complete delivered Phase 2 report, with its citations converted to ordinary Markdown links and an archival reconciliation appended. It is historical research, not approved policy, model qualification, or authorization to download or train. Publisher scores and hardware estimates have not been independently reproduced. The original research session's write-access limitation is retained at the end; the subsequent archival session has GitHub access.
+
+## Repository state, pinned evidence, and research boundary
+
+TinyBuilder’s current repository guidance is unusually clear about the sequencing question this research is meant to answer: **do not train merely because training is technically possible**. `AGENTS.md` requires executable benchmarking before training, keeps weights/runtime/memory/live documentation as separate concerns, preserves opt-in mutation and execution, and explicitly says the next engineering milestone is a repeatable benchmark using disposable worktrees and real PHP/Pest/PHPUnit signals. [AGENTS.md](https://github.com/MrPunyapal/TinyBuilder/blob/main/AGENTS.md) The canonical agent guide strengthens that rule: use the smallest *empirically qualified system*, treat the 1.5B model as a baseline rather than a predetermined winner, treat the 3B weights as a research control, compare lexical/structural retrieval before embeddings, and establish executable failure attribution before SFT/QLoRA. [Agent guide](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/AGENT_GUIDE.md)
+
+The repository snapshot dated November 27, 2026 records native 0.1 at `841a85fc4f12d10d38776b2bc9ff85232a6eab62`, the Coding Intelligence research draft at `c536508bdb1345b380ac2c88e01640120e70d25e`, and the Deep Research archive at `7363b2dbd86d7fb7c6a5bc88820f83c836125f10`. It also says Coding Intelligence v1 should improve edit representation and repository context before selecting or training a new model, and that no new model downloads or training are authorized. [Project status](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/PROJECT_STATUS.md) PR #21 preserves the previous research archive in a documentation-only draft and explicitly states that the archive is evidence, not authorization to train. [PR #21](https://github.com/MrPunyapal/TinyBuilder/pull/21)
+
+The latest directly inspectable Coding Intelligence evidence is stronger than the earlier broad Phase 1 architecture survey. On three original Laravel cross-file reasoning fixtures, Qwen2.5-Coder 1.5B Q4_K_M scored 0/6 across supplied-context and retrieved-context arms, while the research Qwen2.5-Coder 3B Q4_K_M scored 5/6. The 1.5B model produced five unmatchable replacements and one out-of-scope preview; the lone 3B failure under retrieval was also an exact-replacement validation failure. Median prompt size increased from 257 tokens with supplied evidence to 1,818 with repository retrieval, while the relevant files were present in all retrieval trials. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md) These are **not** evidence of general multi-file coding ability: the tasks required a one-line repair informed by multiple files, and the repository itself warns against extrapolating them. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md) · [Phase 1 summary](https://github.com/MrPunyapal/TinyBuilder/blob/7363b2dbd86d7fb7c6a5bc88820f83c836125f10/docs/research/2026-11-27-research-summary.md)
+
+That evidence changes the Phase 2 priority. The first unresolved question is not “which model has the highest coding leaderboard score?” It is “how much verified task success can TinyBuilder gain from better evidence selection, edit representation, tool protocol and feedback repair before model specialization becomes the limiting factor?” The repository’s accepted decision record already points in this direction: compare model-selected source-range edits against exact-text replacement, measure selective lexical retrieval before more complex retrieval, and score behavior independently from proposal acceptance. [Coding v1 decisions](https://github.com/MrPunyapal/TinyBuilder/blob/7363b2dbd86d7fb7c6a5bc88820f83c836125f10/docs/research/2026-11-27-coding-v1-decisions.md)
+
+I could not directly inspect a branch named `codex/coding-intelligence-v1`: public web search returned no indexed result for that exact branch, and the GitHub tree URL was not fetchable through the web tool. The current project status instead points to PR #20 / research work at `c536508…`; PR #20’s inspectable head branch is `research/workflow-slm-lab`, stacked on `feat/rust-patch-lab`, and its scope explicitly excludes native 0.1 release behavior. [PR #20](https://github.com/MrPunyapal/TinyBuilder/pull/20) · [Project status](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/PROJECT_STATUS.md) I therefore treat `c536508…`, the cross-file validation report, and lab revision `7bb336cf823ce3cfe05196b08e5985c55dd3f3df` as the latest source-pinned research evidence I could verify remotely. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md)
+
+## Model candidate shortlist
+
+The strongest Phase 2 shortlist is different from Phase 1 because several newer compact models now provide materially better tool-use and coding evidence. The shortlist below deliberately mixes TinyBuilder-measured baselines with newer candidates whose claims remain publisher-reported until TinyBuilder runs them under its own harness.
+
+| Candidate | Why it matters | License / redistribution | GGUF and llama.cpp | Tool / agent evidence | Laravel/PHP evidence | TinyBuilder disposition |
+|---|---|---|---|---|---|---|
+| **MiniCPM5-2B** | New 2B dense model targeted at local coding agents; publisher reports 69.1 LiveCodeBench v6, 66.6 BFCL v4 and 46.4 SWE-bench Verified | Apache-2.0 | Official GGUF; documented llama.cpp, Ollama and LM Studio support | Publisher reports agent/tool post-training and RL + distillation | No independently verified Laravel result found | **Highest-priority new qualification candidate** |
+| **Granite 4.2-3B** | 3B dense reasoning model with native tool calling, long context and agent-oriented post-training | Apache-2.0 | Official GGUF and direct llama.cpp instructions | Publisher reports BFCL v4 52.41 for 3B; explicit OpenAI-style function calling | No Laravel-specific evidence found | **High-priority cross-family candidate** |
+| **Qwen2.5-Coder-1.5B-Instruct** | Existing low-memory TinyBuilder baseline; code-specialized pretraining | Apache-2.0 | Official Q4_K_M GGUF ~1.12 GB | TinyBuilder observed poor edit/protocol reliability in current coding experiments | Direct TinyBuilder evidence: 0/6 on current cross-file pilot | **Keep as unchanged low-resource control** |
+| **Qwen2.5-Coder-3B-Instruct** | Existing TinyBuilder research control with materially better narrow repair behavior | Qwen Research License; non-commercial use unless separately licensed | Official Q4_K_M GGUF ~2.1 GB | TinyBuilder 5/6 on current narrow cross-file pilot | Direct TinyBuilder evidence | **Research control only; unsuitable default for commercial/open product path** |
+| **Qwen3.5-4B** | New general model with much stronger instruction/agent benchmarks than older small general models | Apache-2.0 | ggml-org official-conversion GGUF; llama.cpp instructions; Q4_K_M ~3.03 GB | Publisher reports BFCL-V4 50.3 and strong agent results | No Laravel-specific evidence found | **Quality-ceiling candidate if RAM/latency acceptable** |
+| **Phi-4-mini-instruct, 3.8B** | Strong small-model cross-family control with tool-call format | MIT | Community GGUF compatible with llama.cpp; Q4_K_M ~2.49 GB | Microsoft documents function-calling format | No Laravel-specific evidence found | **Useful independent control, not first choice** |
+| **OpenCoder-1.5B-Instruct** | Small code-specific model with open training recipe and stronger classic code benchmarks than many older 1–2B models | Publisher describes permissive commercial license | GGUF availability is less canonical than Qwen/Granite/MiniCPM | Primarily code-generation evidence, weak repository-agent evidence | No Laravel evidence found | **Secondary 1.5B comparison** |
+| **Qwen2.5-Coder-7B-Instruct** | Established code-specialist upper bound | Apache-2.0 | Official GGUF | Stronger code model but substantially heavier | No TinyBuilder Laravel result | **Upper-bound qualification, not target default** |
+
+MiniCPM5-2B is the most interesting new candidate. OpenBMB describes it as a 2.516B-parameter standard `LlamaForCausalLM` model, Apache-2.0 licensed, with official GGUFs and documented llama.cpp/Ollama support; its publisher-reported table gives 46.4 SWE-bench Verified and 66.6 BFCL v4. [Model card](https://huggingface.co/openbmb/MiniCPM5-2B/blob/main/README.md) · [Base card](https://huggingface.co/openbmb/MiniCPM5-2B-Base/blob/main/README.md) · [GGUF](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF/tree/main) That is strong enough to justify testing, but not enough to call it superior for TinyBuilder: the same publisher table shows only 8.6 on Terminal-Bench v2.1 and 14.4 on SWE-bench Pro, illustrating how much results depend on task distribution and harness. [Model card](https://huggingface.co/openbmb/MiniCPM5-2B) · [Base card](https://huggingface.co/openbmb/MiniCPM5-2B-Base/blob/main/README.md)
+
+Granite 4.2-3B is the cleanest 3B candidate from a licensing and runtime perspective. IBM releases it under Apache-2.0, explicitly trains for reasoning/tool calling/agentic traces, documents OpenAI-style function schemas, and provides official GGUFs usable directly with llama.cpp. [Model card](https://huggingface.co/ibm-granite/granite-4.2-3b) · [README](https://huggingface.co/ibm-granite/granite-4.2-3b/blob/main/README.md) · [GGUF](https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF/tree/main) IBM reports a 3B BFCL-v4 score of 52.41, but it does not publish 3B SWE-bench results in the model card, so repository-level coding remains unverified for this size. [Model card](https://huggingface.co/ibm-granite/granite-4.2-3b)
+
+Qwen3.5-4B is a plausible capability ceiling rather than an obvious specialization base. Qwen reports 55.8 LiveCodeBench v6, 50.3 BFCL-V4 and strong general-agent scores for the 4B checkpoint, and the model is Apache-2.0. [Model card](https://huggingface.co/Qwen/Qwen3.5-4B) ggml-org provides a Q4_K_M conversion of roughly 3.03 GB with llama.cpp support on Windows, macOS and Linux. [GGUF](https://huggingface.co/ggml-org/Qwen3.5-4B-GGUF) Its multimodal architecture and larger footprint may be wasted complexity for a text-first Laravel specialist, so it should be benchmarked rather than assumed superior.
+
+Qwen2.5-Coder-3B remains scientifically valuable because TinyBuilder already has matched local evidence, but its license is a practical blocker for the intended product: the Qwen Research License explicitly restricts use to non-commercial purposes absent a separate license. [License](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/main/LICENSE) That makes it appropriate as a research comparator, not as the basis of a redistributable product that should remain broadly usable.
+
+The most important model-selection conclusion is therefore: **qualify MiniCPM5-2B and Granite 4.2-3B before authorizing any training; retain Qwen2.5-Coder-1.5B and the existing Qwen2.5-Coder-3B research weights as controls; use Qwen3.5-4B as a quality ceiling; do not adopt Qwen2.5-Coder-3B as the product base because of license restrictions.** The 7B class should be used only to estimate the capability ceiling unless TinyBuilder proves that the additional RAM/latency buys a large repository-level gain.
+
+## Specialization methods: expected benefit versus cost
+
+LoRA remains the default low-resource adaptation method because it freezes the pretrained weights and trains low-rank matrices instead of the whole model. The original LoRA work showed large reductions in trainable parameters and memory relative to full fine-tuning, while QLoRA extended that idea by backpropagating through a frozen 4-bit base into LoRA adapters. [LoRA](https://doi.org/10.48550/ARXIV.2106.09685) · [QLoRA](https://arxiv.org/abs/2305.14314) Hugging Face PEFT’s current guidance recommends QLoRA-style adaptation by targeting all linear layers when appropriate. [PEFT](https://huggingface.co/docs/peft/package_reference/lora)
+
+For TinyBuilder, the methods should be ranked by **expected verified coding gain per unit of engineering effort**, not novelty:
+
+| Method | Expected TinyBuilder value | Compute cost | Data demand | Engineering complexity | Recommendation |
+|---|---:|---:|---:|---:|---|
+| Harness + constrained edit protocol | Very high | None | None | Medium | **Do first** |
+| Retrieval/context curriculum without weight updates | Very high | None | Repository fixtures | Medium | **Do first** |
+| SFT on verified tool/edit trajectories | High | Low–moderate | Hundreds to low thousands of excellent examples | Medium | **First training method** |
+| QLoRA | High | Low–moderate | Same as SFT | Medium | **Preferred local training mechanism** |
+| Rejection sampling / best-of-N | High | Inference-heavy | Verifier required | Low–medium | **Use to build SFT data** |
+| Test-feedback repair curriculum | High | Moderate | Executable failures + repairs | Medium | **Core training content** |
+| Distillation | Medium–high | Teacher generation cost | Large verified trajectory set | Medium–high | **Use only with legally usable teacher outputs** |
+| DPO / preference optimization | Medium | Moderate | High-quality chosen/rejected pairs | Medium | **After SFT only if ranking failures remain** |
+| RLVR / GRPO | Potentially high | High | Fast deterministic verifier | High | **Defer until SFT plateaus** |
+| Full fine-tuning | Low practical value | Very high | Large | High | **Reject for target hardware** |
+| Framework memorization | Fragile | Moderate | Huge and quickly stale | Medium | **Reject as primary strategy** |
+
+DPO is attractive because it replaces reward-model-plus-RL pipelines with a simpler preference objective, but it still requires high-quality preference pairs and does not solve basic edit-format or evidence-selection failures. [DPO](https://arxiv.org/abs/2305.18290) For TinyBuilder, DPO is therefore downstream of SFT: first teach correct tool/evidence/edit behavior; only then optimize preferences such as “minimal patch beats broad rewrite” or “verified evidence beats confident unsupported answer.”
+
+RL with verifiable rewards is genuinely relevant to coding because compilation and tests provide objective outcome signals. Recent code-RL work explicitly uses execution semantics and reports gains over binary-only RLVR and distillation baselines. [CodeRL+](https://arxiv.org/abs/2510.18471) A November 2026 execution-guided coding study similarly combines SFT, repair curricula, group-relative RL and executable verifiers, and reports larger gains after test-feedback rounds than from one-shot success alone. [Let Execution Do the Teaching](https://arxiv.org/abs/2611.19875) Those results support TinyBuilder’s direction, but they do **not** justify starting with RL: both approaches require mature environments, reliable verifiers and much more rollout compute than TinyBuilder presently has.
+
+SWE-smith is more useful as a **data-generation design pattern** than as something TinyBuilder should copy wholesale. It constructs executable environments, synthesizes defects, verifies that tests break, and scales training tasks across many repositories; its published dataset contains about 50,000 instances from 128 repositories. [SWE-smith](https://arxiv.org/abs/2504.21798) TinyBuilder should adapt the principles—environment construction, mutation generation, deterministic verification, lineage splits—not its Python-specific implementation.
+
+SWE-agent is likewise most valuable for its agent-environment research lessons rather than as a product dependency. Its project remains actively maintained and centers on solving GitHub issues through an LM agent interacting with a repository environment. [SWE-agent](https://github.com/SWE-agent) TinyBuilder’s advantage should be a much smaller, deterministic, local-first harness tailored to constrained hardware and Laravel tooling.
+
+On frameworks, PEFT + TRL is the most conservative research stack: PEFT provides LoRA/QLoRA primitives and TRL now supports SFT, DPO, GRPO/RLOO and distillation. [PEFT](https://huggingface.co/docs/peft/package_reference/lora) · [TRL](https://huggingface.co/docs/trl/index) Axolotl is appropriate when experiment configuration, dataset packing and multi-GPU scaling become important, but it is unnecessary complexity for TinyBuilder’s first 1–3B LoRA experiments. [Axolotl FSDP QLoRA](https://github.com/NextAI-Inc/axolotl/blob/main/docs/fsdp_qlora.qmd) · [Axolotl docs](https://github.com/OpenAccess-AI-Collective/axolotl-docs) Unsloth is attractive for consumer-GPU efficiency and supports LoRA/QLoRA/RL, but its own current estimator assumes roughly 0.9 bytes/parameter for 4-bit loading plus about 1.4 GB runtime overhead before training activations and optimizer state; this already illustrates why a nominal “4-bit model” is not synonymous with “fits training in 4 GB.” [Unsloth](https://github.com/unslothai/unsloth/) · [Estimator implementation](https://github.com/unslothai/unsloth/blob/main/studio/frontend/src/lib/vram.ts)
+
+Soup remains worth preserving as an experimental convenience layer because TinyBuilder already has a starter configuration, but it should not be treated as proof of 4 GB feasibility. Soup currently advertises layer-streamed 8B fine-tuning on a 4 GB RTX 3050, yet its own README says the published 4 GB measurement predates a later correctness repair and has not been re-run on that card. [Soup README](https://github.com/nullartist/soup/blob/main/README.md) That makes Soup a promising **experimental path**, not a validated training baseline.
+
+The strategic answer to the “memorize Laravel or learn to use evidence?” question is strongly in favor of **evidence-and-tools specialization**. Laravel APIs, package versions, application conventions and local code change continuously; TinyBuilder’s repository already treats current documentation, MCP, package source, skills and bounded repository context as transient external knowledge rather than something that belongs in model weights. [Agent guide](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/AGENT_GUIDE.md) Training should therefore teach the model *how to identify uncertainty, request the right evidence, invoke the right tool, produce a constrained edit and repair against tests*. Laravel syntax and recurring idioms belong in training, but framework facts that can change should preferentially remain in docs/skills/retrieval.
+
+## Laravel-first verified training-data pipeline
+
+TinyBuilder should create a **provenance-first executable dataset**, not a scrape of Laravel repositories. Each example should be reproducible from a pinned repository state, contain a license decision, and include an executable oracle whenever practical. The unit of training should be a verified engineering episode rather than an isolated code completion.
+
+A recommended record schema is:
+
+```json
+{
+  "example_id": "uuid",
+  "task_family": "validation|eloquent|auth|migration|routing|refactor|repair|tool_use",
+  "repo_lineage_id": "stable-private-lineage-id",
+  "source_kind": "original|permissive_repo|synthetic_mutation|licensed_history",
+  "source_license": "MIT",
+  "source_commit": "sha256-or-git-sha",
+  "framework": {"laravel": "13.43.0", "php": "8.5.13"},
+  "prompt": "...",
+  "initial_state_manifest": ["path:sha256", "..."],
+  "available_tools": ["read_file", "search", "run_test", "docs"],
+  "trajectory": [
+    {"role": "assistant", "action": "..."},
+    {"role": "tool", "result_digest": "..."}
+  ],
+  "proposed_edit": {
+    "representation": "range_patch|structured_edit",
+    "files": ["..."]
+  },
+  "verification": {
+    "lint": true,
+    "behavior_tests": ["..."],
+    "regression_tests": ["..."],
+    "exit_codes": [0, 0]
+  },
+  "negative_attempts": ["..."],
+  "repair_rounds": 1,
+  "quality_flags": [],
+  "dedup_fingerprint": "...",
+  "benchmark_exclusion_tags": [],
+  "created_by": "human|generator-version",
+  "review_status": "machine_verified|human_reviewed"
+}
+```
+
+Original Laravel applications should be the cleanest source because TinyBuilder controls copyright, task design and hidden tests. Permissively licensed repositories can supplement them, but the pipeline should ingest source only after license classification, pin exact commits, preserve attribution requirements, and store task metadata separately from redistributed source where that reduces legal ambiguity. Real bug-fix histories are useful only when both repository license and intended redistribution/training use are compatible.
+
+Synthetic task generation should operate on known-good commits. The generator chooses a semantically meaningful mutation—wrong validation rule, missing authorization condition, relationship cardinality error, query scope bug, mass-assignment mistake, transaction omission, stale route binding, migration defect, multi-file policy mismatch—then runs the relevant test suite. The task is admitted only if the baseline passes, the mutation causes the intended failure, the reference repair restores behavior, and at least one plausible incorrect repair is rejected. This mirrors the strongest property of SWE-smith: defects are tied to executable environments rather than merely described in text. [SWE-smith](https://arxiv.org/abs/2504.21798)
+
+Tool-use trajectories should retain **failed attempts followed by successful repair**, because TinyBuilder specifically wants test-feedback-driven coding. A good training episode can contain: hypothesis → targeted retrieval → proposed patch → syntax/test failure → interpretation → corrected patch → full verification. Rejection sampling can produce several candidate trajectories, but only verifier-passing trajectories should become positive SFT examples; near-miss trajectories can become preference negatives if the failure is attributable and not caused by infrastructure.
+
+The strongest contamination control is **lineage separation first, textual dedup second**. Repositories assigned to private evaluation should never contribute training examples, synthetic mutations, prompts, reference patches or retrieved documentation excerpts. Task-family variants should also be separated: if a training set contains “missing FormRequest validation for enum membership,” the private set should not merely rename the field and class. Exact, normalized and fuzzy code fingerprints should be used only as secondary safeguards. SWE-bench-style contamination is especially dangerous because a model can appear to generalize while reproducing memorized fixes.
+
+The dataset generator should preserve a complete provenance ledger containing repository license, source commit, generation script version, mutation operator, verifier version, environment manifest, hashes of relevant files and the final acceptance result. If an upstream license becomes incompatible or a source must be removed, every derived example should be traceable and removable.
+
+Documentation and skills should remain the mechanism for changing framework knowledge. TinyBuilder’s own canonical guide already treats current docs, MCP, guidelines and skills as external context and directs agents to maintain durable knowledge separately from model weights. [Agent guide](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/AGENT_GUIDE.md) Phase 2 research therefore supports adding a reusable **training-data provenance/verification skill** and a **model-qualification skill**, but not adding Laravel-version facts to static training instructions. Those skills should encode procedures—license gate, lineage split, executable oracle, model/base comparison, artifact hashes—not transient framework content.
+
+## Hardware feasibility and genuinely free compute
+
+The target RTX 3050 with 4 GB VRAM and 16 GB system RAM is adequate for **meaningful inference qualification and very small QLoRA experiments**, but it is not a comfortable general-purpose training workstation. The most important distinction is that 4-bit *inference* footprint is not 4-bit *training* footprint: QLoRA still requires CUDA/PyTorch runtime memory, activations, gradients for adapters, optimizer state, temporary kernels and often dequantization workspaces. The QLoRA paper’s memory savings come from freezing a 4-bit base while training adapters, not from making all training state four-bit. [QLoRA](https://arxiv.org/abs/2305.14314)
+
+TinyBuilder’s own CPU measurements establish useful inference anchors. Qwen2.5-Coder 1.5B Q4_K_M peaked around 2.64 GiB server working set and Qwen2.5-Coder 3B Q4_K_M around 4.45 GiB in the measured Windows CPU-only campaign. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md) That supports CPU usability for both on a 16 GB machine, while also showing why total process RAM is meaningfully larger than the GGUF file alone.
+
+| Configuration | Q4 model payload / known artifact | Training estimate on 4 GB VRAM | Suggested seq / batch | Local feasibility | Planning duration for ~5M train tokens |
+|---|---:|---|---|---|---|
+| Qwen2.5-Coder 0.5B LoRA/QLoRA | sub-GB class | Comfortable relative to larger options | 1K–2K, microbatch 1–2 | **Feasible** | roughly hours to <1 day after measured calibration |
+| Qwen2.5-Coder 1.5B Q4_K_M | 1.12 GB official GGUF | Base 4-bit load roughly fits; activations make long context tight | 1K–2K, microbatch 1, grad accumulation 8–32, checkpointing | **Feasible but constrained** | planning range ~1–4 days; benchmark 1k steps before committing |
+| MiniCPM5-2B QLoRA | ~2B-class | Likely tight; standard Llama architecture helps tooling | 1K, microbatch 1, aggressive checkpointing | **Experimentally uncertain** | several days likely |
+| Granite 4.2-3B QLoRA | 3B class | Unsloth-style 4-bit loading estimate already approaches/exceeds 4 GB before activations | 512–1K, microbatch 1, CPU/offload | **Impractical with conventional QLoRA; streaming/offload experimental** | likely multi-day to >1 week |
+| Qwen3.5-4B QLoRA | Q4_K_M ~3.03 GB GGUF for inference | Conventional training far beyond 4 GB once runtime + activations included | ≤1K with heavy offload only | **Impractical locally** | not recommended |
+| 7B QLoRA | ~4–5+ GB Q4 artifact class | Does not fit ordinary 4 GB training stack | heavy streaming/offload only | **Reject locally except research experiments such as Soup streaming** | not an efficient use of target machine |
+
+The duration ranges above are engineering planning estimates, not measured TinyBuilder throughput. They assume adapter training, short contexts, gradient checkpointing and no large rollout-generation phase; the correct procedure is to run a fixed 500–1,000-step calibration experiment, record effective training tokens/sec and peak RAM/VRAM, then extrapolate. A configuration should be stopped immediately if it spends most wall-clock time swapping/offloading, because “technically runs” is not the same as resource-efficient training.
+
+LoRA rank should start at **8 or 16**, with `r=16` as the default serious experiment and `r=8` as the low-memory control. Higher ranks should require evidence of underfitting because TinyBuilder’s likely bottleneck is trajectory quality rather than adapter capacity. Training should start at 1K context even though models support much longer inference contexts; long repository context belongs mainly in retrieval/harness experiments, and training context should be increased only if held-out failures prove truncation is limiting.
+
+Gradient checkpointing should be enabled for every local 1.5B+ experiment. Optimizer state should remain limited to adapter parameters; paged optimizers can help with spikes, as introduced in QLoRA. [QLoRA](https://arxiv.org/abs/2305.14314) CPU offloading can make otherwise impossible configurations launch, but on 16 GB system RAM it competes with dataset workers, Windows, CUDA staging and page cache, so 3B+ training should be considered experimental rather than a normal local workflow.
+
+Free cloud compute is useful, but it is not a stable training entitlement. Google Colab’s free tier explicitly has dynamic unpublished usage limits, variable GPU types and at most 12-hour notebook lifetimes depending on availability and usage. [Colab FAQ](https://research.google.com/colaboratory/faq.html) Kaggle currently documents a free single Tesla P100 and 12-hour CPU/GPU notebook sessions, with queueing possible at busy times. [Kaggle notebook docs](https://www.kaggle.com/docs/notebooks) Lightning currently advertises initial free credits equivalent to up to roughly 80 interruptible T4 hours, but the larger credit allocation requires adding a card, so only the no-card portion should be treated as unconditionally free. [Lightning pricing](https://studio.lightning.ai/pricing/) · [Support pricing](https://support.lightning.ai/pricing/) Hugging Face ZeroGPU gives free accounts only five GPU minutes per day and is designed for shared Space execution, not sustained training. [ZeroGPU](https://huggingface.co/docs/hub/main/spaces-zerogpu)
+
+The best genuinely free external path is therefore **Kaggle first, Colab opportunistically, Lightning only within truly free credits**. Private proprietary repositories should not be uploaded to any third-party notebook service unless the maintainer explicitly accepts that privacy boundary. Colab additionally documents collection of prompts/code/output when its generative-AI features are used, so those features should be disabled for any sensitive research workload. [Colab FAQ](https://research.google.com/colaboratory/faq.html?hl=en) Original TinyBuilder-generated Laravel fixtures and redistributable permissive data are the safest materials for free-cloud experiments.
+
+## Staged experimental program and acceptance criteria
+
+The experimental program should isolate four possible bottlenecks before touching weights: **model reasoning, evidence retrieval, edit representation, and evaluator/protocol behavior**. The current 1.5B results are especially important because most failures occurred before behavioral scoring; training on Laravel semantics would be wasted if the model still cannot express an accepted edit. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md)
+
+The first stage should freeze model weights and compare edit representations under identical evidence. Run the existing 1.5B and 3B controls on at least 30 private tasks using exact-text replacement, source-range replacement and a structured edit object. Measure parse success, target-file correctness, target-range correctness, application success and behavioral test success separately. Promote a representation only if application success improves materially without increasing out-of-scope edits or regression failures.
+
+The second stage should freeze the best edit protocol and compare evidence arms: complete supplied evidence, current retrieval, bounded lexical retrieval, structural PHP symbol retrieval and lexical-plus-dependency hints. Context budget should be treated as an experimental variable. The existing campaign already suggests retrieval can inject irrelevant material and inflate prompts without missing the relevant files. [Cross-file validation](https://github.com/MrPunyapal/TinyBuilder/blob/c536508bdb1345b380ac2c88e01640120e70d25e/docs/research/2026-11-27-cross-file-validation.md) The goal is not maximum recall; it is maximum behavioral success per retrieved token.
+
+The third stage should qualify models with the same harness. Every candidate must run exactly the same private tasks, tool schemas, edit representation, retrieval budget, generation settings and verifier. MiniCPM5-2B, Granite 4.2-3B, Qwen3.5-4B and Phi-4-mini should be compared to untouched Qwen2.5-Coder 1.5B and the existing 3B research control. Publisher benchmarks should not influence scoring once local results exist.
+
+The fourth stage is the first point at which training becomes eligible. Train a **small QLoRA SFT adapter** on several hundred to a few thousand verified examples emphasizing tool choice, compact evidence use, valid structured edits, minimal change and test-feedback repair. Do not start with framework encyclopedic data. Every trained checkpoint must be evaluated against its untouched base under identical decoding, harness, retrieval and verifier settings.
+
+The fifth stage should add rejection-sampled repairs and preference pairs only if SFT shows genuine behavioral improvement but persistent ranking problems. DPO should be used for choices such as minimal patch versus broad rewrite, correct evidence selection versus unnecessary retrieval, and successful repair versus plausible-but-failing repair. RLVR should be considered only after a deterministic, fast verifier exists and SFT/DPO gains have plateaued.
+
+Acceptance should use a private held-out set with **repository-lineage separation and task-family separation**, not randomized examples from the same projects. A serious initial qualification set should have at least 60–100 tasks across multiple repositories, with enough multi-file cases that a one-file success pattern cannot dominate the score. The public smoke fixtures remain regression controls, not the main score.
+
+| Metric | Initial training authorization threshold | Product-oriented target | Failure / stop condition |
+|---|---|---|---|
+| Valid structured edit / tool action | ≥95% | ≥98% | <90% after protocol tuning |
+| Patch applies to intended revision | ≥95% | ≥98% | Training gain comes only from parser forgiveness |
+| Behavioral task pass rate | ≥10 absolute points over untouched base, with confidence interval not dominated by a few tasks | ≥60% on private Laravel set | <5-point gain after two controlled SFT runs |
+| Unseen repository success | No worse than overall by >15 points | gap ≤10 points | Large same-lineage-only gains |
+| Multi-file task success | Demonstrable improvement over base | ≥50% on qualified multi-file subset | No improvement after retrieval/edit controls |
+| Test-feedback repair | ≥20% relative recovery among initial failures | ≥40% recovery | Model repeats same failed patch pattern |
+| Regression preservation | ≥98% | ≥99% | Any systematic regression family |
+| Tool-selection correctness | ≥90% | ≥95% | Frequent unnecessary execution or wrong tools |
+| Hallucinated tool/action rate | ≤2% | ≤1% | >5% |
+| Total RAM, target model | ≤12 GB preferred | ≤8 GB desirable | Persistent swapping on 16 GB host |
+| VRAM for inference | ≤4 GB with partial/full offload path | ≤4 GB | Requires more than target GPU to function |
+| CPU usability | Interactive enough for real repair loop; measure p50/p95 wall time | target p50 task round under ~30 s for common actions | >2× baseline latency without substantial accuracy gain |
+| License | Commercial redistribution allowed | Apache-2.0/MIT-like strongly preferred | Research-only/non-commercial base |
+| Safety | No implicit command/write widening | explicit permission preserved | training increases unauthorized actions |
+
+Stopping criteria matter as much as promotion criteria. If two independently seeded SFT runs fail to beat the untouched base by at least five absolute points on private behavioral tasks, stop tuning that dataset/model pair. If improvement exists only on task families represented in training, stop and redesign the split. If the model becomes better at emitting valid patches but not at passing tests, stop increasing training volume and investigate reasoning/data quality. If a 3–4B candidate gains less than about five absolute behavioral points over a 1.5–2B candidate while doubling latency or memory, prefer the smaller model.
+
+## Recommendation, risks, and pre-training authorization decision
+
+TinyBuilder should **not authorize general model training yet**. The evidence currently supports one narrowly scoped future authorization: a small QLoRA SFT experiment **after** the Coding Intelligence v1 harness proves that edit application and retrieval are no longer the dominant failure source.
+
+The immediate model work should be qualification, not training. MiniCPM5-2B should be tested first because it combines a very small dense footprint, Apache-2.0 licensing, official GGUF/llama.cpp support and unusually strong publisher-reported code/tool results for its size. [Model card](https://huggingface.co/openbmb/MiniCPM5-2B) · [GGUF](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF/tree/main) Granite 4.2-3B should be second because of its clean license, explicit native tool calling and official GGUF support. [Model card](https://huggingface.co/ibm-granite/granite-4.2-3b) · [GGUF](https://huggingface.co/ibm-granite/granite-4.2-3b-GGUF/tree/main) Qwen3.5-4B should be the quality/latency ceiling, while Qwen2.5-Coder 1.5B and the existing 3B research weights remain matched controls. The 3B Qwen2.5 research checkpoint should not become the product base because its license is non-commercial. [License](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/main/LICENSE)
+
+Training, when authorized, should target **behavioral specialization** rather than Laravel memorization: correct evidence requests, compact repository exploration, deterministic tool use, structured edits, minimal patching, interpretation of failing tests and repair. This is consistent with SWE-smith’s executable-data lesson, SWE-agent’s environment-centric approach, current code-RL research, and TinyBuilder’s own repository architecture. [SWE-smith](https://arxiv.org/abs/2504.21798) · [SWE-agent](https://github.com/SWE-agent) · [CodeRL+](https://arxiv.org/abs/2510.18471) · [Agent guide](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/AGENT_GUIDE.md)
+
+Several approaches should be explicitly rejected for Phase 2. Full fine-tuning is not justified on 4 GB VRAM. Training a 7B model locally merely because layer streaming can make it launch is resource-inefficient until smaller models fail controlled qualification. RLVR should not precede a stable verifier. Large scraped Laravel corpora should not substitute for executable, provenance-tracked examples. Benchmark leaderboard rank should not override local task evidence. Qwen2.5-Coder-3B should not become a redistributable commercial base under its current research-only terms. [License](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/main/LICENSE)
+
+The principal remaining risks are dataset leakage, licenses, verifier overfitting, harness-specific specialization, quantization-induced structured-output failures, task-family imbalance, test suites that are too weak to detect semantically wrong patches, and local training configurations that technically run but spend most wall-clock time offloading. These risks should all be visible in the dataset schema and benchmark outputs rather than handled informally.
+
+Reusable repository knowledge should be updated only after Coding Intelligence v1 lands or Phase 2 experiments produce stable evidence. The most defensible additions are procedural skills for model qualification and training-data provenance: exact base/model/runtime hashes, license classification, held-out lineage enforcement, behavioral verifier requirements, resource capture, and mandatory untouched-base comparison. The repository’s current agent guide already provides the correct policy hierarchy and does not need another broad architecture document. [Agent guide](https://github.com/MrPunyapal/TinyBuilder/blob/main/docs/AGENT_GUIDE.md)
+
+The final pre-training gate is therefore: **finish the edit-representation experiment, finish bounded retrieval qualification, run the same private Laravel benchmark on Qwen2.5-Coder-1.5B, existing Qwen2.5-Coder-3B, MiniCPM5-2B, Granite 4.2-3B and Qwen3.5-4B, and only then authorize one small QLoRA SFT experiment if the winning model still shows repeatable model-attributable failures that high-quality verified trajectories are plausibly able to correct.** If better harness/retrieval alone closes most of the gap, do not train.
+
+I was unable to create the requested documentation-only branch or draft PR in this session. The web tooling provided read access only; the container could not resolve `github.com` for a Git clone, and I had no authenticated GitHub write tool with which to independently verify push permission. I therefore made no repository changes, did not touch the active Coding Intelligence branch, did not download weights, did not train, did not use paid compute, and did not modify native 0.1 or its qualification oracle.
+
+---
+
+## Archival reconciliation — 2026-11-27 (not part of the original report)
+
+The archival session directly read GitHub metadata and repository files. Main at [9d4343141bab4d710f7d16450105673c994d5c51](https://github.com/MrPunyapal/TinyBuilder/commit/9d4343141bab4d710f7d16450105673c994d5c51) includes PR #22 guidance. Open drafts: #18 at 3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4, #20 at c536508bdb1345b380ac2c88e01640120e70d25e, #21 at a0c4fe0b6ee254da6afbe8e0801350f332210f31. The previously inaccessible Coding Intelligence branch is now directly inspectable at [56889a82876d15362a54245e0e33eeabd8141012](https://github.com/MrPunyapal/TinyBuilder/commit/56889a82876d15362a54245e0e33eeabd8141012). Only local Codex can inspect uncommitted work. No live inference or training was performed in this archive session.
+
+**Repository-reported newer results, not reproduced here:** [exact retrieval ablation](https://github.com/MrPunyapal/TinyBuilder/blob/56889a82876d15362a54245e0e33eeabd8141012/docs/research/2026-11-27-exact-retrieval-ablation.md) holds exact-text edits fixed. All 12 trials completed, both retrieval arms recalled both complete required files on every trial. 1.5B 0/3 in each arm (four matching, two scope failures across six); 3B 3/3 in each arm. Median prompt tokens 1,818 → 258; median latency 19.75 → 3.75 s (1.5B), 38.40 → 9.65 s (3B). Peak sampled driver + server RAM 2.66 and 4.50 GiB respectively; CPU run. All six accepted repairs passed lint, behavior and regressions. These are the same three narrow smoke cases, not an independent multi-file qualification.
+
+[Source-ID comparison](https://github.com/MrPunyapal/TinyBuilder/blob/56889a82876d15362a54245e0e33eeabd8141012/docs/research/2026-11-27-source-id-comparison.md) and [continuation handoff](https://github.com/MrPunyapal/TinyBuilder/blob/56889a82876d15362a54245e0e33eeabd8141012/docs/research/2026-11-27-next-phase-handoff.md) document a blocked first attempt (known reference failed before inference due to stale Windows CLI OPcache), a fix disabling cache for rewritten-source controls, and a retry that local Codex owns. Public corpus adversarial controls 12/12 and private controls 2/2 were reported on trusted code; ten model-free contained-evaluator tests passed, but verified isolated guest/image and live safety smoke tests remain required before generated-code private evaluation. The release rehearsal reportedly passed the Windows development-host read oracle 10/10; clean Windows standard-user, Ubuntu 22.04 and Apple Silicon acceptance remain separate and open.
+
+**Accepted direction versus proposals:** [PR #21 decision record at latest inspected head](https://github.com/MrPunyapal/TinyBuilder/blob/a0c4fe0b6ee254da6afbe8e0801350f332210f31/docs/research/2026-11-27-coding-v1-decisions.md) and [Phase 1 summary](https://github.com/MrPunyapal/TinyBuilder/blob/a0c4fe0b6ee254da6afbe8e0801350f332210f31/docs/research/2026-11-27-research-summary.md) preserve existing controls, bounded retrieval first, independent verification and explicit approval. The new MiniCPM prioritization, numerical thresholds, cloud options and training settings are research proposals only. The original report's table labels some post-training improvements as authorization thresholds; interpret those as **post-training promotion targets**, not as measurable pre-training prerequisites. Use the accompanying roadmap for proposed sequencing. Hardware feasibility labels and duration estimates are not measurements, including 0.5B/1.5B local training. No model or cloud entitlement was independently validated during archiving; check exact revision, legal terms, pinned runtime, conversion, and resource availability before authorization. Example framework version numbers in the original schema are placeholders, not verified version requirements.
+
+**Additional model references from the original search record:** [Qwen2.5-Coder family](https://qwenlm.github.io/blog/qwen2.5-coder-family/), [1.5B license at pinned revision](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct/blob/49f4d684e8fee582b8549e38affa457cc71b0e6c/LICENSE), [1.5B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF/tree/main), [3B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/tree/main), [7B GGUF](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct-GGUF/blob/main/README.md), [Phi-4-mini publisher card](https://huggingface.co/microsoft/Phi-4-mini-instruct/blob/main/README.md), [Phi community conversion](https://huggingface.co/tensorblock/Phi-4-mini-instruct-GGUF), [OpenCoder card at pinned revision](https://huggingface.co/infly/OpenCoder-1.5B-Instruct/blob/db8f58869ca1b157e451a27d202982cc21da4be2/README.md), [MiniCPM repository](https://github.com/openbmb/minicpm), [TRL quickstart](https://huggingface.co/docs/trl/en/quickstart). No weights fetched. Research report did not complete exhaustive candidate comparisons, per-model quantization sensitivity/CPU profiling, training memory breakdowns, full legal audits, or current account-level free-GPU eligibility; these remain qualification tasks.
+
+**Knowledge maintenance:** main's existing model-research and benchmark skills already cover the broad procedures proposed in the original report. Rather than duplicate skills or conflict with the active agent, propose a focused extension to the existing model-research skill in the companion roadmap, pending maintainer review and evidence. PR #21 owns canonical status refresh. No canonical guidance or production code changed.
+
+
+## Maintainer reconciliation — 2026-11-27
+
+This section supersedes stale sequencing and proposed candidate priorities above,
+without rewriting historical evidence. See [current cross-PR decision record](2026-11-27-model-specialization-roadmap.md#maintainer-decision).
+
+The source-ID retry is complete: [PR #23 report](https://github.com/MrPunyapal/TinyBuilder/blob/560e2ce7f04fb04fce288566cda5444a00232826/docs/research/2026-11-27-source-id-comparison.md)
+records 18 trials; both models scored 0/3 with source IDs, all six rejected by
+PHP lint after location resolution. Exact text scored 3/3 for 3B and 0/3 for
+1.5B; operator control 1/3 each. Retain exact text plus selective lexical
+retrieval as the lab baseline. Do not rerun the same ablations by default.
+No live private model qualification yet. The 12 public and two private trusted
+controls and fake-daemon tests are not model or containment qualification.
+
+The immediate prerequisite is a qualified isolated guest and broader
+development evaluation with the existing weights, not another model download.
+Publisher MiniCPM5-2B results (including SWE-bench Verified 46.4 and BFCL v4
+66.6) are confirmed as reported in its [revision-pinned card](https://huggingface.co/openbmb/MiniCPM5-2B/blob/abe115e887989b14f05e64a3b260648329324c3f/README.md);
+not independently reproduced and not directly comparable to TinyBuilder's
+Q4_K_M CPU setup. MiniCPM5 remains first candidate for a dossier, not approved
+weights. Also evaluate the metadata of [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B)
+(Apache-2.0 card) before escalating to larger models; its text-only runtime and
+quantization path require verification. Granite 4.2-3B remains an independent
+candidate, Qwen3.5-4B a conditional larger control. No winner presumed.
+Publisher [MiniCPM GGUF](https://huggingface.co/openbmb/MiniCPM5-2B-GGUF),
+[Granite card](https://huggingface.co/ibm-granite/granite-4.2-3b),
+[Qwen3.5-4B license](https://huggingface.co/Qwen/Qwen3.5-4B/blob/main/LICENSE)
+and [Qwen2.5-Coder 3B GGUF license](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct-GGUF/blob/main/LICENSE)
+support preliminary classification, not an exhaustive legal or exact-artifact
+audit. The 3B research weights are excluded from product distribution and
+commercial training/distillation unless rights are separately cleared; do not
+assume generated trajectories are cleared for commercial reuse. Generic
+llama.cpp support is not proof of support by pinned b12359 or TinyBuilder's
+strict JSON/template contract.
+
+Hardware estimates remain illustrative. 4 GB VRAM is not a demonstrated
+QLoRA capacity; use measured free VRAM, effective throughput and complete
+memory accounting. Cloud quotas and privacy are unverified. No training
+authorization. All numerical thresholds are proposed, not achieved gates.

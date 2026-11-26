@@ -19,3 +19,11 @@ regression tests and actual hardware profiling. No downloads, training or
 paid compute without approval. Keep training tooling outside the product.
 Never assume a GGUF file size equals RAM or proves training feasibility.
 Use knowledge-maintenance to record findings and update decision guidance.
+
+Before requesting a new model, prepare a revision-pinned dossier covering exact
+base and quantized artifact license/NOTICE, teacher/output reuse rights,
+conversion provenance, bytes/digest, runtime and chat-template compatibility,
+resource estimate, matched development tasks and stop budget. Verify rather
+than assume generic llama.cpp support. Select models/settings on development;
+reserve private evaluation for preregistered confirmation. Distinguish
+training authorization prerequisites from post-training promotion thresholds.
