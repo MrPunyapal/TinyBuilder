@@ -179,6 +179,39 @@ pub struct ModelCompletion {
     pub completion_tokens: Option<u64>,
 }
 
+#[derive(Debug)]
+pub struct IncompleteCompletion {
+    pub reason: &'static str,
+    pub prompt_tokens: Option<u64>,
+    pub completion_tokens: Option<u64>,
+}
+
+impl std::fmt::Display for IncompleteCompletion {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("Incomplete model response")
+    }
+}
+
+impl std::error::Error for IncompleteCompletion {}
+
+fn parse_completion(response: &Value) -> Result<ModelCompletion> {
+    let choice = &response["choices"][0];
+    let prompt_tokens = response["usage"]["prompt_tokens"].as_u64();
+    let completion_tokens = response["usage"]["completion_tokens"].as_u64();
+    let reason = match choice["finish_reason"].as_str() {
+        Some("stop" | "tool_calls") => None,
+        Some("length") => Some("length"),
+        Some("content_filter") => Some("content_filter"),
+        Some(_) => Some("other"),
+        None => Some("missing"),
+    };
+    if let Some(reason) = reason {
+        return Err(IncompleteCompletion { reason, prompt_tokens, completion_tokens }.into());
+    }
+    ensure!(choice["message"].is_object(), "Missing model message");
+    Ok(ModelCompletion { message: choice["message"].clone(), prompt_tokens, completion_tokens })
+}
+
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
         let (exe, revision) = verify_inventory(root)?;
@@ -245,20 +278,29 @@ impl Runtime {
         payload["model"] = Value::String(self.alias.clone());
         let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120)).context("Local model transport failed")?;
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during response");
-        let choice = &response["choices"][0];
-        ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
-        ensure!(choice["message"].is_object(), "Missing model message");
-        Ok(ModelCompletion {
-            message: choice["message"].clone(),
-            prompt_tokens: response["usage"]["prompt_tokens"].as_u64(),
-            completion_tokens: response["usage"]["completion_tokens"].as_u64(),
-        })
+        parse_completion(&response)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn incomplete_responses_keep_only_sanitized_finish_reason_and_usage() {
+        for (finish, expected) in [("length", "length"), ("arbitrary private data", "other")] {
+            let response = serde_json::json!({
+                "choices": [{"finish_reason": finish, "message": {"content": "private partial text"}}],
+                "usage": {"prompt_tokens": 17, "completion_tokens": 23}
+            });
+            let error = parse_completion(&response).err().unwrap();
+            let incomplete = error.downcast_ref::<IncompleteCompletion>().unwrap();
+            assert_eq!(incomplete.reason, expected);
+            assert_eq!(incomplete.prompt_tokens, Some(17));
+            assert_eq!(incomplete.completion_tokens, Some(23));
+            assert_eq!(error.to_string(), "Incomplete model response");
+            assert!(!format!("{error:?}").contains("private"));
+        }
+    }
     #[test]
     fn model_runtime_explicitly_disables_network_and_agent_surfaces() {
         let command = server_command(Path::new("llama-server"), Path::new("test.gguf"), 1234, "test", "test-key");

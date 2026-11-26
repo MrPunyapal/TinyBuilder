@@ -2,6 +2,7 @@
 ALLOWED = {
     "proposal", "context_retrieval", "protocol", "reasoning", "runtime",
     "timeout", "orchestration", "replacement_match", "output_limit", "invalid_location",
+    "incomplete_response", "replacement_payload",
 }
 
 

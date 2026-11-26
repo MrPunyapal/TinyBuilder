@@ -229,16 +229,19 @@ def main():
     parser.add_argument("--model", nargs=3, action="append", metavar=("LABEL", "GGUF", "SHA256"), required=True)
     parser.add_argument("--php", required=True)
     parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file", "coding-v1",
-                                            "coding-retrieval-exact"), default="original")
+                                            "coding-retrieval-exact", "coding-source-ids"), default="original")
     args = parser.parse_args()
     cases, wrong_controls, related = CASES, {}, {}
     compare_v1 = args.suite == "coding-v1"
     exact_retrieval = args.suite == "coding-retrieval-exact"
-    cross_file = args.suite == "coding-cross-file" or compare_v1 or exact_retrieval
+    source_ids = args.suite == "coding-source-ids"
+    cross_file = args.suite == "coding-cross-file" or compare_v1 or exact_retrieval or source_ids
     if compare_v1:
         arms = ("A", "B", "C", "L", "S")
     elif exact_retrieval:
         arms = ("L", "S")
+    elif source_ids:
+        arms = ("A", "B", "C")
     elif cross_file:
         arms = ("A", "C")
     if cross_file:
@@ -267,6 +270,9 @@ def main():
     if exact_retrieval:
         report["configuration"]["context"] = "L baseline lexical / S minimum score 10, exact-text edit in both arms"
         report["configuration"]["arm_order"] = {"default": ["L", "S"], "seat_policy": ["S", "L"]}
+    if source_ids:
+        report["configuration"]["context"] = "A exact-text and B model-selected source ID with same supplied evidence; C operator-selected file/line"
+        report["configuration"]["arm_order"] = {"default": ["A", "B", "C"], "seat_policy": ["B", "A", "C"]}
     def save():
         proof.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     projects = {case.name: output / case.name for case in cases}
@@ -287,7 +293,7 @@ def main():
             jobs.write_text(json.dumps([{"case": c.name, "project": str(projects[c.name]), "task": c.task,
                                          "target": c.path, "line": 7, "source": c.source,
                                          "cross_file": cross_file, "compare_v1": compare_v1, "exact_retrieval": exact_retrieval,
-                                         "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
+                                         "source_ids": source_ids, "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
             for label, name, pin in args.model:
                 model = Path(name).resolve(strict=True)
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
