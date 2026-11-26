@@ -83,3 +83,18 @@ propagates a blocked probe, so it cannot supply those denominators yet.
 [Docker container create](https://docs.docker.com/reference/cli/docker/container/create/) ·
 [Docker container start](https://docs.docker.com/reference/cli/docker/container/start/) ·
 [Default Docker seccomp profile](https://docs.docker.com/engine/security/seccomp/)
+
+
+## Maintainer follow-up: bounded result accounting
+
+The public tax scorer now stops on an evaluator block or identity mismatch
+and reports fixed planned totals, attempted, passed, failed, blocked and
+remaining counts per phase. It never treats unattempted or blocked cases
+as passes, does not fall back to host PHP, and emits no arbitrary exception
+text. CLI exit 2 denotes a blocked run; exit 1 denotes completed behavioral
+failure. The adapter still cannot reliably attribute all nonzero container
+exits to candidate behavior versus daemon/transport failure. These are
+conservatively classified as unattributed blocks, not model failures.
+Live guest qualification and stronger typed execution attribution remain
+prerequisites for broader model scoring. Model-free regression tests do
+not establish a working isolation boundary.

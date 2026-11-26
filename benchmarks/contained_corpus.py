@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .contained_php import MAX_FIXTURE_BYTES, observe
+from .contained_php import EvaluationBlocked, MAX_FIXTURE_BYTES, observe
 
 
 TAX_PATH = "app/CodingV1/Tax.php"
@@ -18,21 +18,42 @@ return static function (mixed $input): mixed {
 
 def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: bool) -> dict:
     """Keep assertions and expected results in the caller, outside PHP."""
-    results = {"behavior": {"passed": 0, "total": 0}, "regression": {"passed": 0, "total": 0}}
+    cases = ((9, False), (10, False), (109, False), (999, False), (1009, False),
+             (0, True), (9, True), (109, True), (1009, True))
+    results = {
+        phase: {"passed": 0, "failed": 0, "blocked": 0, "attempted": 0,
+                "total": sum(exempt == (phase == "regression") for _, exempt in cases)}
+        for phase in ("behavior", "regression")
+    }
     fixture_digest = None
-    for net, exempt in ((9, False), (10, False), (109, False), (999, False), (1009, False),
-                        (0, True), (9, True), (109, True), (1009, True)):
-        event = observe(docker=docker, image_id=image_id, fixtures={TAX_PATH: candidate},
-                        request={"net": net, "exempt": exempt}, trusted_bridge=TAX_BRIDGE,
-                        approved_guest=approved_guest)
+    blocked_reason = None
+    for net, exempt in cases:
+        group = results["regression" if exempt else "behavior"]
+        group["attempted"] += 1
+        try:
+            event = observe(docker=docker, image_id=image_id, fixtures={TAX_PATH: candidate},
+                            request={"net": net, "exempt": exempt}, trusted_bridge=TAX_BRIDGE,
+                            approved_guest=approved_guest)
+        except EvaluationBlocked:
+            # The adapter cannot yet attribute all nonzero exits to the
+            # candidate rather than the daemon. Fail closed without logging
+            # arbitrary exception text or treating a blocked probe as a pass.
+            group["blocked"] += 1
+            blocked_reason = "probe_blocked_unattributed"
+            break
         if event.image_id != image_id or (fixture_digest is not None and event.fixture_sha256 != fixture_digest):
-            raise ValueError("Contained fixture or image identity changed")
+            group["blocked"] += 1
+            blocked_reason = "identity_mismatch"
+            break
         fixture_digest = event.fixture_sha256
         expected = 0 if exempt else net // 10
-        group = results["regression" if exempt else "behavior"]
-        group["total"] += 1
-        group["passed"] += int(type(event.response) is int and event.response == expected)
-    return {"task": "exempt_tax", "image_id": image_id, "fixture_sha256": fixture_digest, **results}
+        correct = type(event.response) is int and event.response == expected
+        group["passed" if correct else "failed"] += 1
+    for group in results.values():
+        group["remaining"] = group["total"] - group["attempted"]
+    return {"task": "exempt_tax", "image_id": image_id, "fixture_sha256": fixture_digest,
+            "status": "blocked" if blocked_reason else "completed",
+            "blocked_reason": blocked_reason, **results}
 
 
 def main():
@@ -51,6 +72,8 @@ def main():
     result = score_tax(source, docker=args.docker, image_id=args.image_id,
                        approved_guest=args.approved_guest)
     print(json.dumps(result, sort_keys=True))
+    if result["status"] == "blocked":
+        return 2
     return int(any(result[phase]["passed"] != result[phase]["total"] for phase in ("behavior", "regression")))
 
 

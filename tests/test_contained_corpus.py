@@ -24,8 +24,8 @@ class ContainedCorpusTests(unittest.TestCase):
             return Observation(0 if request["exempt"] else request["net"] // 10, "fixture", "image")
 
         report = self.score(observe)
-        self.assertEqual(report["behavior"], {"total": 5, "passed": 5})
-        self.assertEqual(report["regression"], {"total": 4, "passed": 4})
+        self.assertEqual(report["behavior"], {"total": 5, "passed": 5, "failed": 0, "blocked": 0, "attempted": 5, "remaining": 0})
+        self.assertEqual(report["regression"], {"total": 4, "passed": 4, "failed": 0, "blocked": 0, "attempted": 4, "remaining": 0})
         self.assertEqual(len(calls), 9)
         self.assertNotIn("candidate bytes", str(report))
 
@@ -37,5 +37,27 @@ class ContainedCorpusTests(unittest.TestCase):
         self.assertEqual(wrong_type["regression"]["passed"], 0)
 
     def test_blocked_runner_never_falls_back_to_host_php(self):
-        with self.assertRaises(EvaluationBlocked):
-            self.score(EvaluationBlocked("guest unavailable"))
+        report = self.score(EvaluationBlocked("private guest detail"))
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["blocked_reason"], "probe_blocked_unattributed")
+        self.assertEqual(report["behavior"], {"total": 5, "passed": 0, "failed": 0,
+                                             "blocked": 1, "attempted": 1, "remaining": 4})
+        self.assertEqual(report["regression"]["remaining"], 4)
+        self.assertNotIn("private guest detail", str(report))
+
+    def test_partial_probe_failure_retains_completed_counts(self):
+        report = self.score([Observation(0, "fixture", "image"),
+                             Observation(2, "fixture", "image"),
+                             EvaluationBlocked("cleanup failed")])
+        self.assertEqual(report["behavior"], {"total": 5, "passed": 1, "failed": 1,
+                                             "blocked": 1, "attempted": 3, "remaining": 2})
+        self.assertEqual(report["regression"]["remaining"], 4)
+
+    def test_identity_mismatch_blocks_remaining_probes(self):
+        report = self.score([Observation(0, "fixture", "image"),
+                             Observation(1, "changed", "image")])
+        self.assertEqual(report["blocked_reason"], "identity_mismatch")
+        self.assertEqual(report["behavior"]["attempted"], 2)
+        self.assertEqual(report["behavior"]["passed"], 1)
+        self.assertEqual(report["behavior"]["blocked"], 1)
+        self.assertEqual(report["behavior"]["remaining"], 3)
