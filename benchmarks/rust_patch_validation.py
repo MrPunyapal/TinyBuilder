@@ -1,12 +1,12 @@
 """Run an independently scored Laravel validation repair with the Rust patch lab."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import shutil
 import subprocess
 
 from .evaluate import command, prepare_route_variant, require, route_registered, validate_laravel_baseline
+from .identity import sha256_file
 from .validation_case import (
     VALIDATION_PATH, VALIDATION_HIDDEN_PATH, fresh_fixture_path,
     hidden_validation_test, reference_fixed_route,
@@ -25,9 +25,8 @@ HIDDEN_FILTER = "--filter=TinyBuilderValidationHiddenTest"
 def verify_model(model, expected):
     if not model.is_file() or model.is_symlink() or model.suffix.lower() != ".gguf":
         raise ValueError("Select an existing regular GGUF")
-    with model.open("rb") as file:
-        if hashlib.file_digest(file, "sha256").hexdigest() != expected:
-            raise ValueError("Model SHA-256 mismatch")
+    if sha256_file(model) != expected:
+        raise ValueError("Model SHA-256 mismatch")
 
 
 def test_exit(php, root, *args):
@@ -50,8 +49,8 @@ def main():
     output.mkdir()
     project = output / "laravel"
     report = {"status": "failed", "baseline_commit": revision, "model_sha256": model_hash,
-              "runtime_manifest_sha256": hashlib.sha256((runtime / "runtime-manifest.json").read_bytes()).hexdigest(),
-              "lab_sha256": hashlib.sha256(lab.read_bytes()).hexdigest()}
+              "runtime_manifest_sha256": sha256_file(runtime / "runtime-manifest.json"),
+              "lab_sha256": sha256_file(lab)}
     try:
         require(["git", "worktree", "add", "--detach", str(project), revision], base)
         shutil.copytree(base / "vendor", project / "vendor")

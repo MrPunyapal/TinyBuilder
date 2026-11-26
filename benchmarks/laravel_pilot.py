@@ -2,7 +2,6 @@
 import argparse
 from collections import Counter
 from dataclasses import dataclass
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -15,6 +14,7 @@ from threading import Event, Thread
 from time import monotonic
 
 from .evaluate import command, require, validate_laravel_baseline
+from .identity import sha256_file as digest
 from .validation_case import fresh_fixture_path
 from .pilot_protocol import index_rows
 
@@ -73,11 +73,6 @@ CASES = (
         "$this->assertSame(10, CheckoutDiscount::checkoutTotal(10, 0));",
     ),
 )
-
-
-def digest(path):
-    with path.open("rb") as file:
-        return hashlib.file_digest(file, "sha256").hexdigest()
 
 
 def patch_category(case, preview):
