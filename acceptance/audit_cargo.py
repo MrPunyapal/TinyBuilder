@@ -82,6 +82,11 @@ def main():
         json.dump(report,file,indent=2,sort_keys=True)
         file.write("\n")
     print(report["status"])
+    # Public dependency identities only; retain actionable audit evidence in logs.
+    for finding in report["findings"]:
+        print(f'{finding["name"]} {finding["version"]}: {finding["id"]}')
+    if "error_type" in report:
+        print(report["error_type"])
     return 0 if report["status"]=="no known OSV matches" else 1
 
 if __name__=="__main__":
