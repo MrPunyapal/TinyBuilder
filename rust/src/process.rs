@@ -435,6 +435,19 @@ mod tests {
             thread::sleep(Duration::from_millis(30));
         }
         assert!(!owned.connection_owned(&foreign_connection).unwrap(),"Foreign established socket accepted");
+        // The real authorized path must send zero bytes to a foreign server.
+        let other=std::net::TcpListener::bind(("127.0.0.1",0)).unwrap();
+        let foreign_port=other.local_addr().unwrap().port();
+        let reader=thread::spawn(move||{
+            use std::io::Read;
+            let (mut stream,_)=other.accept().unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+            let mut byte=[0u8;1];
+            assert_eq!(stream.read(&mut byte).unwrap(),0,"Foreign server received request bytes");
+        });
+        assert!(crate::loopback::authorized(&owned,foreign_port,"TestCredential123",
+            crate::loopback::Endpoint::Props,None,Duration::from_secs(3)).is_err());
+        reader.join().unwrap();
     }
 
     // A test subprocess is the heartbeat producer, not an inference server.

@@ -205,11 +205,11 @@ impl Runtime {
                     ensure!(matches!(status(http.get(&url).call()), Some(401 | 403)), "Runtime accepted missing authentication");
                     ensure!(matches!(status(http.get(&url).set("Authorization", "Bearer invalid-session").call()), Some(401 | 403)), "Runtime accepted invalid authentication");
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
-                    loopback::authorized(&self.child,self.port,&self.key,Endpoint::Props,None,Duration::from_secs(5))?;
+                    loopback::authorized(&self.child,self.port,&self.key,Endpoint::Props,None,Duration::from_secs(5)).context("Runtime authentication probe failed")?;
                     // b12359 protects /v1/models; b6500 accepts authenticated
                     // access too. Require the random session alias after auth.
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
-                    let data=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Models,None,Duration::from_secs(5))?;
+                    let data=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Models,None,Duration::from_secs(5)).context("Runtime identity probe failed")?;
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during identity probe");
                     ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     ensure!(self.child.try_wait()?.is_none(), "Runtime exited during readiness");
@@ -224,7 +224,7 @@ impl Runtime {
     pub fn complete(&self, mut payload: Value) -> Result<Value> {
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         payload["model"] = Value::String(self.alias.clone());
-        let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120))?;
+        let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120)).context("Local model transport failed")?;
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during response");
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
