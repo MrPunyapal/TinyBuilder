@@ -92,7 +92,7 @@ def test(php, project, suffix):
     return result.returncode
 
 
-def prepare(case, base, root, revision, php):
+def prepare(case, base, root, revision, php, related=None):
     require(["git", "worktree", "add", "--detach", str(root), revision], base)
     shutil.copytree(base / "vendor", root / "vendor")
     shutil.copyfile(root / ".env.example", root / ".env")
@@ -102,6 +102,8 @@ def prepare(case, base, root, revision, php):
     target.write_bytes(case.source.encode())
     (target.parent / "SampleUtility.php").write_text(
         "<?php\nnamespace App\\Pilot;\nfinal class SampleUtility { public function sample() { return 0; } }\n", encoding="utf-8")
+    for relative, source in (related or {}).items():
+        fresh_fixture_path(root, relative).write_text(source, encoding="utf-8")
     hidden = fresh_fixture_path(root, TEST)
     try:
         hidden.write_text(case.test, encoding="utf-8")
@@ -205,10 +207,18 @@ def main():
         parser.add_argument(f"--{key}", type=Path, required=True)
     parser.add_argument("--model", nargs=3, action="append", metavar=("LABEL", "GGUF", "SHA256"), required=True)
     parser.add_argument("--php", required=True)
-    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval"), default="original")
+    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file"), default="original")
     args = parser.parse_args()
-    cases, wrong_controls = CASES, {}
-    if args.suite != "original":
+    cases, wrong_controls, related = CASES, {}, {}
+    cross_file = args.suite == "coding-cross-file"
+    arms = ("A", "C") if cross_file else ARMS
+    if cross_file:
+        from .coding_intelligence import FIXTURES, validate_fixtures
+        validate_fixtures()
+        cases = tuple(f.case for f in FIXTURES)
+        wrong_controls = {f.case.name: f.wrong for f in FIXTURES}
+        related = {f.case.name: f.related for f in FIXTURES}
+    elif args.suite != "original":
         from .workflow_slm import FIXTURES, validate_fixtures
         validate_fixtures()
         fixtures = [f for f in FIXTURES if f.split == args.suite.removeprefix("workflow-")]
@@ -221,15 +231,15 @@ def main():
     proof = output / "pilot.json"
     report = {"profile": "laravel-v1-pilot-20261127" if args.suite == "original" else args.suite, "baseline": revision, "control_order": ["behavior", "regression"],
               "runtime_manifest_sha256": digest(args.runtime / "runtime-manifest.json"), "lab_sha256": digest(args.lab),
-              "configuration": {"temperature": 0, "selection_max_tokens": 128, "replacement_max_tokens": 512,
-                                "context": "one complete file with exact selected line; b12359 CPU runtime defaults"},
-              "requested_per_model": len(cases)*len(ARMS), "controls": {}, "models": []}
+              "configuration": {"temperature": 0, "selection_max_tokens": 128, "replacement_max_tokens": 1024 if cross_file else 512,
+                                "context": "multiple source files, no selected line; A supplied / C retrieved" if cross_file else "one complete file with exact selected line; b12359 CPU runtime defaults"},
+              "requested_per_model": len(cases)*len(arms), "controls": {}, "models": []}
     def save():
         proof.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     projects = {case.name: output / case.name for case in cases}
     try:
         for case in cases:
-            controls = prepare(case, base, projects[case.name], revision, args.php)
+            controls = prepare(case, base, projects[case.name], revision, args.php, related.get(case.name))
             report["controls"][case.name] = controls
             if controls != {"broken": [1, 0], "reference": [0, 0]}:
                 raise ValueError(f"Oracle controls failed for {case.name}: {controls}")
@@ -242,14 +252,15 @@ def main():
         with TemporaryDirectory(prefix="laravel-pilot-plan-", dir=output) as scratch:
             jobs = Path(scratch) / "jobs.json"
             jobs.write_text(json.dumps([{"case": c.name, "project": str(projects[c.name]), "task": c.task,
-                                         "target": c.path, "line": 7, "source": c.source} for c in cases]), encoding="utf-8")
+                                         "target": c.path, "line": 7, "source": c.source,
+                                         "cross_file": cross_file, "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
             for label, name, pin in args.model:
                 model = Path(name).resolve(strict=True)
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
                     raise ValueError("Model identity does not match preselected hash")
                 responses, metrics = infer(args.lab, args.runtime, model, jobs)
                 indexed = {}
-                expected = {(case.name, arm) for case in cases for arm in ARMS}
+                expected = {(case.name, arm) for case in cases for arm in arms}
                 for response in responses:
                     if "case" not in response:
                         continue
@@ -261,9 +272,12 @@ def main():
                     indexed[key] = response
                 rows = []
                 for case in cases:
-                    for arm in ARMS:
+                    for arm in arms:
                         row = indexed.get((case.name, arm), {"case": case.name, "arm": arm,
                                                             "category": "not_run", "driver_failure": metrics["driver_failure"]})
+                        if cross_file and row.get("category") == "proposal" and row.get("path") != case.path:
+                            row.pop("preview", None)
+                            row["category"] = "wrong_target"
                         evaluate_preview(row, case, projects[case.name], args.php)
                         rows.append(row)
                         print(label, case.name, arm, row["category"], flush=True)
