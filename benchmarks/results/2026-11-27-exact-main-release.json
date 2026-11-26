@@ -1,0 +1,132 @@
+{
+  "archives": [
+    {
+      "bytes": 27938130,
+      "name": "tinybuilder-0.1.0-rc.1-aarch64-apple-darwin.tar.gz",
+      "sha256": "d9c94d775523c09d18161e456ccc20f87024b3a6271ab6b6ba24ac6e0920d3b3",
+      "source_commit": "9d4343141bab4d710f7d16450105673c994d5c51",
+      "target": "aarch64-apple-darwin",
+      "map_entries": 237,
+      "binary_architecture": "Mach-O ARM64",
+      "binary_sha256": "ade4f4520f13bc5db235ae8e400808453e67ca39fe2a2f9239bf0dfb41e96cd8",
+      "runtime_manifest_sha256": "bf813d4612508b1cdadbc96b27230beda249c0cd1025afe5889b406e2aac04e8",
+      "runtime_archive_sha256": "82b00abc740160e1b9980e6cc79c117345fa34af058c80e6c0a69aa8ddccde75",
+      "runtime_revision": "b12359",
+      "runtime_source_commit": "b1b770d90d94cad9e9ea5b993bdbc383a522fb28",
+      "runtime_notices": [
+        "LICENSE",
+        "LICENSE-httplib",
+        "LICENSE-jsonhpp"
+      ],
+      "crate_notice_packages": 107,
+      "copied_notice_count": 200,
+      "signing": "unsigned; not notarized",
+      "status": "archive identity and members verified; no execution"
+    },
+    {
+      "bytes": 21950380,
+      "name": "tinybuilder-0.1.0-rc.1-x86_64-pc-windows-msvc.zip",
+      "sha256": "9e0bcc34fdcf53784eadc30765e508bf81d631470b92e493209bd0e9e0af812a",
+      "source_commit": "9d4343141bab4d710f7d16450105673c994d5c51",
+      "target": "x86_64-pc-windows-msvc",
+      "map_entries": 238,
+      "binary_architecture": "PE x64",
+      "binary_sha256": "5fe2db72f3890db406c2d92805d43a30ad2fc266d88b3a100044c532d3a12573",
+      "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+      "runtime_archive_sha256": "837c1655e87df3b66989f4be33a792a1399c785bf259038dc75c900096683e69",
+      "runtime_revision": "b12359",
+      "runtime_source_commit": "b1b770d90d94cad9e9ea5b993bdbc383a522fb28",
+      "runtime_notices": [
+        "LICENSE",
+        "LICENSE-LLVM-OpenMP",
+        "LICENSE-httplib",
+        "LICENSE-jsonhpp"
+      ],
+      "crate_notice_packages": 111,
+      "copied_notice_count": 206,
+      "signing": "unsigned; not notarized",
+      "status": "archive identity and members verified; no execution"
+    },
+    {
+      "bytes": 31004077,
+      "name": "tinybuilder-0.1.0-rc.1-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "defe8b7e142363b8c75d85fb0bab7d7eda7e8b054de56847da6cbe9ed5b875ec",
+      "source_commit": "9d4343141bab4d710f7d16450105673c994d5c51",
+      "target": "x86_64-unknown-linux-gnu",
+      "map_entries": 244,
+      "binary_architecture": "ELF x64",
+      "binary_sha256": "cf6a012c9787fdc15f516d129b8d0c164185589949e04204614b39cc40c11433",
+      "runtime_manifest_sha256": "d57d6b158e38cf3373de83305363ba628521a03bafcdbc4ad5eea675f012c3e7",
+      "runtime_archive_sha256": "0bc1f091e8916102b6d8f2cf944233a620e90a0f856c72d0ce41150c65c2e72e",
+      "runtime_revision": "b12359",
+      "runtime_source_commit": "b1b770d90d94cad9e9ea5b993bdbc383a522fb28",
+      "runtime_notices": [
+        "LICENSE",
+        "LICENSE-httplib",
+        "LICENSE-jsonhpp"
+      ],
+      "crate_notice_packages": 108,
+      "copied_notice_count": 204,
+      "signing": "unsigned; not notarized",
+      "status": "archive identity and members verified; no execution"
+    }
+  ],
+  "windows_development_host": {
+    "status": "passed",
+    "scope": "development_host",
+    "windows": "Windows-11-10.0.26300-SP0",
+    "review_required": [
+      "clean host and standard user",
+      "Windows security prompts"
+    ],
+    "elevated": true,
+    "cpu": [
+      "12th Gen Intel(R) Core(TM) i7-12700H"
+    ],
+    "active_adapters": 2,
+    "ram_bytes": 16782102528,
+    "source_commit": "9d4343141bab4d710f7d16450105673c994d5c51",
+    "target": "x86_64-pc-windows-msvc",
+    "runtime_revision": "b12359",
+    "runtime_archive_sha256": "837c1655e87df3b66989f4be33a792a1399c785bf259038dc75c900096683e69",
+    "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+    "archive_sha256": "9e0bcc34fdcf53784eadc30765e508bf81d631470b92e493209bd0e9e0af812a",
+    "archive_bytes": 21950380,
+    "model_sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+    "model_bytes": 1117320768,
+    "model_free": {
+      "version": "tinybuilder 0.1.0-rc.1",
+      "doctor": true,
+      "first_launch": true,
+      "read_search_inspect": true,
+      "write_exec_denied": true
+    },
+    "normal_quit": {
+      "authenticated_ready_ms": 1843,
+      "runtime_peak_working_set_bytes": 2621497344,
+      "loopback_only": true,
+      "child_exited": true,
+      "listener_removed": true
+    },
+    "forced_exit": {
+      "authenticated_ready_ms": 1704,
+      "runtime_peak_working_set_bytes": 2620882944,
+      "loopback_only": true,
+      "child_exited": true,
+      "listener_removed": true
+    },
+    "qualification_exit_code": 0,
+    "qualification": {
+      "requested": 10,
+      "attempted": 10,
+      "passed": 10,
+      "not_run": 0,
+      "read_gate_passed": true
+    },
+    "preservation": {
+      "app_copy_removed": true,
+      "project_unchanged": true,
+      "model_unchanged": true
+    }
+  }
+}

@@ -41,11 +41,17 @@ outer isolation boundary.
    the container before checking that the daemon has no matching container.
    Stop the benchmark and discard the guest if cleanup cannot be verified.
 
-The user-side fixture bridge and observable operations still need to be
-written for each benchmark family. This permits black-box scoring without
-putting PHPUnit or hidden expectations inside the candidate process. It
-does not replace the existing restricted smoke-test lane or the read-only
-release evaluator.
+The public corpus tax task now has a benchmark-family bridge and an
+independent caller that checks varied amounts and the tax-exempt regression.
+It sends each input to a fresh container and scores the typed observation
+outside PHP. Additional families and the private holdout need their own
+bridges. This permits black-box scoring with PHPUnit and hidden expectations
+outside the candidate process. The existing restricted smoke-test lane
+and read-only release evaluator retain their own oracles.
+
+```text
+python -m benchmarks.contained_corpus --docker /usr/bin/docker --image-id EXACT_LOCAL_ID --candidate Tax.php --approved-guest
+```
 
 ## Verified on the development host
 
@@ -57,6 +63,7 @@ strict JSON, cleanup and the no-fallback boundary. They use a fake daemon.
 
 ```text
 python -m unittest discover -s tests -p test_contained_php.py -v
+python -m unittest discover -s tests -p test_contained_corpus.py -v
 python -m py_compile benchmarks/contained_php.py tests/test_contained_php.py
 php -l benchmarks/contained_php_probe.php
 ```
