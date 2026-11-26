@@ -194,12 +194,26 @@ pub fn located_line_request(task: &str, evidence: &[ReadResult]) -> Result<Value
 }
 
 pub fn prepare_located_line(project: &Project, evidence: &[ReadResult], message: &Value) -> Result<ProposedEdit> {
-    let located: LocatedLine = serde_json::from_str(content(message)?)
-        .map_err(|_| anyhow::anyhow!("Invalid model line proposal"))?;
+    let raw = content(message)?;
+    let located: LocatedLine = serde_json::from_str(raw)
+        .map_err(|_| anyhow::anyhow!(line_proposal_error(raw)))?;
     let source = evidence.iter().find(|r| r.path == located.path && !r.truncated)
         .context("Patch target not in complete evidence")?;
     let patch = project.propose_line_from_read(source, located.line, &located.new)?;
     Ok(ProposedEdit { path: source.path.clone(), patch })
+}
+
+fn line_proposal_error(raw: &str) -> &'static str {
+    let Ok(Value::Object(fields)) = serde_json::from_str(raw) else {
+        return "Invalid line proposal JSON";
+    };
+    if fields.get("line").is_some_and(Value::is_string) {
+        return "Line number was a string";
+    }
+    if !fields.get("line").is_some_and(Value::is_u64) {
+        return "Line number was absent or invalid";
+    }
+    "Invalid model line proposal"
 }
 
 #[cfg(test)]
@@ -225,6 +239,8 @@ mod tests {
         assert!(project.apply(edit.patch, false).is_err());
         assert!(prepare_located_line(&project, &evidence, &answer(0)).is_err());
         assert!(prepare_located_line(&project, &evidence, &answer(4)).is_err());
+        let wrong_type = json!({"role":"assistant","content":r#"{"path":"a.php","line":"3","new":"return true;"}"#});
+        assert_eq!(prepare_located_line(&project, &evidence, &wrong_type).err().unwrap().to_string(), "Line number was a string");
         fs::write(file, format!("{source_text}\r\n")).unwrap();
         assert!(prepare_located_line(&project, &evidence, &answer(3)).is_err());
     }

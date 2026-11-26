@@ -11,6 +11,8 @@ struct Args {
     #[arg(long)] runtime: PathBuf,
     #[arg(long)] model: PathBuf,
     #[arg(long)] jobs: PathBuf,
+    /// Replay only the model-selected line arm and emit sanitized failure details.
+    #[arg(long)] diagnose_line: bool,
 }
 
 #[derive(Deserialize)]
@@ -119,6 +121,21 @@ fn cross_file_trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
                     }
                     Err(error) => {
                         let detail = error.to_string();
+                        if job.compare_v1 && matches!(arm, "B" | "L" | "S") {
+                            row["proposal_detail"] = json!(match detail.as_str() {
+                                "Invalid line proposal JSON" => "invalid_json",
+                                "Line number was a string" => "line_string",
+                                "Line number was absent or invalid" => "line_missing_or_invalid",
+                                "Invalid model line proposal" => "invalid_envelope",
+                                "Invalid line replacement" => "invalid_replacement",
+                                "Patch target not in complete evidence" => "path_not_in_evidence",
+                                "Selected line does not exist" => "out_of_range",
+                                "Selected line is blank" => "blank_line",
+                                "No change" => "no_change",
+                                "File changed since context selection" => "stale_source",
+                                _ => "other",
+                            });
+                        }
                         let local = match detail.as_str() {
                             "No change" => "reasoning",
                             "Replacement must match exactly once" => "replacement_match",
@@ -189,19 +206,28 @@ fn trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
 fn main() -> Result<()> {
     let args = Args::parse();
     let jobs: Vec<Job> = serde_json::from_slice(&fs::read(args.jobs)?)?;
+    ensure!(!args.diagnose_line || (!jobs.is_empty() && jobs.iter().all(|job| job.compare_v1 && job.cross_file)),
+        "The line diagnostic requires Coding Intelligence v1 jobs");
     let start = Instant::now();
     let runtime = Runtime::start(&args.runtime, &args.model)?;
     println!("{}", json!({"ready_ms":start.elapsed().as_millis() as u64}));
     for job in &jobs {
         // Both models have the same order. No retries or interactive changes.
         if job.cross_file {
-            let arms: &[&str] = match (job.compare_v1, job.case.as_str()) {
-                (true, "seat_policy") => &["B", "A", "C", "S", "L"],
-                (true, _) => &["A", "B", "C", "L", "S"],
-                (false, "seat_policy") => &["C", "A"],
-                (false, _) => &["A", "C"],
+            let arms: &[&str] = match (args.diagnose_line, job.compare_v1, job.case.as_str()) {
+                (true, _, _) => &["B"],
+                (false, true, "seat_policy") => &["B", "A", "C", "S", "L"],
+                (false, true, _) => &["A", "B", "C", "L", "S"],
+                (false, false, "seat_policy") => &["C", "A"],
+                (false, false, _) => &["A", "C"],
             };
-            for arm in arms { println!("{}", cross_file_trial(job, arm, &runtime)?); }
+            for arm in arms {
+                let mut row = cross_file_trial(job, arm, &runtime)?;
+                if args.diagnose_line {
+                    row.as_object_mut().expect("Trial record is an object").remove("preview");
+                }
+                println!("{row}");
+            }
             continue;
         }
         let arms = if job.case == "checkout_discount" { ["D", "C", "B", "A"] } else { ["A", "B", "C", "D"] };
