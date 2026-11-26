@@ -1,6 +1,6 @@
 import unittest
 
-from benchmarks.coding_v1_corpus import REPOSITORIES, test_source, valid_controls
+from benchmarks.coding_v1_corpus import REPOSITORIES, test_source as render_verifier, valid_controls
 
 
 class CorpusControlTests(unittest.TestCase):
@@ -33,11 +33,11 @@ class CorpusControlTests(unittest.TestCase):
         split, classes, dispatch_tasks = REPOSITORIES["dispatch"]
         self.assertEqual(split, "public-challenge")
         feedback_task = next(task for task in dispatch_tasks if task.feedback)
-        php = test_source(classes, feedback_task)
+        php = render_verifier(classes, feedback_task)
         self.assertIn("function test_public_feedback()", php)
         self.assertIn("function test_repair()", php)
         self.assertNotIn("function test_policy_variant()", php)
         policy_task = next(task for task in dispatch_tasks if task.policy)
-        php = test_source(classes, policy_task)
+        php = render_verifier(classes, policy_task)
         self.assertIn("function test_policy_variant()", php)
         self.assertNotIn("function test_public_feedback()", php)
