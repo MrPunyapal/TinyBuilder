@@ -233,13 +233,17 @@ def main():
         parser.add_argument(f"--{key}", type=Path, required=True)
     parser.add_argument("--model", nargs=3, action="append", metavar=("LABEL", "GGUF", "SHA256"), required=True)
     parser.add_argument("--php", required=True)
-    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file", "coding-v1"), default="original")
+    parser.add_argument("--suite", choices=("original", "workflow-dev", "workflow-eval", "coding-cross-file", "coding-v1",
+                                            "coding-retrieval-exact"), default="original")
     args = parser.parse_args()
     cases, wrong_controls, related = CASES, {}, {}
     compare_v1 = args.suite == "coding-v1"
-    cross_file = args.suite == "coding-cross-file" or compare_v1
+    exact_retrieval = args.suite == "coding-retrieval-exact"
+    cross_file = args.suite == "coding-cross-file" or compare_v1 or exact_retrieval
     if compare_v1:
         arms = ("A", "B", "C", "L", "S")
+    elif exact_retrieval:
+        arms = ("L", "S")
     elif cross_file:
         arms = ("A", "C")
     if cross_file:
@@ -265,6 +269,9 @@ def main():
                                 "arms": arms,
                                 "context": "multiple source files, no selected line; A supplied / C retrieved" if cross_file else "one complete file with exact selected line; b12359 CPU runtime defaults"},
               "requested_per_model": len(cases)*len(arms), "controls": {}, "models": []}
+    if exact_retrieval:
+        report["configuration"]["context"] = "L baseline lexical / S minimum score 10, exact-text edit in both arms"
+        report["configuration"]["arm_order"] = {"default": ["L", "S"], "seat_policy": ["S", "L"]}
     def save():
         proof.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     projects = {case.name: output / case.name for case in cases}
@@ -284,7 +291,8 @@ def main():
             jobs = Path(scratch) / "jobs.json"
             jobs.write_text(json.dumps([{"case": c.name, "project": str(projects[c.name]), "task": c.task,
                                          "target": c.path, "line": 7, "source": c.source,
-                                         "cross_file": cross_file, "compare_v1": compare_v1, "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
+                                         "cross_file": cross_file, "compare_v1": compare_v1, "exact_retrieval": exact_retrieval,
+                                         "related": related.get(c.name, {})} for c in cases]), encoding="utf-8")
             for label, name, pin in args.model:
                 model = Path(name).resolve(strict=True)
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:

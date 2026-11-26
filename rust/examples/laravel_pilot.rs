@@ -25,6 +25,7 @@ struct Job {
     source: String,
     #[serde(default)] cross_file: bool,
     #[serde(default)] compare_v1: bool,
+    #[serde(default)] exact_retrieval: bool,
     #[serde(default)] related: BTreeMap<String, String>,
 }
 
@@ -206,6 +207,8 @@ fn trial(job: &Job, arm: &str, runtime: &Runtime) -> Result<Value> {
 fn main() -> Result<()> {
     let args = Args::parse();
     let jobs: Vec<Job> = serde_json::from_slice(&fs::read(args.jobs)?)?;
+    ensure!(jobs.iter().all(|job| !job.exact_retrieval || (job.cross_file && !job.compare_v1)),
+        "Exact retrieval requires cross-file jobs with the exact-text protocol");
     ensure!(!args.diagnose_line || (!jobs.is_empty() && jobs.iter().all(|job| job.compare_v1 && job.cross_file)),
         "The line diagnostic requires Coding Intelligence v1 jobs");
     let start = Instant::now();
@@ -214,12 +217,14 @@ fn main() -> Result<()> {
     for job in &jobs {
         // Both models have the same order. No retries or interactive changes.
         if job.cross_file {
-            let arms: &[&str] = match (args.diagnose_line, job.compare_v1, job.case.as_str()) {
-                (true, _, _) => &["B"],
-                (false, true, "seat_policy") => &["B", "A", "C", "S", "L"],
-                (false, true, _) => &["A", "B", "C", "L", "S"],
-                (false, false, "seat_policy") => &["C", "A"],
-                (false, false, _) => &["A", "C"],
+            let arms: &[&str] = match (args.diagnose_line, job.exact_retrieval, job.compare_v1, job.case.as_str()) {
+                (true, _, _, _) => &["B"],
+                (false, true, _, "seat_policy") => &["S", "L"],
+                (false, true, _, _) => &["L", "S"],
+                (false, false, true, "seat_policy") => &["B", "A", "C", "S", "L"],
+                (false, false, true, _) => &["A", "B", "C", "L", "S"],
+                (false, false, false, "seat_policy") => &["C", "A"],
+                (false, false, false, _) => &["A", "C"],
             };
             for arm in arms {
                 let mut row = cross_file_trial(job, arm, &runtime)?;
