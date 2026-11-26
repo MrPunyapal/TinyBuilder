@@ -32,7 +32,9 @@ These are an initial source survey, not reproduced benchmark claims or license
 clearance. Deep research should inspect actual code, experiment artifacts,
 licenses, hardware requirements and matched comparisons.
 
-## New cross-file diagnostic (implementation, not measured result)
+## Cross-file diagnostic
+
+See the [Windows validation and measured results](2026-11-27-cross-file-validation.md).
 
 Three original two-file cases: contact validation, seat eligibility and role
 authorization. They use project policy definitions and independent PHP tests.
