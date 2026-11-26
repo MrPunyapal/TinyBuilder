@@ -10,8 +10,8 @@ Python and write-capable examples remain reference/lab only.
 | Gate | Status | Required evidence |
 | --- | --- | --- |
 | Scope and version | IMPLEMENTED; CI PENDING | Read-only normal CLI, canonical product version and regression tests |
-| Exact candidate CI | PENDING | Locked native tests/build/smoke all three targets |
-| Runtime provenance | PARTIAL; SECURITY REVIEW BLOCKED | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
+| Exact candidate CI | NEW HEAD PENDING | Locked native tests/build/smoke all three targets |
+| Runtime provenance | BLOCKED — known affected b6500 | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
 | Clean-machine lifecycle | CI SMOKE IMPLEMENTED; CLEAN HOST BLOCKED | Each target installs/unpacks and runs offline without developer tools, exit/remove preserve user files |
 | Model quality and license | BLOCKED | Permissively licensed model, preselected shipped engine, unchanged 10/10 exact two-fact genuine-read trials |
 | Read-only safety | REGRESSION TESTS; REVIEW PENDING | Denial of mutation/exec options, no project mutation, traversal/hardlink/symlink/reparse protection and containment review |
@@ -38,3 +38,7 @@ are staged. Hosted CI is not clean-machine qualification; system dependency,
 redistribution, signing and security review remain outstanding. Point-in-time
 listener ownership checks are not an atomic authenticated transport boundary.
 See [candidate quickstart](CANDIDATE_QUICKSTART.md).
+
+## Security continuation (2026-11-26)
+
+The b6500 package is affected by upstream [GHSA-96jg-mvhq-q7q7](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-96jg-mvhq-q7q7) and [GHSA-3p4r-fq3f-q74v](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-3p4r-fq3f-q74v). New Rust builds reject b6500 at inference startup; doctor and model-free tools remain available. Historical packages lack this guard. Upgrade and repackage b12359 after inspecting its official archives; check all applicable advisories and loader/redistribution requirements. A patched version is not automatically a secure runtime. Only use known trustworthy model files, never arbitrary GGUF. A same-connection or authenticated transport boundary is still required to close the listener-check race; post-response checks only reduce acceptance risk. See candidate security evidence workflow and the [model research PR #16](https://github.com/MrPunyapal/TinyBuilder/pull/16), which is not a release dependency.
