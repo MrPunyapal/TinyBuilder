@@ -129,6 +129,21 @@ REPOSITORIES = {
     )),
 }
 
+WRONG_REPLACEMENTS = {
+    "contact_channel": ("'email'=>'required|string'",),
+    "patient_visibility": ("return $staff || $viewer === $owner + 1;",),
+    "urgent_reminders": ("return $urgent ? 3 : 24;",),
+    "booking_availability": ("CAPACITY = 9", "return max(0, BookingRules::CAPACITY - $occupied);"),
+    "available_stock": ("where('active', true)->where('stock', '>=', 0)->orderBy",),
+    "group_inventory": ("Item::class, 'group_id')->where('active', false",),
+    "exempt_tax": ("return $exempt ? 0 : intdiv($net, 20);",),
+    "listing_response": ("['listed'=>$listed], $listed ? 200 : 400",),
+    "priority_normalization": ("strtolower(ltrim($header))",),
+    "deadline_boundary": ("$elapsed >= $deadline - 1",),
+    "rural_quote": ("450 + 25 * $kilometers + ($rural ? 50 : 0)",),
+    "parcel_weight": ("MAX_WEIGHT = 19", "return $weight > 0 && $weight <= ParcelLimit::MAX_WEIGHT;"),
+}
+
 
 def test_source(classes, task):
     imports = "".join(f"use App\\CodingV1\\{cls};\n" for cls in classes)
@@ -142,11 +157,15 @@ def test_source(classes, task):
 def verify_task(repo, php, files, task):
     hidden = fresh_fixture_path(repo, TEST)
     changes = {}
-    for cls, old, new in task.changes:
+    incorrect = {}
+    for (cls, old, new), wrong in zip(task.changes, WRONG_REPLACEMENTS[task.name], strict=True):
         original = files[cls]
         if original.count(old) != 1 or old == new or cls in changes:
             raise ValueError(f"Invalid reference for {task.name}")
         changes[cls] = original.replace(old, new, 1)
+        incorrect[cls] = original.replace(old, wrong, 1)
+    if changes == incorrect:
+        raise ValueError(f"Wrong and reference repairs coincide for {task.name}")
     def relative(cls):
         return repo / "app" / "CodingV1" / f"{cls}.php"
     with hidden.open("x", encoding="utf-8", newline="\n") as handle:
@@ -166,12 +185,22 @@ def verify_task(repo, php, files, task):
                 relative(cls).write_bytes(files[cls].encode("utf-8"))
                 partial[cls] = test(php, repo, "test_repair")
                 relative(cls).write_bytes(changes[cls].encode("utf-8"))
+        for cls, text in incorrect.items():
+            relative(cls).write_bytes(text.encode("utf-8"))
+            require([php, "-l", str(relative(cls))], repo)
+        wrong = assertions()
     finally:
         for cls in changes:
             relative(cls).write_bytes(files[cls].encode("utf-8"))
         hidden.unlink()
     return {"task": task.name, "family": task.family, "changed_files": len(changes),
-            "broken": broken, "reference": reference, "with_one_file_reverted": partial}
+            "broken": broken, "reference": reference, "wrong": wrong, "with_one_file_reverted": partial}
+
+
+def valid_controls(row):
+    return (row["broken"] == [1, 0] and row["reference"] == [0, 0]
+            and all(code in (0, 1) for code in row["wrong"]) and 1 in row["wrong"]
+            and all(value == 1 for value in row["with_one_file_reverted"].values()))
 
 
 def main():
@@ -215,8 +244,7 @@ def main():
             row = verify_task(repo, args.php, files, task)
             rows.append(row)
             print(name, row, flush=True)
-            failed |= (row["broken"] != [1, 0] or row["reference"] != [0, 0]
-                       or any(value != 1 for value in row["with_one_file_reverted"].values()))
+            failed |= not valid_controls(row)
             (output / "controls.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         if command(["git", "-c", "core.autocrlf=false", "status", "--porcelain"], repo).stdout.strip():
             raise ValueError("Trusted controls did not restore the baseline")
