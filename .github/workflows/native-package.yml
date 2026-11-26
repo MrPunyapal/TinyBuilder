@@ -1,7 +1,8 @@
 name: Native candidate packages
 on:
   push:
-    branches: ['release/0.1']
+    branches: [main, 'release/0.1']
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths: ['rust/**', 'acceptance/package_native.py', 'acceptance/test_package_native.py', 'acceptance/qualify_packaged_read.py', 'acceptance/test_qualify_packaged_read.py', 'acceptance/llama-b12359-*', 'acceptance/runtime_upgrade_evidence.py', 'acceptance/test_runtime_upgrade_evidence.py', 'acceptance/runtime_evidence.py', 'tinybuilder/runtime/catalog.py', 'docs/CANDIDATE_QUICKSTART.md', '.github/workflows/native-package.yml']
