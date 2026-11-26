@@ -6,7 +6,8 @@ pinned llama.cpp runtime. No model weights or lab executables are included.
 **Security hold:** the b6500 runtime shipped in earlier development packages is
 covered by published GGUF parsing advisories. Do not load models in those
 packages. New Rust builds reject that revision before inference. Model-free
-inspection remains available. A patched packaged runtime is still required.
+inspection remains available. New staging targets b12359; only use a freshly
+verified candidate with that runtime after CI and review.
 Only use trusted GGUF files with verified provenance and digest; unknown model
 files require isolation (this CLI is not a sandbox).
 No Python, Rust, Ollama or Git is needed at run time on a compatible host.
@@ -21,7 +22,7 @@ Use read FILE --project PATH, search TEXT --project PATH or inspect QUESTION
 and press Enter at the GGUF prompt for model-free mode. Use /cat, /search,
 and /inspect immediately, or /model to choose an existing GGUF later. Paths
 with surrounding double quotes are accepted. The bundled runtime is selected
-automatically for AI; no downloads are performed. When a reviewed patched runtime becomes available, use /ask for AI questions,
+automatically for AI; no downloads are performed. With a reviewed patched runtime, use /ask for AI questions,
 /help for commands and /quit to exit.
 Model quality is not qualified; verify all responses. No file editing or
 command execution. Do not bypass OS security warnings; unsigned packages

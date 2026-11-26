@@ -4,7 +4,7 @@ on:
     branches: ['release/0.1']
   pull_request:
     branches: [main]
-    paths: ['rust/**', 'acceptance/package_native.py', 'acceptance/test_package_native.py', 'acceptance/llama-b12359-*', 'acceptance/runtime_upgrade_evidence.py', 'acceptance/test_runtime_upgrade_evidence.py', 'acceptance/runtime_evidence.py', 'tinybuilder/runtime/catalog.py', 'docs/CANDIDATE_QUICKSTART.md', '.github/workflows/native-package.yml']
+    paths: ['rust/**', 'acceptance/package_native.py', 'acceptance/test_package_native.py', 'acceptance/qualify_packaged_read.py', 'acceptance/test_qualify_packaged_read.py', 'acceptance/llama-b12359-*', 'acceptance/runtime_upgrade_evidence.py', 'acceptance/test_runtime_upgrade_evidence.py', 'acceptance/runtime_evidence.py', 'tinybuilder/runtime/catalog.py', 'docs/CANDIDATE_QUICKSTART.md', '.github/workflows/native-package.yml']
 permissions:
   contents: read
 concurrency:
@@ -36,6 +36,7 @@ jobs:
       - run: python -m unittest discover -s acceptance -p test_runtime_evidence.py -v
       - run: python -m unittest discover -s acceptance -p test_runtime_upgrade_evidence.py -v
       - run: python -m unittest discover -s acceptance -p test_package_native.py -v
+      - run: python -m unittest discover -s acceptance -p test_qualify_packaged_read.py -v
       - run: python acceptance/package_native.py --target ${{ matrix.target }} --source-commit ${{ github.sha }} --output candidate-dist
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

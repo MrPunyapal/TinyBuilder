@@ -11,7 +11,7 @@ Python and write-capable examples remain reference/lab only.
 | --- | --- | --- |
 | Scope and version | IMPLEMENTED; CI PENDING | Read-only normal CLI, canonical product version and regression tests |
 | Exact candidate CI | NEW HEAD PENDING | Locked native tests/build/smoke all three targets |
-| Runtime provenance | BLOCKED — known affected b6500 | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
+| Runtime provenance | PATCHED RUNTIME STAGING; VALIDATION PENDING | Actual staged runtime hashes and source asset, notices, socket ownership/authentication, forced exit cleanup |
 | Clean-machine lifecycle | CI SMOKE IMPLEMENTED; CLEAN HOST BLOCKED | Each target installs/unpacks and runs offline without developer tools, exit/remove preserve user files |
 | Model quality and license | BLOCKED | Permissively licensed model, preselected shipped engine, unchanged 10/10 exact two-fact genuine-read trials |
 | Read-only safety | REGRESSION TESTS; REVIEW PENDING | Denial of mutation/exec options, no project mutation, traversal/hardlink/symlink/reparse protection and containment review |
@@ -30,7 +30,7 @@ separate, and do not distribute lab executables with supported artifacts.
 ## Candidate packaging
 
 The native-package workflow builds unsigned portable ZIP (Windows) or tar.gz
-(macOS/Linux) archives from a locked Rust build and the pinned b6500 archive.
+(macOS/Linux) archives from a locked Rust build and the pinned b12359 archive.
 It retains exact source SHA, file and archive hashes, runtime and crate notice
 inventories, and exercises unpacked model-free launch and removal. The build
 binds the runtime manifest to the executable. No weights or lab executables
@@ -41,4 +41,6 @@ See [candidate quickstart](CANDIDATE_QUICKSTART.md).
 
 ## Security continuation (2026-11-26)
 
-The b6500 package is affected by upstream [GHSA-96jg-mvhq-q7q7](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-96jg-mvhq-q7q7) and [GHSA-3p4r-fq3f-q74v](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-3p4r-fq3f-q74v). New Rust builds reject b6500 at inference startup; doctor and model-free tools remain available. Historical packages lack this guard. Upgrade and repackage b12359 after inspecting its official archives; check all applicable advisories and loader/redistribution requirements. A patched version is not automatically a secure runtime. Only use known trustworthy model files, never arbitrary GGUF. A same-connection or authenticated transport boundary is still required to close the listener-check race; post-response checks only reduce acceptance risk. See candidate security evidence workflow and the [model research PR #16](https://github.com/MrPunyapal/TinyBuilder/pull/16), which is not a release dependency.
+The b6500 package is affected by upstream [GHSA-96jg-mvhq-q7q7](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-96jg-mvhq-q7q7) and [GHSA-3p4r-fq3f-q74v](https://github.com/ggml-org/llama.cpp/security/advisories/GHSA-3p4r-fq3f-q74v). New Rust builds reject b6500 at inference startup; doctor and model-free tools remain available. Historical packages lack this guard. The package staging code now uses b12359 after verifying its official archives. Exact-head native package CI, loader/redistribution and all applicable advisory review remain necessary. A patched version is not automatically a secure runtime. Only use known trustworthy model files, never arbitrary GGUF. A same-connection or authenticated transport boundary is still required to close the listener-check race; post-response checks only reduce acceptance risk. See candidate security evidence workflow and the [model research PR #16](https://github.com/MrPunyapal/TinyBuilder/pull/16), which is not a release dependency.
+
+The exact packaged CLI can be evaluated using acceptance/qualify_packaged_read.py on a disposable acceptance host. This is separate evaluator tooling, not a product runtime dependency. The original Rust lab qualification oracle remains unchanged. See [clean-machine acceptance](CLEAN_MACHINE_ACCEPTANCE.md). The OSV scan found advisories in anyhow 1.0.98 and rand 0.8.5; updated to 1.0.103 and 0.8.6, respectively. The dependency-updated head a0c4ae3 passed [security evidence](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45797085981). Zero known OSV matches does not establish absence of vulnerabilities.
