@@ -69,6 +69,17 @@ impl Owned {
     pub fn listener_owned(&self, port: u16) -> Result<bool> {
         listener_owned(self.child.id(), port)
     }
+    /// Identify the server-side established IPv4 tuple for this exact socket.
+    /// No credentials or project data should be sent before this check succeeds.
+    pub fn connection_owned(&self, socket: &std::net::TcpStream) -> Result<bool> {
+        use std::net::{IpAddr, Ipv4Addr};
+        let client = socket.local_addr()?;
+        let server = socket.peer_addr()?;
+        if client.ip()!=IpAddr::V4(Ipv4Addr::LOCALHOST)
+            || server.ip()!=IpAddr::V4(Ipv4Addr::LOCALHOST)
+            || client.port()==server.port() {return Ok(false);}
+        connection_owned(self.child.id(),server.port(),client.port())
+    }
     pub fn try_wait(&mut self) -> std::io::Result<Option<ExitStatus>> {
         self.child.try_wait()
     }
@@ -144,6 +155,59 @@ fn listener_owned(group: u32, port: u16) -> Result<bool> {
         }
     }
     Ok(false)
+}
+
+#[cfg(target_os = "linux")]
+fn connection_owned(group: u32, server: u16, client: u16) -> Result<bool> {
+    use std::{collections::BTreeSet, fs};
+    let local=format!("0100007F:{server:04X}");
+    let remote=format!("0100007F:{client:04X}");
+    let mut inodes=BTreeSet::new();
+    for line in fs::read_to_string("/proc/net/tcp")?.lines().skip(1) {
+        let c:Vec<_>=line.split_whitespace().collect();
+        if c.len()>=10 && c[1]==local && c[2]==remote && c[3]=="01" && c[9]!="0" {
+            inodes.insert(format!("socket:[{}]",c[9]));
+        }
+    }
+    if inodes.len()!=1 {return Ok(false);}
+    let expected=inodes.iter().next().unwrap();
+    for entry in fs::read_dir("/proc")? {
+        let Ok(entry)=entry else {continue;};
+        let Some(pid)=entry.file_name().to_str().and_then(|v|v.parse::<u32>().ok()) else {continue;};
+        if !in_group(pid,group){continue;}
+        let Ok(fds)=fs::read_dir(entry.path().join("fd")) else {continue;};
+        for fd in fds.flatten() {
+            if fs::read_link(fd.path()).ok().as_deref()==Some(Path::new(expected)) {
+                return Ok(in_group(pid,group));
+            }
+        }
+    }
+    Ok(false)
+}
+
+#[cfg(target_os = "macos")]
+fn connection_owned(group:u32,server:u16,client:u16)->Result<bool>{
+    let out=Command::new("/usr/sbin/lsof").env_clear().env("PATH","/usr/bin:/bin")
+        .args(["-nP","-a","-sTCP:ESTABLISHED","-Fpfn"])
+        .arg(format!("-i4TCP:{server}"))
+        .stdin(Stdio::null()).stderr(Stdio::null()).output()?;
+    if !out.status.success(){return Ok(false);}
+    let endpoint=format!("127.0.0.1:{server}->127.0.0.1:{client}");
+    let mut pid=None;
+    let mut matched=false;
+    for line in std::str::from_utf8(&out.stdout)?.lines(){
+        if let Some(value)=line.strip_prefix('p'){pid=value.parse::<u32>().ok();}
+        else if line.strip_prefix('n')==Some(endpoint.as_str()){
+            if matched||!pid.is_some_and(|p|in_group(p,group)){return Ok(false);}
+            matched=true;
+        }
+    }
+    Ok(matched)
+}
+
+#[cfg(windows)]
+fn connection_owned(pid:u32,server:u16,client:u16)->Result<bool>{
+    windows::connection_owned(pid,server,client)
 }
 
 #[cfg(target_os = "macos")]
@@ -268,6 +332,28 @@ mod windows {
         Ok(owned)
     }
 
+    pub fn connection_owned(pid:u32,server:u16,client:u16)->Result<bool>{
+        let mut bytes=0u32;
+        // TCP_TABLE_OWNER_PID_ALL includes the established server-side row.
+        let rc=unsafe{GetExtendedTcpTable(ptr::null_mut(),&mut bytes,0,2,5,0)};
+        ensure!(rc==122&&(4..=16*1024*1024).contains(&bytes),"TCP table size unavailable");
+        let mut words=vec![0u32;(bytes as usize+3)/4];
+        let rc=unsafe{GetExtendedTcpTable(words.as_mut_ptr().cast(),&mut bytes,0,2,5,0)};
+        if rc==122{return Ok(false);}
+        ensure!(rc==0&&bytes>=4&&bytes as usize<=words.len()*4,"TCP table unavailable");
+        let count=words[0] as usize;
+        ensure!(count<=(bytes as usize/4-1)/6,"Malformed TCP table");
+        let address=u32::from_ne_bytes([127,0,0,1]);
+        let mut matched=false;
+        for row in words[1..1+count*6].chunks_exact(6){
+            if row[0]!=5||row[1]!=address||row[3]!=address
+                ||u16::from_be(row[2] as u16)!=server||u16::from_be(row[4] as u16)!=client{continue;}
+            if matched||row[5]!=pid{return Ok(false);}
+            matched=true;
+        }
+        Ok(matched)
+    }
+
     pub struct Job(Handle);
     impl Job {
         pub fn new() -> Result<Self> {
@@ -314,6 +400,7 @@ mod tests {
         let Some(path) = std::env::var_os("TB_TEST_LISTENER") else { return; };
         let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
         fs::write(path, listener.local_addr().unwrap().port().to_string()).unwrap();
+        let (_socket, _) = listener.accept().unwrap();
         loop { thread::sleep(Duration::from_millis(100)); }
     }
 
@@ -339,6 +426,15 @@ mod tests {
         assert!(owned.listener_owned(port).unwrap(), "Owned listener not identified");
         assert!(!owned.listener_owned(foreign.local_addr().unwrap().port()).unwrap(),
             "Foreign listener accepted");
+        let connection=std::net::TcpStream::connect(("127.0.0.1",port)).unwrap();
+        let foreign_connection=std::net::TcpStream::connect(foreign.local_addr().unwrap()).unwrap();
+        let (_foreign_server,_)=foreign.accept().unwrap();
+        let deadline=Instant::now()+Duration::from_secs(5);
+        while !owned.connection_owned(&connection).unwrap(){
+            assert!(Instant::now()<deadline,"Owned connected socket not identified");
+            thread::sleep(Duration::from_millis(30));
+        }
+        assert!(!owned.connection_owned(&foreign_connection).unwrap(),"Foreign established socket accepted");
     }
 
     // A test subprocess is the heartbeat producer, not an inference server.

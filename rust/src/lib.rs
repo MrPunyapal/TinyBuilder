@@ -3,6 +3,7 @@ pub mod grounded;
 pub mod context;
 pub mod project;
 mod process;
+mod loopback;
 pub mod runtime;
 
 pub fn terminal(text: &str) -> String {

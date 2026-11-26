@@ -1,6 +1,6 @@
 //! Existing, trusted installed llama.cpp runtime. No downloads or remote API.
 use anyhow::{bail, ensure, Context, Result};
-use crate::process::{self, Owned};
+use crate::{process::{self, Owned}, loopback::{self, Endpoint}};
 use rand::{distributions::Alphanumeric, Rng};
 use serde::Deserialize;
 use serde_json::Value;
@@ -154,12 +154,6 @@ fn client(timeout: Duration) -> ureq::Agent {
     // internally and are never sourced from model or project text.
     ureq::AgentBuilder::new().redirects(0).timeout(timeout).build()
 }
-fn bounded_json(response: ureq::Response) -> Result<Value> {
-    let mut buf = Vec::new();
-    response.into_reader().take(2 * 1024 * 1024 + 1).read_to_end(&mut buf)?;
-    ensure!(buf.len() <= 2 * 1024 * 1024, "Response too large");
-    serde_json::from_slice(&buf).map_err(|_| anyhow::anyhow!("Invalid server JSON"))
-}
 fn status(result: std::result::Result<ureq::Response, ureq::Error>) -> Option<u16> {
     match result {
         Ok(r) => Some(r.status()),
@@ -211,14 +205,11 @@ impl Runtime {
                     ensure!(matches!(status(http.get(&url).call()), Some(401 | 403)), "Runtime accepted missing authentication");
                     ensure!(matches!(status(http.get(&url).set("Authorization", "Bearer invalid-session").call()), Some(401 | 403)), "Runtime accepted invalid authentication");
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
-                    ensure!(status(http.get(&url).set("Authorization", &format!("Bearer {}", self.key)).call()) == Some(200), "Runtime authentication failed");
+                    loopback::authorized(&self.child,self.port,&self.key,Endpoint::Props,None,Duration::from_secs(5))?;
                     // b12359 protects /v1/models; b6500 accepts authenticated
                     // access too. Require the random session alias after auth.
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
-                    let models = http.get(&format!("{}/v1/models", self.base))
-                        .set("Authorization", &format!("Bearer {}", self.key)).call()
-                        .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
-                    let data = bounded_json(models)?;
+                    let data=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Models,None,Duration::from_secs(5))?;
                     ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during identity probe");
                     ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     ensure!(self.child.try_wait()?.is_none(), "Runtime exited during readiness");
@@ -233,16 +224,7 @@ impl Runtime {
     pub fn complete(&self, mut payload: Value) -> Result<Value> {
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         payload["model"] = Value::String(self.alias.clone());
-        let response = client(Duration::from_secs(120))
-            .post(&format!("{}/v1/chat/completions", self.base))
-            .set("Authorization", &format!("Bearer {}", self.key))
-            .send_json(payload)
-            .map_err(|err| match err {
-                ureq::Error::Status(code, _) => anyhow::anyhow!("Model HTTP status {code}"),
-                _ => anyhow::anyhow!("Local model transport failed"),
-            })?;
-        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
-        let response = bounded_json(response)?;
+        let response=loopback::authorized(&self.child,self.port,&self.key,Endpoint::Completion,Some(&payload),Duration::from_secs(120))?;
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during response");
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
