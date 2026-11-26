@@ -9,12 +9,14 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+from xml.etree import ElementTree
 from tempfile import TemporaryDirectory
 from threading import Event, Thread
 from time import monotonic
 
 from .evaluate import command, require, validate_laravel_baseline
 from .validation_case import fresh_fixture_path
+from .pilot_protocol import index_rows
 
 ARMS = ("A", "B", "C", "D")
 TEST = "tests/Feature/TinyBuilderPilotTest.php"
@@ -88,8 +90,23 @@ def patch_category(case, preview):
 
 
 def test(php, project, suffix):
-    result = command([php, "artisan", "test", "--filter=" + suffix], project)
-    return result.returncode
+    # Run the exact evaluator file and method. Exit 1 alone does not prove an assertion failed.
+    with TemporaryDirectory(prefix="tinybuilder-phpunit-") as tmp:
+        junit = Path(tmp) / "result.xml"
+        runner = project / "vendor/phpunit/phpunit/phpunit"
+        result = command([php, str(runner), "--filter=" + suffix + "$",
+                          "--log-junit", str(junit), TEST], project)
+        try:
+            cases = ElementTree.parse(junit).getroot().findall(".//testcase")
+        except (OSError, ElementTree.ParseError):
+            return 2
+    if (len(cases) != 1 or cases[0].get("name") != suffix
+            or cases[0].find("error") is not None or cases[0].find("skipped") is not None):
+        return 2
+    failed = cases[0].find("failure") is not None
+    if failed and result.returncode == 1:
+        return 1
+    return 0 if not failed and result.returncode == 0 else 2
 
 
 def prepare(case, base, root, revision, php):
@@ -234,7 +251,7 @@ def main():
                 if model.suffix.lower() != ".gguf" or digest(model) != pin:
                     raise ValueError("Model identity does not match preselected hash")
                 responses, metrics = infer(args.lab, args.runtime, model, jobs)
-                indexed = {(row["case"], row["arm"]): row for row in responses if "case" in row}
+                indexed = index_rows(responses, {(case.name, arm) for case in CASES for arm in ARMS})
                 rows = []
                 for case in CASES:
                     for arm in ARMS:
