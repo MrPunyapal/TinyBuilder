@@ -162,6 +162,17 @@ fn status(result: std::result::Result<ureq::Response, ureq::Error>) -> Option<u1
     }
 }
 
+fn server_command(exe: &Path, model: &Path, port: u16, alias: &str, key: &str) -> std::process::Command {
+    let mut command = process::command(exe);
+    command.env_clear().env("LLAMA_API_KEY", key)
+        .arg("--model").arg(model)
+        .args(["--host", "127.0.0.1", "--port"]).arg(port.to_string())
+        .args(["--alias", alias, "--device", "none", "--n-gpu-layers", "0"])
+        .args(["--offline", "--no-agent", "--no-webui-mcp-proxy", "--no-webui",
+               "--no-slots", "--jinja", "--log-disable"]);
+    command
+}
+
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
         let (exe, revision) = verify_inventory(root)?;
@@ -173,11 +184,8 @@ impl Runtime {
         let key: String = rand::thread_rng().sample_iter(&Alphanumeric).take(48).map(char::from).collect();
         let alias: String = format!("tinybuilder-{}", rand::thread_rng().sample_iter(&Alphanumeric).take(24).map(char::from).collect::<String>());
         let dir = exe.parent().context("Missing runtime directory")?;
-        let mut command = process::command(&exe);
-        command.current_dir(dir).env_clear().env("LLAMA_API_KEY", &key)
-            .args(["--model"]).arg(&model)
-            .args(["--host", "127.0.0.1", "--port"]).arg(port.to_string())
-            .args(["--alias", &alias, "--device", "none", "--n-gpu-layers", "0", "--no-webui", "--no-slots", "--jinja", "--log-disable"]);
+        let mut command = server_command(&exe, &model, port, &alias, &key);
+        command.current_dir(dir);
         #[cfg(windows)]
         {
             let system = std::env::var_os("SystemRoot").context("SystemRoot missing")?;
@@ -236,6 +244,16 @@ impl Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn model_runtime_explicitly_disables_network_and_agent_surfaces() {
+        let command = server_command(Path::new("llama-server"), Path::new("test.gguf"), 1234, "test", "test-key");
+        let args: Vec<_> = command.get_args().collect();
+        for disabled in ["--offline", "--no-agent", "--no-webui-mcp-proxy", "--no-webui", "--no-slots"] {
+            assert!(args.iter().any(|arg| *arg == disabled), "Missing {disabled}");
+        }
+        assert!(!args.iter().any(|arg| *arg == "test-key"));
+    }
+
     #[test]
     fn known_affected_runtime_cannot_start_inference() {
         assert!(inference_revision_allowed("b6500").is_err());

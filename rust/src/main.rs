@@ -82,10 +82,17 @@ fn installed_runtime() -> Option<PathBuf> {
     None
 }
 fn task(project: &Project, server: &Runtime, text: &str, protocol: Protocol, required: Option<String>) -> Result<()> {
-    let result = agent::run(project, text, Options { protocol, allow_write:false, required_read:required, max_rounds:8 },
-        |p| server.complete(p),
-        |_, _| false,
-        |event| println!("{}", terminal(event)))?;
+    let complete = |request| server.complete(request);
+    let activity = |event: &str| println!("{}", terminal(event));
+    let result = match (protocol, required) {
+        (Protocol::StrictJson, Some(path)) => tinybuilder::grounded::required_read(
+            project, text, &path, tinybuilder::grounded::AnswerMode::Plain, complete, activity,
+        )?,
+        (protocol, required_read) => agent::run(
+            project, text, Options { protocol, allow_write: false, required_read, max_rounds: 8 },
+            complete, |_, _| false, activity,
+        )?,
+    };
     println!("Model response (verify factual claims):");
     show(&result.answer);
     println!("Evidence: {} file(s) read, {} searches, {} listings, {} approved edits.",
