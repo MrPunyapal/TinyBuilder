@@ -74,6 +74,9 @@ fn valid_name(name: &str) -> bool {
         && ![".gguf", ".safetensors", ".db", ".sqlite", ".sqlite3", ".pem", ".key", ".env"].iter().any(|s| name.to_ascii_lowercase().ends_with(s))
 }
 pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
+    verify_inventory(root).map(|(exe, _)| exe)
+}
+fn verify_inventory(root: &Path) -> Result<(PathBuf, String)> {
     ensure!(root.is_absolute(), "Use an absolute trusted runtime directory");
     let root_meta = root.symlink_metadata()?;
     ensure!(root_meta.is_dir() && !root_meta.file_type().is_symlink(), "Runtime root must be a real directory");
@@ -119,7 +122,14 @@ pub fn verify_runtime(root: &Path) -> Result<PathBuf> {
         ensure!(valid_name(&name) && name != "runtime-manifest.json", "Invalid runtime filename");
         ensure!(digest(&root.join(name))? == expected, "Runtime digest mismatch");
     }
-    Ok(root.join(exe))
+    Ok((root.join(exe), data.revision))
+}
+
+// b6500 remains inspectable for historical package evidence, but it must
+// not parse model files: published GGUF parser advisories affect this pin.
+fn inference_revision_allowed(revision: &str) -> Result<()> {
+    ensure!(revision == "b12359", "Runtime revision blocked for inference: use a separately verified patched runtime; model-free mode remains available");
+    Ok(())
 }
 
 pub fn model_path(path: &Path) -> Result<PathBuf> {
@@ -160,7 +170,8 @@ fn status(result: std::result::Result<ureq::Response, ureq::Error>) -> Option<u1
 
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
-        let exe = verify_runtime(root)?;
+        let (exe, revision) = verify_inventory(root)?;
+        inference_revision_allowed(&revision)?;
         let model = model_path(model)?;
         let socket = TcpListener::bind(("127.0.0.1", 0))?;
         let port = socket.local_addr()?.port();
@@ -208,6 +219,7 @@ impl Runtime {
                         .set("Authorization", &format!("Bearer {}", self.key)).call()
                         .map_err(|_| anyhow::anyhow!("Runtime identity probe failed"))?;
                     let data = bounded_json(models)?;
+                    ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during identity probe");
                     ensure!(data["data"].as_array().is_some_and(|rows| rows.iter().any(|r| r["id"].as_str() == Some(self.alias.as_str()))), "Runtime identity mismatch");
                     ensure!(self.child.try_wait()?.is_none(), "Runtime exited during readiness");
                     return Ok(());
@@ -231,6 +243,7 @@ impl Runtime {
             })?;
         ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed");
         let response = bounded_json(response)?;
+        ensure!(self.child.listener_owned(self.port)?, "Loopback ownership changed during response");
         let choice = &response["choices"][0];
         ensure!(matches!(choice["finish_reason"].as_str(), Some("stop" | "tool_calls")), "Incomplete model response");
         ensure!(choice["message"].is_object(), "Missing model message");
@@ -241,6 +254,12 @@ impl Runtime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn known_affected_runtime_cannot_start_inference() {
+        assert!(inference_revision_allowed("b6500").is_err());
+        assert!(inference_revision_allowed("unknown").is_err());
+        assert!(inference_revision_allowed("b12359").is_ok());
+    }
     #[test]
     fn approved_pin_and_inventory_only() {
         for revision in ["b6500", "b12359"] {
