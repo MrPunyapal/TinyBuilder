@@ -11,7 +11,8 @@ import tarfile
 import tempfile
 import zipfile
 
-from runtime_evidence import download, inspect, CPU_ARCHIVES, REVISION
+from runtime_evidence import download, inspect
+from runtime_upgrade_evidence import PINS, REVISION, SOURCE_COMMIT, inspect_tar
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = {
@@ -19,7 +20,13 @@ TARGETS = {
     "aarch64-apple-darwin": ("macos", "arm64"),
     "x86_64-unknown-linux-gnu": ("linux", "x64"),
 }
-UPSTREAM_COMMIT = "a7a98e0fffed794396b3fbad4dcdbbc184963645"
+UPSTREAM_COMMIT = SOURCE_COMMIT
+CPU_ARCHIVES = {(platform, arch): PINS[platform] for platform, arch in TARGETS.values()}
+SOURCE_NOTICES = {
+    "LICENSE": "e7dca554bcb802f98408383a864404e3aa4eacca",
+    "LICENSE-jsonhpp": "b5a10275c1cdff6d2d1b4d84f51922d42499dec5",
+    "LICENSE-httplib": "3e5ed359a2bb16f52c383745c25f14bb7a81c9e4",
+}
 
 
 def digest(path):
@@ -32,55 +39,124 @@ def write_json(path, value):
 
 
 def selected(name, platform):
-    return (name == ("llama-server.exe" if platform == "windows" else "llama-server")
-            or name == "LICENSE" or name.startswith("LICENSE-")
-            or (platform == "windows" and name.endswith(".dll"))
-            or (platform == "linux" and name.endswith(".so"))
-            or (platform == "macos" and (name.endswith(".dylib") or name in {
-                "ggml-common.h", "ggml-metal-impl.h", "ggml-metal.metal"})))
+    if name in {"LICENSE", "LICENSE-LLVM-OpenMP", "LICENSE-jsonhpp", "LICENSE-httplib"}:
+        return True
+    if platform == "windows":
+        return (name == "llama-server.exe"
+                or re.fullmatch(r"ggml(?:-[a-z0-9-]+)?\.dll", name) is not None
+                or name in {"llama.dll", "llama-common.dll", "llama-server-impl.dll", "mtmd.dll", "libomp.dll"})
+    if name == "llama-server":
+        return True
+    stem = r"lib(?:ggml(?:-[a-z0-9-]+)?|llama(?:-common|-server-impl)?|mtmd)"
+    extension = r"(?:\.[0-9]+)*\.dylib" if platform == "macos" else r"\.so(?:\.[0-9]+)*"
+    return re.fullmatch(stem + extension, name) is not None
+
+
+def source_notice(name):
+    data = (ROOT / "acceptance" / ("llama-b12359-" + name)).read_bytes().replace(b"\r\n", b"\n")
+    blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+    if blob != SOURCE_NOTICES[name]:
+        raise ValueError("Pinned source notice mismatch")
+    return data
+
+
+def resolve_alias(name, inventory):
+    """Only same-directory selected library aliases, never filesystem links."""
+    visited = set()
+    while True:
+        if name in visited or len(visited) >= 8 or name not in inventory:
+            raise ValueError("Invalid runtime alias chain")
+        visited.add(name)
+        record = inventory[name]
+        if record["kind"] == "regular":
+            return name
+        if record["kind"] != "symlink":
+            raise ValueError("Unsupported selected runtime link")
+        target = record["target"]
+        if not re.fullmatch(r"[A-Za-z0-9_+.-]{1,128}", target) or target in {".", ".."}:
+            raise ValueError("Unsafe runtime alias")
+        name = target
 
 
 def stage(archive, target, runtime):
     platform, arch = TARGETS[target]
     filename, expected = CPU_ARCHIVES[(platform, arch)]
-    records = inspect(archive, expected)
+    is_zip = filename.endswith(".zip")
+    if is_zip != (platform == "windows"):
+        raise ValueError("Unexpected native archive format")
+    records = inspect(archive, expected) if is_zip else inspect_tar(archive, expected)
     runtime.mkdir(parents=True, exist_ok=False)
     server = "llama-server.exe" if platform == "windows" else "llama-server"
     files = {}
-    deps = []
-    with zipfile.ZipFile(archive) as z:
-        for row in records:
-            name = PurePosixPath(row["path"]).name
-            if not selected(name, platform):
+    inventory = {}
+    prefix = "" if platform == "windows" else f"llama-{REVISION}/"
+    for row in records:
+        name = PurePosixPath(row["path"]).name
+        if not selected(name, platform):
+            continue
+        if (row["path"] != prefix + name
+                or not re.fullmatch(r"[A-Za-z0-9_+.-]{1,128}", name)
+                or name.casefold() in {n.casefold() for n in inventory}):
+            raise ValueError("Unexpected selected runtime member")
+        if row["kind"] != "regular" and (is_zip or row["kind"] != "symlink"
+                or name == server or name.startswith("LICENSE")):
+            raise ValueError("Unexpected selected runtime member type")
+        inventory[name] = row
+    if server not in inventory:
+        raise ValueError("Missing native server")
+    # Resolve every alias before copying; malformed chains cannot influence paths.
+    canonical = {name: resolve_alias(name, inventory) for name in inventory}
+    context = zipfile.ZipFile(archive) if is_zip else tarfile.open(archive, "r:gz")
+    with context as z:
+        for name, row in inventory.items():
+            if row["kind"] != "regular":
                 continue
-            prefix = "" if platform == "windows" else "build/bin/"
-            if (row["kind"] != "regular" or row["path"] != prefix + name
-                    or not re.fullmatch(r"[A-Za-z0-9_+.-]{1,128}", name)
-                    or name.casefold() in {n.casefold() for n in files}):
-                raise ValueError("Unexpected selected runtime member")
             dst = runtime / name
-            with z.open(row["path"]) as src, dst.open("xb") as out:
+            src = z.open(row["path"]) if is_zip else z.extractfile(row["path"])
+            if src is None:
+                raise ValueError("Missing selected member data")
+            with src, dst.open("xb") as out:
                 shutil.copyfileobj(src, out)
-            if digest(dst) != row["sha256"]:
+            if dst.stat().st_size != row["bytes"] or digest(dst) != row["sha256"]:
                 raise ValueError("Staged runtime digest mismatch")
             dst.chmod(0o755 if name == server else 0o644)
             files[name] = row["sha256"]
-            if name != server and not name.startswith("LICENSE"):
-                deps.append(name)
-    if "LICENSE" not in files and platform == "windows":
-        data = (ROOT / "acceptance" / "llama-b6500-LICENSE").read_bytes().replace(b"\r\n", b"\n")
-        blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
-        if blob != "acb96ce78e0486e9dc7602cdcdd2f491c34f335a":
-            raise ValueError("Upstream license blob mismatch")
-        (runtime / "LICENSE").write_bytes(data)
-        files["LICENSE"] = digest(runtime / "LICENSE")
-    if not {server, "LICENSE", "LICENSE-curl", "LICENSE-httplib",
-            "LICENSE-jsonhpp", "LICENSE-linenoise"} <= files.keys() or not deps:
+    # Materialize aliases as regular byte-identical files. The embedded manifest
+    # authenticates every alias; no symlink/hardlink survives installation.
+    for name, resolved in canonical.items():
+        if name == resolved:
+            continue
+        if resolved == server or resolved.startswith("LICENSE"):
+            raise ValueError("Alias target is not a library")
+        dst = runtime / name
+        with (runtime / resolved).open("rb") as src, dst.open("xb") as out:
+            shutil.copyfileobj(src, out)
+        dst.chmod(0o644)
+        if digest(dst) != files[resolved]:
+            raise ValueError("Materialized alias digest mismatch")
+        files[name] = files[resolved]
+    for name in SOURCE_NOTICES:
+        data = source_notice(name)
+        if name in files:
+            if (runtime / name).read_bytes().replace(b"\r\n", b"\n") != data:
+                raise ValueError("Archive and pinned source notice disagree")
+        else:
+            (runtime / name).write_bytes(data)
+            files[name] = digest(runtime / name)
+    if platform == "windows" and not {"libomp.dll", "LICENSE-LLVM-OpenMP"} <= files.keys():
+        raise ValueError("Missing Windows OpenMP dependency or notice")
+    required = {
+        "windows": {"ggml.dll", "llama.dll", "llama-server-impl.dll", "llama-common.dll", "mtmd.dll"},
+        "macos": {"libggml.1.dylib", "libllama.1.dylib", "libllama-server-impl.dylib", "libllama-common.1.dylib", "libmtmd.1.dylib"},
+        "linux": {"libggml.so.1", "libllama.so.1", "libllama-server-impl.so", "libllama-common.so.1", "libmtmd.so.1"},
+    }[platform]
+    if not required <= files.keys():
         raise ValueError("Incomplete runtime payload")
+    deps = sorted(n for n in files if n != server and not n.startswith("LICENSE"))
     write_json(runtime / "runtime-manifest.json", {
         "schema": 1, "revision": REVISION, "os": platform, "architecture": arch,
         "backend": "cpu", "executable": server, "archive": filename,
-        "archive_sha256": expected, "native_dependencies": sorted(deps), "files": files,
+        "archive_sha256": expected, "native_dependencies": deps, "files": files,
     })
     return digest(runtime / "runtime-manifest.json")
 
