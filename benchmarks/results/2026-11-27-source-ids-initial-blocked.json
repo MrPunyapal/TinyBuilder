@@ -1,0 +1,47 @@
+{
+  "profile": "coding-source-ids",
+  "baseline": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+  "control_order": [
+    "behavior",
+    "regression"
+  ],
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "lab_sha256": "1e052c7ce5cf818d8d47cc098e5fb0ad03ed24b458b28e58a54709fd4ed2a38d",
+  "configuration": {
+    "temperature": 0,
+    "selection_max_tokens": 128,
+    "replacement_max_tokens": 1024,
+    "arms": [
+      "A",
+      "B",
+      "C"
+    ],
+    "context": "A exact-text and B model-selected source ID with same supplied evidence; C operator-selected file/line",
+    "arm_order": {
+      "default": [
+        "A",
+        "B",
+        "C"
+      ],
+      "seat_policy": [
+        "B",
+        "A",
+        "C"
+      ]
+    }
+  },
+  "requested_per_model": 9,
+  "controls": {
+    "contact_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        1,
+        0
+      ]
+    }
+  },
+  "models": []
+}
