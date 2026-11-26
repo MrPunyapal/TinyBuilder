@@ -39,15 +39,16 @@ procedure. Existing repository skills cover the remaining workflow, and
 no permanent Codex profiles are needed. PR #21 still owns the canonical
 project-status refresh.
 
-## Continue without duplicating the run
+## Continue from the completed run
 
 The source-ID campaign uses the existing 1.5B and 3B weights sequentially.
 The local first-attempt report sits in the `coding-v1-source-ids` output
-folder under the release evidence root. The retry writes to
-`coding-v1-source-ids-retry/pilot.json`. Check the retry output and active
-processes before considering a rerun. Record all 18 planned trials or their
-blocked status. Then rerun or collect integrated Python, Rust, acceptance
-and guidance checks on the exact pushed commit.
+folder under the release evidence root. The retry completed all 18 trials
+and wrote `coding-v1-source-ids-retry/pilot.json`. The sanitized artifact
+and metrics are linked above. Both models scored 0/3 with source IDs,
+with PHP lint rejecting all six proposals. The 3B passed 3/3 with exact text.
+Collect or rerun integrated Python, Rust, acceptance and guidance checks on
+the exact pushed commit.
 
 Prepare one draft successor for review after recording the integrated
 evidence. Keep PRs #18 and #20 for provenance until a maintainer approves

@@ -39,3 +39,30 @@ the report. The completed study records all attempted and missing trials.
 cargo build --manifest-path rust/Cargo.toml --release --locked --offline --example laravel_pilot
 python -m benchmarks.laravel_pilot --suite coding-source-ids --baseline BASELINE --lab LAB --runtime RUNTIME --php PHP --model LABEL_15 MODEL_15 SHA_15 --model LABEL_3 MODEL_3 SHA_3 --output NEW_REPORT_DIR
 ```
+
+## Verified results
+
+The first attempt stopped before inference on a failing reference. The
+retry used `9585b26d61c04e7000e0dac29df20be986931a74` to disable CLI
+OPcache for rewritten-source controls. It passed the seeded, reference,
+and wrong-repair controls and completed all 18 planned trials.
+[Blocked attempt](../../benchmarks/results/2026-11-27-source-ids-initial-blocked.json) ·
+[Completed trial evidence](../../benchmarks/results/2026-11-27-source-ids.json)
+
+| Model | A exact text | B source ID | C operator control | Median prompts A/B/C | Median completions A/B/C | Median latency A/B/C | Peak sampled driver + server RAM |
+| --- | ---: | ---: | ---: | --- | --- | --- | ---: |
+| 1.5B | 0/3 | 0/3 | 1/3 | 257 / 241 / 192 | 83 / 31 / 21 | 4.86 / 3.81 / 2.48 s | 2.50 GiB |
+| 3B | 3/3 | 0/3 | 1/3 | 257 / 241 / 192 | 59 / 32 / 22 | 7.75 / 6.41 / 4.93 s | 4.30 GiB |
+
+All six source-ID proposals resolved to a source location and then failed
+PHP lint. The trial report preserves the syntax rejections without model
+text. These results establish a replacement-output bottleneck for this
+representation. They leave PHP behavioral correctness unmeasured in arm B.
+All five accepted edits passed independent behavior and regression tests.
+There were no incomplete responses in the retry. Both existing weight
+hashes were preserved.
+
+Keep exact-text editing with selective retrieval as the leading lab
+baseline. Before another representation trial, isolate the replacement
+grammar from location selection, and use the contained evaluator for
+broader scoring after guest qualification.
