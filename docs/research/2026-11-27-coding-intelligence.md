@@ -34,7 +34,8 @@ licenses, hardware requirements and matched comparisons.
 
 ## Cross-file diagnostic
 
-See the [Windows validation and measured results](2026-11-27-cross-file-validation.md).
+See the [Windows validation and measured results](2026-11-27-cross-file-validation.md)
+and the [Coding Intelligence v1 comparison](2026-11-27-coding-v1-experiment.md).
 
 Three original two-file cases: contact validation, seat eligibility and role
 authorization. They use project policy definitions and independent PHP tests.

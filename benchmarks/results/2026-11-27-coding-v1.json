@@ -1,0 +1,620 @@
+{
+  "profile": "coding-v1",
+  "baseline": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+  "control_order": [
+    "behavior",
+    "regression"
+  ],
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "lab_sha256": "cc5bd98040655dcb0fec844d2af4588e32ca1746e856218535ae2c42c1d432ed",
+  "configuration": {
+    "temperature": 0,
+    "selection_max_tokens": 128,
+    "replacement_max_tokens": 1024,
+    "arms": [
+      "A",
+      "B",
+      "C",
+      "L",
+      "S"
+    ],
+    "context": "multiple source files, no selected line; A supplied / C retrieved"
+  },
+  "requested_per_model": 15,
+  "controls": {
+    "contact_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    },
+    "seat_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    },
+    "editor_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    }
+  },
+  "models": [
+    {
+      "model": "1.5B Q4_K_M",
+      "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "bytes": 1117320768,
+      "unchanged": true,
+      "ready_ms": 1590,
+      "counts": {
+        "out_of_scope": 1,
+        "protocol": 9,
+        "pass": 1,
+        "replacement_match": 2,
+        "reasoning": 1,
+        "outside_safe_subset": 1
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "out_of_scope",
+          "completion_tokens": 43,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 2346,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 252,
+          "request_json_bytes": 1590,
+          "lint_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "protocol",
+          "completion_tokens": 55,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 2636,
+          "prompt_tokens": 230,
+          "request_json_bytes": 1462
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 1376,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 181,
+          "request_json_bytes": 1187,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "protocol",
+          "completion_tokens": 71,
+          "event": "retrieved_source",
+          "evidence_bytes": 16223,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php",
+            "composer.lock",
+            "README.md"
+          ],
+          "latency_ms": 6802,
+          "prompt_tokens": 1089,
+          "request_json_bytes": 5365
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "protocol",
+          "completion_tokens": 55,
+          "event": "retrieved_source",
+          "evidence_bytes": 249,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 2075,
+          "prompt_tokens": 231,
+          "request_json_bytes": 1474
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "replacement_match",
+          "completion_tokens": 88,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 5681,
+          "prompt_tokens": 260,
+          "request_json_bytes": 1551
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 70,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 3137,
+          "prompt_tokens": 238,
+          "request_json_bytes": 1423
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "reasoning",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 1911,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 197,
+          "request_json_bytes": 1178,
+          "lint_exit": 0,
+          "behavior_exit": 1,
+          "regression_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 70,
+          "event": "retrieved_source",
+          "evidence_bytes": 6614,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php",
+            "README.md",
+            "composer.json"
+          ],
+          "latency_ms": 20295,
+          "prompt_tokens": 1799,
+          "request_json_bytes": 8404
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 69,
+          "event": "retrieved_source",
+          "evidence_bytes": 235,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 4339,
+          "prompt_tokens": 239,
+          "request_json_bytes": 1435
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "replacement_match",
+          "completion_tokens": 83,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 5037,
+          "prompt_tokens": 257,
+          "request_json_bytes": 1569
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "protocol",
+          "completion_tokens": 64,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 4160,
+          "prompt_tokens": 235,
+          "request_json_bytes": 1441
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 34,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 2671,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 192,
+          "request_json_bytes": 1195,
+          "lint_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "protocol",
+          "completion_tokens": 64,
+          "event": "retrieved_source",
+          "evidence_bytes": 6656,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php",
+            "README.md",
+            "composer.json"
+          ],
+          "latency_ms": 20165,
+          "prompt_tokens": 1796,
+          "request_json_bytes": 8422
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "protocol",
+          "completion_tokens": 64,
+          "event": "retrieved_source",
+          "evidence_bytes": 277,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 3049,
+          "prompt_tokens": 236,
+          "request_json_bytes": 1453
+        }
+      ],
+      "wall_seconds": 88.5,
+      "runtime_peak_working_set_bytes": 2890686464,
+      "app_runtime_peak_sampled_bytes": 2878496768,
+      "driver_failure": null
+    },
+    {
+      "model": "3B Q4_K_M research",
+      "sha256": "4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+      "bytes": 1929903072,
+      "unchanged": true,
+      "ready_ms": 3513,
+      "counts": {
+        "pass": 4,
+        "output_limit": 3,
+        "protocol": 3,
+        "outside_safe_subset": 2,
+        "invalid_location": 3
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 45,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 5084,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 252,
+          "request_json_bytes": 1590,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "output_limit",
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 89054,
+          "request_json_bytes": 1462
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 4605,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 181,
+          "request_json_bytes": 1187,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "output_limit",
+          "event": "retrieved_source",
+          "evidence_bytes": 16223,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php",
+            "composer.lock",
+            "README.md"
+          ],
+          "latency_ms": 115302,
+          "request_json_bytes": 5365
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "output_limit",
+          "event": "retrieved_source",
+          "evidence_bytes": 249,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 78380,
+          "request_json_bytes": 1474
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "pass",
+          "completion_tokens": 131,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 11973,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 260,
+          "request_json_bytes": 1551,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 54,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 6969,
+          "prompt_tokens": 238,
+          "request_json_bytes": 1423
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 23,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 3744,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 197,
+          "request_json_bytes": 1178,
+          "lint_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 57,
+          "event": "retrieved_source",
+          "evidence_bytes": 6614,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php",
+            "README.md",
+            "composer.json"
+          ],
+          "latency_ms": 37528,
+          "prompt_tokens": 1799,
+          "request_json_bytes": 8404
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "protocol",
+          "completion_tokens": 58,
+          "event": "retrieved_source",
+          "evidence_bytes": 235,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 6456,
+          "prompt_tokens": 239,
+          "request_json_bytes": 1435
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "pass",
+          "completion_tokens": 59,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 7855,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 257,
+          "request_json_bytes": 1569,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "invalid_location",
+          "completion_tokens": 45,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 8125,
+          "prompt_tokens": 235,
+          "request_json_bytes": 1441
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 22,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 3812,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 192,
+          "request_json_bytes": 1195,
+          "lint_exit": 0
+        },
+        {
+          "arm": "L",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "invalid_location",
+          "completion_tokens": 49,
+          "event": "retrieved_source",
+          "evidence_bytes": 6656,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php",
+            "README.md",
+            "composer.json"
+          ],
+          "latency_ms": 37180,
+          "prompt_tokens": 1796,
+          "request_json_bytes": 8422
+        },
+        {
+          "arm": "S",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "invalid_location",
+          "completion_tokens": 45,
+          "event": "retrieved_source",
+          "evidence_bytes": 277,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 4013,
+          "prompt_tokens": 236,
+          "request_json_bytes": 1453
+        }
+      ],
+      "wall_seconds": 424.55,
+      "runtime_peak_working_set_bytes": 4990119936,
+      "app_runtime_peak_sampled_bytes": 4981665792,
+      "driver_failure": null
+    }
+  ]
+}

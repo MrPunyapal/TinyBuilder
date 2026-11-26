@@ -1,0 +1,251 @@
+{
+  "laravel_skeleton": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+  "composer_lock_sha256": "bb99c0775487693b15a617a632d635f0a35167d9ed8c3c6bb7769ef8583f6525",
+  "evaluator": "trusted source controls only",
+  "control_order": [
+    "behavior",
+    "regression"
+  ],
+  "repositories": {
+    "clinic": {
+      "split": "development",
+      "commit": "9b1f905be29266d24d5f86b71c35a85a17ab3656",
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "family": "validation",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "patient_visibility",
+          "family": "authorization",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "urgent_reminders",
+          "family": "business_logic",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "booking_availability",
+          "family": "multi_file_repair",
+          "changed_files": 2,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            1
+          ],
+          "with_one_file_reverted": {
+            "BookingRules": 1,
+            "Booking": 1
+          }
+        }
+      ]
+    },
+    "catalog": {
+      "split": "validation",
+      "commit": "37d7c48b8e4ec9a866fa93f80a2df21e85e5260a",
+      "tasks": [
+        {
+          "task": "available_stock",
+          "family": "eloquent_query",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "group_inventory",
+          "family": "eloquent_relationship",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "exempt_tax",
+          "family": "feature",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "listing_response",
+          "family": "controller",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        }
+      ]
+    },
+    "dispatch": {
+      "split": "holdout-candidate",
+      "commit": "715351323ff2d5053e95458bd86a0a0d7d4b8bfb",
+      "tasks": [
+        {
+          "task": "priority_normalization",
+          "family": "unfamiliar_repository",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "deadline_boundary",
+          "family": "test_feedback",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            1
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "rural_quote",
+          "family": "service",
+          "changed_files": 1,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            0
+          ],
+          "with_one_file_reverted": {}
+        },
+        {
+          "task": "parcel_weight",
+          "family": "multi_file_repair",
+          "changed_files": 2,
+          "broken": [
+            1,
+            0
+          ],
+          "reference": [
+            0,
+            0
+          ],
+          "wrong": [
+            1,
+            1
+          ],
+          "with_one_file_reverted": {
+            "ParcelLimit": 1,
+            "ParcelIntake": 1
+          }
+        }
+      ]
+    }
+  }
+}
