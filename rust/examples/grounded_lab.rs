@@ -17,20 +17,28 @@ enum Action {
     Edit {
         task: String,
         #[arg(long)] allow_write: bool,
+        /// Supply one project-relative file as the complete patch context.
+        #[arg(long)] target: Option<String>,
+        /// Replace one explicitly selected source line using model-generated text.
+        #[arg(long, requires = "target")]
+        line: Option<usize>,
     },
 }
 
 fn main() -> Result<()> {
     let args=Cli::parse();
     let project=Project::new(&args.project)?;
-    let (task, edit)=match args.command {
-        Action::Ask{task}=>(task,false),
-        Action::Edit{task,allow_write}=>{
+    let (task, edit, target, line)=match args.command {
+        Action::Ask{task}=>(task,false,None,None),
+        Action::Edit{task,allow_write,target,line}=>{
             ensure!(allow_write,"Edit requires explicit --allow-write lab opt-in");
-            (task,true)
+            (task,true,target,line)
         }
     };
-    let selected=workbench::collect(&project,&task)?;
+    let selected = match target {
+        Some(path) => workbench::collect_edit_target(&project, &path)?,
+        None => workbench::collect(&project, &task)?,
+    };
     println!("Deterministic context selection (not model-selected tool use):");
     for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
@@ -40,7 +48,11 @@ fn main() -> Result<()> {
         println!("Model answer (verify factual claims):");
         show(&answer);
     } else {
-        let patch=workbench::propose(&project,&task,&selected,|request|server.complete(request))?;
+        let complete = |request| server.complete(request);
+        let patch = match line {
+            Some(line) => tinybuilder::grounded::propose_edit_at_line(&project, &task, &selected.files[0], line, complete)?,
+            None => workbench::propose(&project, &task, &selected, complete)?,
+        };
         println!("Proposed model-generated replacement in {}",terminal(&patch.path));
         show(&patch.patch.diff);
         print!("Apply this exact patch? Type yes: ");

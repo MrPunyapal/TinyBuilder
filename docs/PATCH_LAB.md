@@ -28,6 +28,21 @@ commands in isolated disposable environments with no secrets/network.
 Report all trials, failures, runtime/model/source hashes, test output
 summaries and safety events. Do not change the 10/10 read gate.
 
+For an independently scored Laravel validation repair, use a clean,
+disposable Git checkout marked with `.tinybuilder-disposable` and existing
+Composer dependencies. Run from the TinyBuilder checkout:
+
+    python -m benchmarks.rust_patch_validation --baseline BASELINE --lab GROUNDED_LAB --runtime RUNTIME --model EXISTING_GGUF --expected-model-sha256 HASH --php PHP --output NEW_REPORT_DIR
+
+The runner creates a detached worktree and checks the untouched suite,
+the seeded failure, a correct reference repair and a plausible incorrect
+repair before prompting for approval. The lab receives only
+`routes/web.php` as complete evidence. Review the exact diff and approve
+only the intended safe change in the test project. The runner keeps hidden
+assertions out of the project during inference and scores approved changes
+with PHP lint, Laravel route listing and the full PHPUnit suite. Keep
+`laravel-patch.json` with the report, including failed and declined trials.
+
 Lab apply requires explicit permission plus per-patch approval, complete
 fresh source evidence and exact unique replacement. Re-read after every
 approved edit. Filesystem race and ACL/xattr preservation remain

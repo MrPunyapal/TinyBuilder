@@ -216,3 +216,40 @@ new agent features. Original full research remains in the project conversation.
   signing and redistribution review. Windows host networking stayed enabled
   during the developer checks. PR #14 was preserved separately. No new
   weights, training, publication or merges.
+
+## Exact-main acceptance after PR #17 — 2026-11-26
+
+- PR #17 at `08346b0aeafe3c5b21c9fa044ff480ab187f2269` passed 16
+  checks with one skipped and merged as
+  `04a2bb0571a5c67288e6fb018404d27abb34efff`. [Exact-main packages](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45822555193),
+  [security evidence](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45822555110),
+  [native checks](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45822554990)
+  and [Python checks](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45822555330)
+  succeeded. All three original archives were downloaded and hashed.
+- Windows x64 ZIP, 21,950,331 bytes:
+  `afc94f3ae043888847dbd77f89fd52cc4cd892d121e5ae96574afc40327192eb`.
+  macOS ARM64 tar.gz, 27,937,941 bytes:
+  `7cc5e1013d7c8d3664b54f1c34a83e01e7dfc65909f890882abaa380f8606fd1`.
+  Linux x64 tar.gz, 31,005,245 bytes:
+  `1413da65e1ff3884b9329d74909b686a8579ada9a47d6c0179f395037efb40d4`.
+- The exact Windows ZIP passed the unchanged **10/10** read gate with
+  Apache-2.0 Qwen2.5-Coder 1.5B Q4_K_M
+  (`cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046`).
+  All reads were genuine, both facts exact, and fixture, archive contents
+  and model unchanged. Authenticated b12359 reached readiness in
+  3.29–3.69 s, used about 2.44 GiB runtime peak working set, and its
+  loopback listener and child exited after both normal and forced app exit.
+  The packaged runtime uses offline mode, but the development host was
+  elevated and had two active adapters. It supplies developer-host evidence
+  only. No suitable clean Windows guest or macOS host was available.
+- Exact Windows notice checks verified 206 crate notice files across 111
+  inventoried crate records and four runtime notices, including LLVM OpenMP.
+  No declared notice files were missing. The exact-main OSV scan covered 129
+  lock entries with zero known matches. Independent redistribution and
+  signing review remain pending.
+- The Linux x64 archive failed to launch in the existing Ubuntu 22.04 WSL
+  guest. The application requires `GLIBC_2.39` and the guest has 2.35.
+  Decide and document the supported Linux baseline before publication or
+  build and test the package against an older compatible toolchain. WSL
+  does not stand in for a clean Linux host. This compatibility failure
+  applies to the exact archive above.

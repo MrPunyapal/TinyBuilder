@@ -67,11 +67,19 @@ fn main()->Result<()>{
             && fs::read_dir(dir.path())?.count()==2;
         let exact=proposal.as_ref().is_ok_and(|r|r.path==case.path&&r.patch.preview_text()==expected);
         let valid=proposal.is_ok();
+        let rejection = proposal.as_ref().err().map(|error| match error.to_string().as_str() {
+            "Invalid model patch proposal" => "schema",
+            "Patch target not in complete evidence" => "target",
+            "Replacement must match exactly once" => "replacement_match",
+            "No change" => "no_change",
+            _ if transport_failed => "transport",
+            _ => "other",
+        });
         let category=if !unchanged{"safety"}else if transport_failed{"transport_or_server"}
             else if !read{"missing_complete_evidence"}else if !valid{"invalid_proposal"}
             else if !exact{"wrong_patch"}else{"exact_proposal"};
         rows.push(json!({"case":case.name,"complete_file_read":read,"valid_proposal":valid,
-            "exact_proposal":exact,"source_unchanged":unchanged,"category":category,
+            "exact_proposal":exact,"source_unchanged":unchanged,"category":category,"rejection":rejection,
             "elapsed_ms":start.elapsed().as_millis() as u64}));
         println!("{}: {category}",case.name);
         if !unchanged||transport_failed{stopped=true;break;}
