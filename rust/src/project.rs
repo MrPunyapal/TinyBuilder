@@ -38,6 +38,10 @@ pub struct Patch {
     replacement: String,
     pub diff: String,
 }
+impl Patch {
+    /// Prospective complete source for independent lab scoring; never writes.
+    pub fn preview_text(&self) -> &str { &self.replacement }
+}
 fn link_like(meta: &Metadata) -> bool {
     if meta.file_type().is_symlink() {
         return true;

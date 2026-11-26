@@ -1,9 +1,9 @@
 //! Typed action validation. No prose-to-action conversion.
-use crate::project::Project;
+use crate::project::{Project, ReadResult};
 use anyhow::{bail, ensure, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Protocol { Native, StrictJson }
@@ -133,6 +133,8 @@ pub fn run(
     }
     let mut messages = vec![json!({"role":"system","content":system}), json!({"role":"user","content":task})];
     let mut outcome = Outcome { answer: String::new(), reads: BTreeSet::new(), searches: 0, listings: 0, edits: 0 };
+    // Only the write-capable lab needs patch-authorizing snapshots.
+    let mut snapshots: BTreeMap<String, ReadResult> = BTreeMap::new();
     for _ in 0..options.max_rounds {
         ensure!(serde_json::to_vec(&messages)?.len() <= 160 * 1024, "Context budget exhausted");
         let msg = complete(payload(&messages, options.protocol, options.allow_write))?;
@@ -161,7 +163,9 @@ pub fn run(
                 Ok(read) => {
                     activity(&format!("File read verified: {}", read.path));
                     outcome.reads.insert(read.path.clone());
-                    json!({"path":read.path,"text":read.text,"truncated":read.truncated})
+                    let observation=json!({"path":read.path,"text":read.text,"truncated":read.truncated});
+                    if options.allow_write { snapshots.insert(read.path.clone(),read); }
+                    observation
                 }
                 Err(_) => json!({"error":"Read rejected or unavailable"}),
             },
@@ -174,15 +178,15 @@ pub fn run(
                 Err(_) => json!({"error":"Search rejected"}),
             },
             Action::Replace { path, old, new } => {
-                if !options.allow_write || !outcome.reads.contains(&path) {
+                if !options.allow_write || !snapshots.get(&path).is_some_and(|r|!r.truncated) {
                     activity("Write attempt denied");
                     json!({"error":"Write denied: explicit task permission and prior exact-path read required"})
                 } else {
-                    match project.propose(&path, &old, &new) {
+                    match project.propose_from_read(&snapshots[&path], &old, &new) {
                         Ok(patch) => {
                             let approved = approve(&path, &patch.diff);
                             match project.apply(patch, approved) {
-                                Ok(()) => { outcome.edits += 1; json!({"status":"approved replacement applied"}) },
+                                Ok(()) => { outcome.edits += 1; snapshots.clear(); json!({"status":"approved replacement applied; re-read before any further edit"}) },
                                 Err(_) => json!({"error":"Patch declined, stale or failed"}),
                             }
                         }
@@ -243,6 +247,52 @@ mod tests {
             |_,_| panic!("must not approve"), |_| {}).unwrap();
         assert_eq!(result.edits, 0);
         assert_eq!(fs::read_to_string(dir.path().join("a.txt")).unwrap(), "old");
+    }
+    #[test]
+    fn changed_evidence_never_reaches_patch_approval() {
+        let dir=tempfile::tempdir().unwrap();
+        let file=dir.path().join("a.txt");
+        fs::write(&file,"old").unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let mut opts=options();
+        opts.allow_write=true;
+        let mut round=0;
+        let result=run(&p,"edit",opts,|_|{
+            round+=1;
+            match round {
+                1=>Ok(message(r#"{"type":"read","path":"a.txt"}"#)),
+                2=>{
+                    fs::write(&file,"old plus external change").unwrap();
+                    Ok(message(r#"{"type":"replace","path":"a.txt","old":"old","new":"new"}"#))
+                }
+                3=>Ok(message(r#"{"type":"final","content":"not changed"}"#)),
+                _=>panic!("unexpected round")
+            }
+        },|_,_|panic!("stale source must not reach approval"),|_|{}).unwrap();
+        assert_eq!(result.edits,0);
+        assert_eq!(fs::read_to_string(file).unwrap(),"old plus external change");
+    }
+    #[test]
+    fn approved_patch_requires_a_new_read_for_next_edit() {
+        let dir=tempfile::tempdir().unwrap();
+        let file=dir.path().join("a.txt");
+        fs::write(&file,"old").unwrap();
+        let p=Project::new(dir.path()).unwrap();
+        let mut opts=options(); opts.allow_write=true; opts.max_rounds=5;
+        let mut seq=vec![
+            message(r#"{"type":"read","path":"a.txt"}"#),
+            message(r#"{"type":"replace","path":"a.txt","old":"old","new":"new"}"#),
+            message(r#"{"type":"replace","path":"a.txt","old":"new","new":"other"}"#),
+            message(r#"{"type":"final","content":"done"}"#)
+        ].into_iter();
+        let mut approvals=0;
+        let mut events=Vec::new();
+        let result=run(&p,"edit",opts,|_|Ok(seq.next().unwrap()),
+            |_,_|{approvals+=1;true},|s|events.push(s.to_owned())).unwrap();
+        assert_eq!(approvals,1);
+        assert_eq!(result.edits,1);
+        assert_eq!(fs::read_to_string(file).unwrap(),"new");
+        assert!(events.iter().any(|e|e=="Write attempt denied"));
     }
     #[test]
     fn native_argument_validation() {

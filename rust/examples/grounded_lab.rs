@@ -2,7 +2,7 @@
 use anyhow::{ensure, Result};
 use clap::{Parser, Subcommand};
 use std::{io::{self,Write}, path::PathBuf};
-use tinybuilder::{context, grounded::{self, AnswerMode}, project::Project, runtime::Runtime, show, terminal};
+use tinybuilder::{workbench, project::Project, runtime::Runtime, show, terminal};
 
 #[derive(Parser)]
 struct Cli {
@@ -30,20 +30,17 @@ fn main() -> Result<()> {
             (task,true)
         }
     };
-    let selected=context::retrieve(&project,&task)?;
+    let selected=workbench::collect(&project,&task)?;
     println!("Deterministic context selection (not model-selected tool use):");
-    for f in &selected.files {println!("File read verified: {}{}",terminal(&f.path),if f.truncated{" [prefix only]"}else{""});}
+    for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
     let server=Runtime::start(&args.runtime,&args.model)?;
     if !edit {
-        let request=grounded::answer_request(&task,&selected.files,AnswerMode::Plain)?;
-        let answer=grounded::decode_answer(&server.complete(request)?,AnswerMode::Plain)?;
+        let answer=workbench::ask(&task,&selected,|request|server.complete(request))?;
         println!("Model answer (verify factual claims):");
         show(&answer);
     } else {
-        let proposal=grounded::edit_request(&task,&selected.files)?;
-        let response=server.complete(proposal)?;
-        let patch=grounded::prepare_edit(&project,&selected.files,&response)?;
+        let patch=workbench::propose(&project,&task,&selected,|request|server.complete(request))?;
         println!("Proposed model-generated replacement in {}",terminal(&patch.path));
         show(&patch.patch.diff);
         print!("Apply this exact patch? Type yes: ");
