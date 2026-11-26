@@ -5,6 +5,8 @@ Status: Proposed research direction; not a release specification or approved tra
 Full evidence and limitations: [Complete deep research report](2026-11-27-deep-research.md).  
 Execution plan: [Implementation roadmap](2026-11-27-implementation-roadmap.md).
 
+See the [maintainer decisions](2026-11-27-coding-v1-decisions.md) for the accepted direction and the approval scope of this documentation PR.
+
 ## Executive decision
 
 Build a small-model amplifier, not a model-size demonstration: a lightweight Rust coding harness, initially Laravel-first, that gives a local 1.5B–4B model compact repository evidence, a constrained action space, trustworthy executable feedback and version-aware documentation. Choose the smallest model that meets measured functional and safety thresholds, not the smallest downloadable file. The normal native read-only 0.1 release remains independent; the Python and mutation examples are reference/lab only.
