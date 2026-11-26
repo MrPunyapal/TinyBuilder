@@ -24,9 +24,9 @@ class ContainedCorpusTests(unittest.TestCase):
             return Observation(0 if request["exempt"] else request["net"] // 10, "fixture", "image")
 
         report = self.score(observe)
-        self.assertEqual(report["behavior"], {"total": 4, "passed": 4})
-        self.assertEqual(report["regression"], {"total": 3, "passed": 3})
-        self.assertEqual(len(calls), 7)
+        self.assertEqual(report["behavior"], {"total": 5, "passed": 5})
+        self.assertEqual(report["regression"], {"total": 4, "passed": 4})
+        self.assertEqual(len(calls), 9)
         self.assertNotIn("candidate bytes", str(report))
 
     def test_wrong_and_boolean_outputs_never_match_integer_results(self):

@@ -55,9 +55,9 @@ python -m benchmarks.contained_corpus --docker /usr/bin/docker --image-id EXACT_
 
 ## Verified on the development host
 
-The Windows host has WSL2 Ubuntu 22.04 installed and stopped. This check
-found no Docker or Podman executable and no approved isolated Linux guest.
-No container or model-generated PHP ran on this host. The model-free tests
+The Windows host has a development WSL2 Ubuntu 22.04 installation. The
+check found no Docker or Podman executable and no approved isolated Linux
+guest. Broader generated PHP evaluation remains blocked. The model-free tests
 check fail-closed preflight, staged paths, digest binding, policy inspection,
 strict JSON, cleanup and the no-fallback boundary. They use a fake daemon.
 
@@ -74,6 +74,11 @@ read-only fixture and root, scratch limits, absent secrets, denial of extra
 mounts, timeout and memory behavior, and force-removal on the actual daemon.
 Then run the independent controls for a private held-out set. Guest-side
 containment remains unverified until that smoke run.
+
+Before qualification, preserve attempted, blocked and remaining counts
+when a probe aborts. Keep candidate exit or output failures separate from
+daemon, environment and cleanup failures. The tax scorer currently
+propagates a blocked probe, so it cannot supply those denominators yet.
 
 [Docker container create](https://docs.docker.com/reference/cli/docker/container/create/) ·
 [Docker container start](https://docs.docker.com/reference/cli/docker/container/start/) ·

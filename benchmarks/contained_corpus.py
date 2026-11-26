@@ -20,8 +20,8 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
     """Keep assertions and expected results in the caller, outside PHP."""
     results = {"behavior": {"passed": 0, "total": 0}, "regression": {"passed": 0, "total": 0}}
     fixture_digest = None
-    for net, exempt in ((9, False), (10, False), (109, False), (1009, False),
-                        (0, True), (109, True), (1009, True)):
+    for net, exempt in ((9, False), (10, False), (109, False), (999, False), (1009, False),
+                        (0, True), (9, True), (109, True), (1009, True)):
         event = observe(docker=docker, image_id=image_id, fixtures={TAX_PATH: candidate},
                         request={"net": net, "exempt": exempt}, trusted_bridge=TAX_BRIDGE,
                         approved_guest=approved_guest)
