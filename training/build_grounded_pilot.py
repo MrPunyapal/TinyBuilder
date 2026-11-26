@@ -16,27 +16,31 @@ FAMILIES = {
 def row(family, rng, i):
     tag = f"demo_{rng.randrange(10**8):08d}"
     n = rng.randrange(2, 40)
+    controller = rng.choice(("OrdersController", "AccountController", "SearchController"))
+    method = rng.choice(("index", "show", "lookup"))
+    boolean = rng.choice(("true", "false"))
+    package = rng.choice(("example-parser", "example-reader", "example-codec"))
     if family == "route_handler":
-        source = f"// routes.php\nRoute::get('/{tag}', [DemoController::class, 'index']);\n"
+        source = f"// routes.php\nRoute::get('/{tag}', [{controller}::class, '{method}']);\n"
         question = f"Which controller method handles GET /{tag}? Return Class::method only."
-        answer = "DemoController::index"
+        answer = f"{controller}::{method}"
     elif family == "python_default":
         source = f"# settings.py\ndef connect_{tag}(timeout={n}):\n    return timeout\n"
         question = f"What is connect_{tag}'s default timeout? Return only the integer."
         answer = str(n)
     elif family == "rust_flag":
         flag = f"{tag}_enabled"
-        source = f"// flags.rs\nstruct Flags {{ {flag}: bool }}\nfn defaults() -> Flags {{ Flags {{ {flag}: false }} }}\n"
+        source = f"// flags.rs\nstruct Flags {{ {flag}: bool }}\nfn defaults() -> Flags {{ Flags {{ {flag}: {boolean} }} }}\n"
         question = f"Is {flag} true or false by default? Return only the boolean."
-        answer = "false"
+        answer = boolean
     elif family == "queue_retry":
         source = f"# worker.toml\n[queues.{tag}]\nmax_attempts = {n}\nbackoff = 1\n"
         question = f"What is max_attempts for {tag}? Return only the integer."
         answer = str(n)
     elif family == "dependency_alias":
-        source = f"# Cargo.toml\n[dependencies]\n{tag} = {{ package = \"example-parser\", version = \"{n}.0\" }}\n"
+        source = f"# Cargo.toml\n[dependencies]\n{tag} = {{ package = \"{package}\", version = \"{n}.0\" }}\n"
         question = f"Which upstream package is aliased as {tag}? Return only the package name."
-        answer = "example-parser"
+        answer = package
     elif family == "typescript_port":
         source = f"// config.ts\nexport const services = {{ {tag}: {{ port: {8000+n} }} }};\n"
         question = f"What port is configured for {tag}? Return only the integer."
