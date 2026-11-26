@@ -93,6 +93,9 @@ separate contained runner.
 
 ## Next experiment
 
+The [exact-text retrieval follow-up](2026-11-27-exact-retrieval-ablation.md)
+has completed. Its results and next decision are recorded separately.
+
 Keep exact-text edits as the comparison baseline for the 3B. Compare the
 two lexical strategies with that protocol to measure repair-rate effects
 without the line-payload bottleneck. Separately compare visible source
