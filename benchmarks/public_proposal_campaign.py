@@ -7,6 +7,7 @@ the public seeded class files. The manifest is outside those roots.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import stat
 
@@ -55,6 +56,10 @@ def plan():
             "planned_observations": sum(row["planned_observations"] for row in tasks)}
 
 
+def _manifest_bytes(result):
+    return (json.dumps(result, indent=2, sort_keys=True) + "\n").encode("utf-8")
+
+
 def prepare(output: Path):
     # Explicit fresh destination only; never overwrite a prior campaign.
     output = Path(output).absolute()
@@ -68,9 +73,8 @@ def prepare(output: Path):
             with path.open("xb") as handle:
                 handle.write(content)
     result = plan()
-    with (output / MANIFEST).open("x", encoding="utf-8") as handle:
-        json.dump(result, handle, indent=2, sort_keys=True)
-        handle.write("\n")
+    with (output / MANIFEST).open("xb") as handle:
+        handle.write(_manifest_bytes(result))
     return result
 
 
@@ -87,14 +91,26 @@ def _metadata(path: Path, directory: bool):
     return info
 
 
+def _signature(info):
+    # Reading can update atime. Compare identity, size and modification
+    # metadata instead of rejecting a file because it was read.
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_nlink,
+            info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+
+
 def _bounded_read(path: Path, limit: int) -> bytes:
     before = _metadata(path, False)
     if before.st_size > limit:
         raise ValueError("source_budget")
-    with path.open("rb") as handle:
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+    with os.fdopen(os.open(path, flags), "rb") as handle:
+        if _signature(os.fstat(handle.fileno())) != _signature(before):
+            raise ValueError("source_changed_or_oversize")
         content = handle.read(limit + 1)
+        if _signature(os.fstat(handle.fileno())) != _signature(before):
+            raise ValueError("source_changed_or_oversize")
     after = _metadata(path, False)
-    if len(content) > limit or before != after or len(content) != after.st_size:
+    if len(content) > limit or _signature(before) != _signature(after) or len(content) != after.st_size:
         raise ValueError("source_changed_or_oversize")
     return content
 
@@ -127,11 +143,8 @@ def inspect(root: Path):
     _metadata(root, True)
     expected = plan()
     manifest = _bounded_read(root / MANIFEST, 256 * 1024)
-    try:
-        actual = json.loads(manifest)
-    except (UnicodeError, ValueError):
-        raise ValueError("invalid_campaign_manifest") from None
-    if actual != expected:
+    # Byte equality also rejects duplicate fields and bool/int coercions.
+    if manifest != _manifest_bytes(expected):
         raise ValueError("campaign_manifest_differs")
     rows = []
     for row, files in _inventory():

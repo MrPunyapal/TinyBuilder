@@ -77,3 +77,16 @@ class PublicProposalCampaignTests(unittest.TestCase):
             except (OSError, NotImplementedError):
                 return
             self.assertEqual(inspect(root)["tasks"][0]["reason"], "link_or_reparse_point")
+
+    def test_plan_bytes_reject_duplicate_fields_and_boolean_integer_alias(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "campaign"
+            prepare(root)
+            path = root / MANIFEST
+            original = path.read_bytes()
+            path.write_bytes(original.replace(b'"version": 1', b'"version": true'))
+            with self.assertRaisesRegex(ValueError, "manifest_differs"):
+                inspect(root)
+            path.write_bytes(original.replace(b'"version": 1', b'"version": 2, "version": 1'))
+            with self.assertRaisesRegex(ValueError, "manifest_differs"):
+                inspect(root)

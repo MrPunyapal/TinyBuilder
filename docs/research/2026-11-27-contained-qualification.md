@@ -288,3 +288,10 @@ semantic pass, and all 87 semantic observations remain unattempted.
 Candidate scoring still requires a separate qualified evaluator.
 No system installation, weight download or candidate execution is part
 of these commands.
+
+The separate route bridge passed its actual trusted Laravel/HTTP controls
+at [0938833](https://github.com/MrPunyapal/TinyBuilder/actions/runs/46001155018).
+The earlier 1554af7 full Python workflow passed on Python 3.10, 3.12, 3.13,
+including extracted sdist and wheel. The campaign uses a byte-exact plan
+and bounded descriptor/path identity checks that ignore access-time-only
+updates. No semantic observation was attempted in this review.
