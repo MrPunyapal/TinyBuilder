@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from benchmarks import qualify_contained_php as qualification
-from benchmarks.contained_php import CandidateFailure, EvaluationBlocked, Observation, ProbeDeadlineExceeded
+from benchmarks.contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, Observation, ProbeDeadlineExceeded
 
 
 class GuestQualificationTests(unittest.TestCase):
@@ -28,3 +28,10 @@ class GuestQualificationTests(unittest.TestCase):
         self.assertEqual(report["status"], "blocked")
         self.assertIsNone(report["checks"]["memory_enforced"])
         observe.assert_called_once()
+
+    def test_guest_preflight_reports_a_registered_reason_without_private_details(self):
+        error = EvaluationBlocked("sensitive path", reason=BlockedReason.GUEST)
+        with patch.object(qualification, "observe", side_effect=error):
+            report = qualification.qualify(Path("/usr/bin/docker"), "image", True)
+        self.assertEqual(report["blocked_reason"], "approved_guest_unavailable")
+        self.assertNotIn("sensitive path", str(report))

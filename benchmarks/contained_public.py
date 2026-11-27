@@ -126,9 +126,9 @@ def score_public(task: str, candidates: dict[str, bytes], *, docker: Path, image
             group["failed"] += 1
             failures[error.reason] = failures.get(error.reason, 0) + 1
             continue
-        except EvaluationBlocked:
+        except EvaluationBlocked as error:
             group["blocked"] += 1
-            blocked_reason = "probe_blocked"
+            blocked_reason = error.reason
             break
         if (event.image_id != image_id or event.protocol != VERSION
                 or (variant in digests and event.fixture_sha256 != digests[variant])):

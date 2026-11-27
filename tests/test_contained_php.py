@@ -168,6 +168,21 @@ class ContainedPHPTests(unittest.TestCase):
         with self.assertRaisesRegex(runner.EvaluationBlocked, "cleanup"):
             run_fake(FakeDocker(attach_status=17, cleanup_residue=True))
 
+    def test_cleanup_requires_independent_inventory_even_after_transport_failure(self):
+        def run(args):
+            if args[1] == "rm":
+                raise runner.EvaluationBlocked("private path", reason=runner.BlockedReason.TRANSPORT)
+            return 0, b""
+
+        runner._cleanup(run, "fixture")
+        for inventory in ((0, b"survivor"), (1, b"")):
+            def run_with_residue(args):
+                return (0, b"") if args[1] == "rm" else inventory
+
+            with self.assertRaises(runner.EvaluationBlocked) as error:
+                runner._cleanup(run_with_residue, "fixture")
+            self.assertEqual(error.exception.reason, "cleanup_unverified")
+
 
 if __name__ == "__main__":
     unittest.main()

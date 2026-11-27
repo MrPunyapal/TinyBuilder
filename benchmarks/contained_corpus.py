@@ -39,10 +39,10 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
             group["failed"] += 1
             candidate_failures[error.reason] = candidate_failures.get(error.reason, 0) + 1
             continue
-        except EvaluationBlocked:
+        except EvaluationBlocked as error:
             # Transport, timeout and cleanup uncertainty are not candidate failures.
             group["blocked"] += 1
-            blocked_reason = "probe_blocked_unattributed"
+            blocked_reason = error.reason
             break
         if (event.protocol != VERSION or event.image_id != image_id
                 or (fixture_digest is not None and event.fixture_sha256 != fixture_digest)):

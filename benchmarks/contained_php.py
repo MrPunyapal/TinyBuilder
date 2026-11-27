@@ -1,6 +1,7 @@
 """Opt-in Docker probe for an operator-approved disposable Linux evaluator guest."""
 
 from dataclasses import dataclass
+from enum import Enum
 import hashlib
 import json
 from math import isfinite
@@ -30,16 +31,41 @@ VERSION = 1
 TMPFS = "rw,noexec,nosuid,nodev,size=32m,mode=1777"
 
 
+class BlockedReason(str, Enum):
+    UNATTRIBUTED = "probe_blocked_unattributed"
+    GUEST = "approved_guest_unavailable"
+    DAEMON = "docker_unavailable"
+    IMAGE = "image_unverified"
+    STAGING = "fixture_staging_failed"
+    POLICY = "container_policy_unverified"
+    TRANSPORT = "docker_transport_failed"
+    STATE = "execution_state_unverified"
+    TIMEOUT = "probe_timeout"
+    CLEANUP = "cleanup_unverified"
+
+
 class EvaluationBlocked(RuntimeError):
     """A named containment requirement could not be verified."""
+
+    def __init__(self, message: str, *, reason: BlockedReason = BlockedReason.UNATTRIBUTED):
+        if not isinstance(reason, BlockedReason):
+            raise TypeError("Expected a registered blocked reason")
+        super().__init__(message)
+        self.reason = reason.value
 
 
 class ContainerCommandDeadline(EvaluationBlocked):
     """A Docker CLI operation exceeded its deadline."""
 
+    def __init__(self, message: str):
+        super().__init__(message, reason=BlockedReason.TRANSPORT)
+
 
 class ProbeDeadlineExceeded(EvaluationBlocked):
     """The attach deadline expired and the probe container was removed."""
+
+    def __init__(self, message: str):
+        super().__init__(message, reason=BlockedReason.TIMEOUT)
 
 
 class CandidateFailure(RuntimeError):
@@ -116,7 +142,7 @@ def _call(argv: list[str], cwd: Path, deadline_seconds: int, *, data: bytes = b"
                                 return process.wait(timeout=max(0, deadline - monotonic())), bytes(result)
                             result.extend(part)
                             if len(result) > cap:
-                                raise EvaluationBlocked("container response exceeds output budget")
+                                raise EvaluationBlocked("container response exceeds output budget", reason=BlockedReason.TRANSPORT)
                     raise ContainerCommandDeadline("container command deadline exceeded")
                 finally:
                     if process.poll() is None:
@@ -124,13 +150,13 @@ def _call(argv: list[str], cwd: Path, deadline_seconds: int, *, data: bytes = b"
     except subprocess.TimeoutExpired:
         raise ContainerCommandDeadline("container command deadline exceeded") from None
     except OSError:
-        raise EvaluationBlocked("container command unavailable") from None
+        raise EvaluationBlocked("container command unavailable", reason=BlockedReason.TRANSPORT) from None
 
 
 def _create(name: str, fixture: Path, image_id: str) -> list[str]:
     # Docker CSV parsing must not reinterpret the controlled host staging path.
     if any(character in str(fixture) for character in (",", "\n", "\r", '"')):
-        raise EvaluationBlocked("unsafe staging path for Docker bind mount")
+        raise EvaluationBlocked("unsafe staging path for Docker bind mount", reason=BlockedReason.STAGING)
     return [
         "container", "create", "--name", name, "--pull=never", "--interactive",
         "--network=none", "--ipc=private", "--cgroupns=private", "--cap-drop=ALL",
@@ -148,8 +174,8 @@ def _create(name: str, fixture: Path, image_id: str) -> list[str]:
 def _check_container(run, name: str, fixture: Path) -> None:
     status, raw = run(["container", "inspect", "--format", "{{json .}}", name])
     if status != 0:
-        raise EvaluationBlocked("created container policy could not be inspected")
-    container = _json(raw)
+        raise EvaluationBlocked("created container policy could not be inspected", reason=BlockedReason.POLICY)
+    container = _json(raw, reason=BlockedReason.POLICY)
     host = container.get("HostConfig") if isinstance(container, dict) else None
     config = container.get("Config") if isinstance(container, dict) else None
     mounts = container.get("Mounts") if isinstance(container, dict) else None
@@ -175,10 +201,10 @@ def _check_container(run, name: str, fixture: Path) -> None:
             or host.get("Tmpfs") != {"/tmp": TMPFS}
             or config.get("User") != "65534:65534"
             or not accepted_mounts):
-        raise EvaluationBlocked("created container does not enforce evaluator policy")
+        raise EvaluationBlocked("created container does not enforce evaluator policy", reason=BlockedReason.POLICY)
 
 
-def _json(raw: bytes) -> object:
+def _json(raw: bytes, *, reason: BlockedReason = BlockedReason.UNATTRIBUTED) -> object:
     def unique_fields(pairs: list[tuple[str, object]]) -> dict[str, object]:
         fields = dict(pairs)
         if len(fields) != len(pairs):
@@ -198,29 +224,29 @@ def _json(raw: bytes) -> object:
         return json.loads(raw.decode("utf-8"), object_pairs_hook=unique_fields,
                           parse_constant=reject_constant, parse_float=finite_float)
     except (ValueError, UnicodeError, RecursionError):
-        raise EvaluationBlocked("invalid container observation") from None
+        raise EvaluationBlocked("invalid container observation", reason=reason) from None
 
 
 def _approved_runtime(docker: Path, image_id: str, approved_guest: bool) -> None:
     if approved_guest is not True or sys.platform != "linux":
-        raise EvaluationBlocked("an approved disposable Linux guest is required")
+        raise EvaluationBlocked("an approved disposable Linux guest is required", reason=BlockedReason.GUEST)
     if not docker.is_absolute() or not docker.is_file():
-        raise EvaluationBlocked("an explicitly selected local Docker binary is required")
+        raise EvaluationBlocked("an explicitly selected local Docker binary is required", reason=BlockedReason.DAEMON)
     try:
         socket_ok = stat.S_ISSOCK(SOCKET.stat().st_mode)
     except OSError:
         socket_ok = False
     if not socket_ok:
-        raise EvaluationBlocked("local Docker socket is unavailable")
+        raise EvaluationBlocked("local Docker socket is unavailable", reason=BlockedReason.DAEMON)
     if not IMAGE_ID.fullmatch(image_id):
-        raise EvaluationBlocked("exact local probe image ID is required")
+        raise EvaluationBlocked("exact local probe image ID is required", reason=BlockedReason.IMAGE)
 
 
 def _check_engine(run, image_id: str) -> None:
     status, raw = run(["info", "--format", "{{json .}}"])
     if status != 0:
-        raise EvaluationBlocked("local Docker engine is unavailable")
-    info = _json(raw)
+        raise EvaluationBlocked("local Docker engine is unavailable", reason=BlockedReason.DAEMON)
+    info = _json(raw, reason=BlockedReason.DAEMON)
     if (not isinstance(info, dict) or info.get("OSType") != "linux"
             or info.get("CgroupVersion") != "2"
             or info.get("CgroupDriver") not in ("cgroupfs", "systemd")
@@ -229,32 +255,37 @@ def _check_engine(run, image_id: str) -> None:
             or not isinstance(info.get("SecurityOptions"), list)
             or not any(option in ("name=seccomp,profile=builtin", "name=seccomp,profile=default")
                        for option in info["SecurityOptions"])):
-        raise EvaluationBlocked("local container resource or seccomp controls unavailable")
+        raise EvaluationBlocked("local container resource or seccomp controls unavailable", reason=BlockedReason.POLICY)
     status, raw = run(["image", "inspect", "--format",
                        '{"id":{{json .Id}},"volumes":{{json .Config.Volumes}}}', image_id])
     if status != 0:
-        raise EvaluationBlocked("pinned probe image is unavailable locally")
-    image = _json(raw)
+        raise EvaluationBlocked("pinned probe image is unavailable locally", reason=BlockedReason.IMAGE)
+    image = _json(raw, reason=BlockedReason.IMAGE)
     if not isinstance(image, dict) or image.get("id") != image_id or image.get("volumes") not in ({}, None):
-        raise EvaluationBlocked("probe image identity or declared volumes violate policy")
+        raise EvaluationBlocked("probe image identity or declared volumes violate policy", reason=BlockedReason.IMAGE)
 
 
 def _cleanup(run, name: str) -> None:
     try:
         run(["container", "rm", "--force", "--volumes", name])
-    finally:
+    except EvaluationBlocked:
+        # Removal may have reached the daemon before the CLI lost its reply.
+        pass
+    try:
         status, output = run(["container", "ls", "--all", "--quiet", "--filter", f"name={name}"])
-        if status != 0 or output.strip():
-            raise EvaluationBlocked("container cleanup could not be verified")
+    except EvaluationBlocked:
+        raise EvaluationBlocked("container cleanup could not be verified", reason=BlockedReason.CLEANUP) from None
+    if status != 0 or output.strip():
+        raise EvaluationBlocked("container cleanup could not be verified", reason=BlockedReason.CLEANUP)
 
 
 def _execution_state(run, name: str) -> dict:
     status, raw = run(["container", "inspect", "--format", "{{json .State}}", name])
     if status != 0:
-        raise EvaluationBlocked("probe execution state could not be verified")
-    state = _json(raw)
+        raise EvaluationBlocked("probe execution state could not be verified", reason=BlockedReason.STATE)
+    state = _json(raw, reason=BlockedReason.STATE)
     if not isinstance(state, dict) or state.get("Error") != "":
-        raise EvaluationBlocked("probe execution state could not be verified")
+        raise EvaluationBlocked("probe execution state could not be verified", reason=BlockedReason.STATE)
     return state
 
 
@@ -262,11 +293,11 @@ def _verify_exit(run, name: str, attach_status: int) -> None:
     state = _execution_state(run, name)
     if (state.get("Status") != "exited" or state.get("Running") is not False
             or type(state.get("ExitCode")) is not int or type(state.get("OOMKilled")) is not bool):
-        raise EvaluationBlocked("probe termination was not independently verified")
+        raise EvaluationBlocked("probe termination was not independently verified", reason=BlockedReason.STATE)
     if state["OOMKilled"] and state["ExitCode"] != 0:
         raise CandidateFailure("candidate_resource")
     if state["OOMKilled"] or state["ExitCode"] != attach_status:
-        raise EvaluationBlocked("probe attachment and recorded exit differ")
+        raise EvaluationBlocked("probe attachment and recorded exit differ", reason=BlockedReason.STATE)
     if state["ExitCode"] != 0:
         raise CandidateFailure("candidate_exit")
 
@@ -287,7 +318,7 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
         try:
             fixture_sha256 = _stage(fixture, {**fixtures, BRIDGE: trusted_bridge})
         except OSError:
-            raise EvaluationBlocked("fixture could not be staged") from None
+            raise EvaluationBlocked("fixture could not be staged", reason=BlockedReason.STAGING) from None
         prefix = [str(docker), "--host", f"unix://{SOCKET}", "--config", temp]
 
         def run(args: list[str], timeout: int = CONTROL_TIMEOUT, data: bytes = b""):
@@ -299,7 +330,7 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
         try:
             status, _ = run(create)
             if status != 0:
-                raise EvaluationBlocked("container creation rejected")
+                raise EvaluationBlocked("container creation rejected", reason=BlockedReason.POLICY)
             _check_container(run, name, fixture)
             try:
                 status, raw = run(["container", "start", "--attach", "--interactive", name],
@@ -307,7 +338,7 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
             except ContainerCommandDeadline:
                 state = _execution_state(run, name)
                 if state.get("Status") != "running" or state.get("Running") is not True:
-                    raise EvaluationBlocked("deadline expired without proof of a running probe") from None
+                    raise EvaluationBlocked("deadline expired without proof of a running probe", reason=BlockedReason.STATE) from None
                 raise ProbeDeadlineExceeded("probe attachment deadline exceeded") from None
             _verify_exit(run, name, status)
         finally:

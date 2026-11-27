@@ -2,7 +2,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from benchmarks.contained_php import CandidateFailure, EvaluationBlocked, Observation, VERSION
+from benchmarks.contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, Observation, VERSION
 from benchmarks.contained_public import (
     BOOKING, BOOKING_RULES, PARCEL_INTAKE, PARCEL_LIMIT, TIMING, score_public,
 )
@@ -75,7 +75,7 @@ class ContainedPublicTests(unittest.TestCase):
         report = self.score("deadline_boundary", {TIMING: b"source"}, [
             CandidateFailure("candidate_exit"),
             Observation(False, "fixture", IMAGE),
-            EvaluationBlocked("private daemon detail"),
+            EvaluationBlocked("private daemon detail", reason=BlockedReason.DAEMON),
         ])
         self.assertEqual(report["status"], "blocked")
         self.assertEqual(
@@ -83,6 +83,7 @@ class ContainedPublicTests(unittest.TestCase):
             [10, 3, 1, 1, 1, 7],
         )
         self.assertEqual(report["failure_reasons"], {"candidate_exit": 1})
+        self.assertEqual(report["blocked_reason"], "docker_unavailable")
         self.assertNotIn("private daemon detail", str(report))
 
     def test_untrusted_protocol_blocks_and_integer_is_not_boolean(self):

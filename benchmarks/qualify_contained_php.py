@@ -56,7 +56,8 @@ CHECKS = (
 
 
 def qualify(docker: Path, image_id: str, approved_guest: bool) -> dict:
-    report = {"status": "blocked", "image_id": image_id, "checks": dict.fromkeys(CHECKS)}
+    report = {"status": "blocked", "image_id": image_id, "blocked_reason": None,
+              "checks": dict.fromkeys(CHECKS)}
     report["checks"].update(memory_enforced=None, timeout_and_cleanup=None)
 
     def probe(mode):
@@ -68,10 +69,12 @@ def qualify(docker: Path, image_id: str, approved_guest: bool) -> dict:
         first = probe("inspect")
         if (first.image_id != image_id or first.protocol != VERSION
                 or not isinstance(first.response, dict) or set(first.response) != set(CHECKS)):
+            report["blocked_reason"] = "qualification_observation_unverified"
             return report
         report["fixture_sha256"] = first.fixture_sha256
         report["checks"].update({key: first.response[key] is True for key in CHECKS})
         if not all(report["checks"][key] for key in CHECKS):
+            report["blocked_reason"] = "qualification_policy_failed"
             return report
         try:
             probe("memory")
@@ -87,10 +90,16 @@ def qualify(docker: Path, image_id: str, approved_guest: bool) -> dict:
             report["checks"]["timeout_and_cleanup"] = monotonic() - start >= PROBE_TIMEOUT - 1
         else:
             report["checks"]["timeout_and_cleanup"] = False
-    except (EvaluationBlocked, CandidateFailure, OSError):
+    except (EvaluationBlocked, CandidateFailure) as error:
+        report["blocked_reason"] = error.reason
+        return report
+    except OSError:
+        report["blocked_reason"] = "qualification_environment_error"
         return report
     if all(report["checks"].values()):
         report["status"] = "qualified"
+    else:
+        report["blocked_reason"] = "qualification_enforcement_failed"
     return report
 
 

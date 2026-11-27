@@ -25,6 +25,11 @@ qualification oracles and the product entry point match main byte for byte.
 
 ## Guest safety gate
 
+The current Windows host is no longer a provisioning target. Its evaluator
+VM was stopped and the local VirtualBox setup was removed. Use a separately
+approved Linux evaluator when live qualification resumes. The Windows rollback
+restart is deferred and does not block model-free lab work.
+
 Use the approved VirtualBox Base environment with an Ubuntu Server x64
 guest, 2 vCPUs, 3–4 GiB RAM and a 25–40 GB dynamic disk on E:. Patch and
 provision the clean guest, record Docker and kernel versions, and pin the
@@ -43,6 +48,18 @@ seccomp, loopback-only networking, read-only root and fixture, bounded
 scratch, absence of inherited environment variables, cgroup limits, an
 enforced memory kill and timeout cleanup. Preserve the report even if one
 check fails. Record real guest results before letting generated PHP run.
+Reports preserve bounded blocked categories for approval, Docker and image
+availability, policy, execution state, transport, timeouts and cleanup.
+Raw daemon messages stay out of evidence. A failed removal command still
+requires an independent container inventory. Missing inventory or a remaining
+container blocks the trial. The existing candidate failures and denominators
+stay separate.
+
+Model-free regression check:
+
+```text
+python -m unittest discover -s tests -p "test*contained*.py"
+```
 
 ## Evaluation sequence
 

@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from benchmarks.contained_corpus import TAX_PATH, score_tax
-from benchmarks.contained_php import CandidateFailure, EvaluationBlocked, Observation
+from benchmarks.contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, Observation
 
 
 class ContainedCorpusTests(unittest.TestCase):
@@ -48,10 +48,12 @@ class ContainedCorpusTests(unittest.TestCase):
     def test_partial_probe_failure_retains_completed_counts(self):
         report = self.score([Observation(0, "fixture", "image"),
                              Observation(2, "fixture", "image"),
-                             EvaluationBlocked("cleanup failed")])
+                             EvaluationBlocked("private staging path", reason=BlockedReason.CLEANUP)])
         self.assertEqual(report["behavior"], {"total": 5, "passed": 1, "failed": 1,
                                              "blocked": 1, "attempted": 3, "remaining": 2})
         self.assertEqual(report["regression"]["remaining"], 4)
+        self.assertEqual(report["blocked_reason"], "cleanup_unverified")
+        self.assertNotIn("private staging path", str(report))
 
     def test_identity_mismatch_blocks_remaining_probes(self):
         report = self.score([Observation(0, "fixture", "image"),
