@@ -22,7 +22,7 @@ Follow the [contained qualification checkpoint](research/2026-11-27-contained-qu
 | Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Retain original research draft; candidate successor #23 replays and extends its work. Verify overlap before supersession. |
 | Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Merged at `4be34b7f737e29c1436fcb269dfd10295457740d`. |
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
-| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Latest reviewed checkpoint `0ecc06f6b853c83699110f17b918b4cbcfcd7ef6` passed all seven retrieved workflows. Candidate failure attribution and public multi-file/feedback probes added. Live guest unqualified; personal Windows provisioning cancelled. Recheck revised head CI. |
+| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Review fixes at `48bc76b26b1a48935eec0cdc96740f882d27b9d2`: project-bound patches, legacy host execution disabled, exact container identity and fresh qualification gate. Previous `99c1eec` native deterministic/Python/guidance/security workflows passed; longer workflows cancelled on branch advance. Recheck latest exact-head CI. Live guest unqualified; personal Windows provisioning cancelled. |
 | Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Merged at `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; candidate dossiers only, no model downloads or training. Historical VM recommendation superseded on the personal Windows host. |
 
 ## Evidence to read first
@@ -86,8 +86,10 @@ Follow the [contained qualification checkpoint](research/2026-11-27-contained-qu
 
 ## Next handoff
 
-Review the integrated lab and reconcile exact-head CI, legacy PR overlap and
-shared native runtime behavior. Continue trusted model-free tests and
+Recheck exact-head CI and approve supersession only after review. The original
+PRs remain open; their useful proposal paths, historical evidence and controls
+are retained, while legacy generated-code execution is intentionally disabled.
+Continue trusted model-free tests and
 prepare portable evaluation on a separately approved Linux environment.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.
@@ -96,7 +98,7 @@ private data without approval. Freeze development evaluation before private
 confirmation; retain exact text plus selective lexical retrieval. Do not
 repeat the completed smoke campaigns, download weights or train without
 evidence and approval. #21 and #24 are merged; #23 remains draft until
-integration and safety review, with #18/#20 preserved. Keep native clean-host
+successful exact-head CI and explicit approval, with #18/#20 preserved. Keep native clean-host
 qualification separate. No release, tag or publication authorized.
 
 See [Agent guide](AGENT_GUIDE.md) for stable mission and authority boundaries,

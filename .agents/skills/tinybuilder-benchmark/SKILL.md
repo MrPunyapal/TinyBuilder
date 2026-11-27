@@ -25,7 +25,12 @@ Before running generated PHP, verify the offline outer guest and run the
 [trusted isolation probes](../../../docs/research/2026-11-27-contained-qualification.md).
 Count an exit as a candidate failure only when the container state proves it
 and cleanup succeeds. Keep unverified transport, timeouts and cleanup
-failures in the blocked denominator.
+failures in the blocked denominator. The public scoring entrypoints rerun
+trusted qualification before candidate submission; a failed preflight leaves
+all candidate trials remaining. Never bypass this via the low-level observe
+API, legacy worktree runner, regex expression filter or human patch approval.
+Legacy route validation is trusted-controls-only; legacy pilot proposals
+are containment-blocked. Preserve historical results without rerunning them.
 
 The owner's personal Windows PC is not an evaluator provisioning target.
 Follow the host-protection rule in AGENTS.md. Ordinary CI may run reviewed

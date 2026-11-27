@@ -46,8 +46,8 @@ independent caller that checks varied amounts and the tax-exempt regression.
 It sends each input to a fresh container and scores the typed observation
 outside PHP. Additional families and the private holdout need their own
 bridges. This permits black-box scoring with PHPUnit and hidden expectations
-outside the candidate process. The existing restricted smoke-test lane
-and read-only release evaluator retain their own oracles.
+outside the candidate process. Historical restricted smoke-test results and the read-only release oracles
+are preserved. The legacy host-generated-code scoring paths are now disabled.
 
 ```text
 python -m benchmarks.contained_corpus --docker /usr/bin/docker --image-id EXACT_LOCAL_ID --candidate Tax.php --approved-guest
@@ -98,3 +98,24 @@ conservatively classified as unattributed blocks, not model failures.
 Live guest qualification and stronger typed execution attribution remain
 prerequisites for broader model scoring. Model-free regression tests do
 not establish a working isolation boundary.
+
+## Current safety gate (supersedes historical procedure above)
+
+The public tax and family scorers now require a fresh successful trusted
+qualification run before submitting any candidate bytes. Failed qualification
+returns a blocked result with zero candidate attempts and all planned cases
+remaining. The separate approved guest is still a human authorization and
+outer isolation requirement; the program cannot establish it. Requalification
+runs the existing trusted inspection, memory and timeout probes, so each
+scoring session incurs their cost. Ordinary CI must continue to use fake
+observations and reviewed controls only. The low-level observe API is for
+trusted qualification probes and already qualified callers; do not call it
+directly to bypass the candidate gate. The created container must match the
+exact approved image, executable and arguments before attachment. Existing
+exit/cleanup attribution and identity checks remain intact.
+
+The old Laravel pilot and route validation paths are no longer usable for
+host-generated-code execution. Keep their historical results; use the
+contained scorer only for implemented public bridges. Full Laravel and
+private holdout bridges still need work. No actual guest or model run was
+performed for this review.

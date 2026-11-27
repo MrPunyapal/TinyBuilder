@@ -28,26 +28,23 @@ commands in isolated disposable environments with no secrets/network.
 Report all trials, failures, runtime/model/source hashes, test output
 summaries and safety events. Do not change the 10/10 read gate.
 
-For an independently scored Laravel validation repair, use a clean,
-disposable Git checkout marked with `.tinybuilder-disposable` and existing
-Composer dependencies. Run from the TinyBuilder checkout:
+For the legacy Laravel route validation fixture, only reviewed trusted
+controls may execute outside the separately qualified candidate evaluator.
+Use a clean disposable checkout of trusted Laravel source and dependencies:
 
-    python -m benchmarks.rust_patch_validation --baseline BASELINE --lab GROUNDED_LAB --runtime RUNTIME --model EXISTING_GGUF --expected-model-sha256 HASH --php PHP --output NEW_REPORT_DIR
+    python -m benchmarks.rust_patch_validation --baseline BASELINE --php PHP --output NEW_REPORT_DIR --trusted-controls-only
 
-The runner creates a detached worktree and checks the untouched suite,
-the seeded failure, a correct reference repair and a plausible incorrect
-repair before prompting for approval. The lab receives only
-`routes/web.php` as complete evidence. Review the exact diff and approve
-only the intended safe change in the test project. The runner keeps hidden
-assertions out of the project during inference and scores approved changes
-with PHP lint, Laravel route listing and the full PHPUnit suite. Add
-`--select-line` to compare operator-selected replacement anchors on the
-same benchmark. This mode leaves the choice of exact old text to the
-evaluator and still requires a reviewed diff and explicit approval. Keep
-`laravel-patch.json` with the report, including failed and declined trials.
+The runner retains the untouched, seeded, reference and incorrect-repair
+controls. It does not invoke the model or evaluate a generated patch.
+The old invocation that applied a model patch and then ran local PHPUnit
+is historical, not an authorized execution path. See the
+[contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
+Do not revive it merely because a human approves a diff. The contained
+public scorer does not yet cover full Laravel route validation.
 
 Lab apply requires explicit permission plus per-patch approval, complete
-fresh source evidence and exact unique replacement. Re-read after every
+fresh source evidence and exact unique replacement. Patches are bound to
+the originating canonical project root. Re-read after every
 approved edit. Filesystem race and ACL/xattr preservation remain
 unqualified. Keep creation and streaming deferred; the old streaming
 transport must never bypass current connected-socket authentication.

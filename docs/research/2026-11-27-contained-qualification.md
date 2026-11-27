@@ -128,3 +128,45 @@ existing implementation and benchmark skills already require scoped approval,
 regression tests and containment. No model execution, private transfer,
 training, host changes or publication performed. Next: verify new exact-head
 CI, finish benchmark and replay review before an experimental merge decision.
+
+## Independent review continuation — model-free safety closure
+
+At [9167b70](https://github.com/MrPunyapal/TinyBuilder/commit/9167b70c788682771eb5e86759a50c0ddf717ff5),
+two legacy execution paths were disabled. The old Laravel pilot discards
+model previews as containment-blocked; trusted wrong-repair comparators
+retain host scoring. Route validation requires trusted-controls-only and
+never invokes model inference or runs generated PHP. Historical results,
+fixture definitions and controls remain. The created container is now
+verified against the approved image ID, executable and exact arguments.
+[48bc76b](https://github.com/MrPunyapal/TinyBuilder/commit/48bc76b26b1a48935eec0cdc96740f882d27b9d2)
+requires trusted live qualification before candidate submission in both
+contained public scoring entrypoints. Failed preflight leaves zero attempts
+and all probes remaining. Regression tests use mocks only. Outer guest
+approval remains external; no model, Docker or guest was executed here.
+
+Compared every #18 (18 paths) and #20 (14 paths) changed file against the
+integrated branch; no missing paths. #18 ancestry is direct; #20 was replayed.
+Original #20 cross-file fixture/benchmark, workflow fixture, benchmark result,
+vision and historical cross-file/workflow reports and workflow tests match
+byte-for-byte. Evolved controller preserves the original A/C arms and seat
+policy order while adding comparison arms, token usage and finish attribution;
+Python hash helper replaces Python-3.11-only digest, tests and protocol expand.
+Original #18 diagnostics, workbench, agent, workflow, lab export and result
+remain; scope and snapshot guards are strengthened. The old semantic execution
+workflow is intentionally superseded, not a lost feature to restore. Full
+Laravel contained scoring remains open. The review compared blobs and changed
+source behavior, not independent re-execution of all historical experiments.
+Keep original drafts for provenance until explicit approval to supersede.
+
+Exact-head 99c1eec: [native deterministic](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45996517384)
+passed all three platform jobs, [Python](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45996517260),
+[guidance](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45996517240) and
+[security](https://github.com/MrPunyapal/TinyBuilder/actions/runs/45996517253) passed.
+Native rewrite and package runs were cancelled on branch advancement. Later
+commits need their own CI; direct clone from review container failed DNS, so
+no independent local test claim. Experimental merge is conditional on final
+exact-head CI and owner approval, not on a live model qualification claim.
+No releases, training, paid compute, downloads, private transfer, Windows
+system changes, or merges performed. Benchmark skill and active lab docs
+updated; no new skill needed. Next: validate final-head hosted trusted CI;
+then review an experimental-only merge, retaining the separate live gate.

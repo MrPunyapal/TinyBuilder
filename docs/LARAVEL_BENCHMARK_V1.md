@@ -24,14 +24,22 @@ and evaluator before comparable runs.
 
 ## Two-case pilot
 
+Historical model results below remain evidence of the previous restricted
+smoke lane, not authorization to repeat host execution. The current pilot
+runs trusted controls and may produce proposals, but discards generated
+previews with `containment_blocked` rather than running PHP or scoring them.
+The CLI returns nonzero for blocked candidate evaluation. Use only an
+explicitly approved separate guest and its qualified contained scorer for
+future generated-code evaluation. No full Laravel candidate bridge exists yet.
+
 This run uses original tests for Laravel's email validator and a checkout
 discount helper. Each case lives in its own detached Laravel worktree.
 Existing vendored dependencies are copied locally. The evaluator inserts
 its PHPUnit tests after the model process has exited, runs fixed test
 commands, and restores the exact seeded source between arms. Its only
 allowed edit is a single line in the designated fixture. PHP lint checks
-syntax. The runner executes only case-specific safe expressions, then
-scores independent behavior and regression assertions. Valid alternatives
+syntax. The historical runner executed only case-specific restricted expressions, then
+scored independent behavior and regression assertions. Valid alternatives
 outside that subset are recorded separately. No project test file is
 available for modification during inference.
 
