@@ -13,7 +13,7 @@ from .qualify_contained_php import require_qualified_guest
 class Probe:
     phase: str
     request: dict
-    expected: int | bool
+    expected: int | bool | str
 
 
 @dataclass(frozen=True)
@@ -30,8 +30,65 @@ BOOKING = "app/CodingV1/Booking.php"
 TIMING = "app/CodingV1/Timing.php"
 PARCEL_LIMIT = "app/CodingV1/ParcelLimit.php"
 PARCEL_INTAKE = "app/CodingV1/ParcelIntake.php"
+VISIBILITY = "app/CodingV1/Visibility.php"
+REMINDER = "app/CodingV1/Reminder.php"
+HEADER = "app/CodingV1/Header.php"
+PICKUP_QUOTE = "app/CodingV1/PickupQuote.php"
 
 TASKS = {
+    "patient_visibility": PublicTask(
+        (VISIBILITY,),
+        br"""<?php
+declare(strict_types=1);
+require '/fixture/app/CodingV1/Visibility.php';
+return static function (mixed $input): mixed {
+    return \App\CodingV1\Visibility::mayRead($input['viewer'], $input['owner'], $input['staff']);
+};
+""",
+        (*(Probe("behavior", {"viewer": owner, "owner": owner, "staff": False}, True)
+           for owner in (4, 37, 1204)),
+         *(Probe("regression", {"viewer": viewer, "owner": owner, "staff": staff}, staff)
+           for viewer, owner in ((4, 5), (5, 4), (17, 1204)) for staff in (False, True))),
+    ),
+    "urgent_reminders": PublicTask(
+        (REMINDER,),
+        br"""<?php
+declare(strict_types=1);
+require '/fixture/app/CodingV1/Reminder.php';
+return static function (mixed $input): mixed {
+    return \App\CodingV1\Reminder::hours($input['urgent']);
+};
+""",
+        (Probe("behavior", {"urgent": True}, 2),
+         Probe("regression", {"urgent": False}, 24)),
+    ),
+    "priority_normalization": PublicTask(
+        (HEADER,),
+        br"""<?php
+declare(strict_types=1);
+require '/fixture/app/CodingV1/Header.php';
+return static function (mixed $input): mixed {
+    return \App\CodingV1\Header::priority($input['header']);
+};
+""",
+        (*(Probe("behavior", {"header": value}, expected)
+           for value, expected in ((" Rush ", "rush"), ("\t eXPReSS\r\n", "express"), ("   ", ""))),
+         Probe("regression", {"header": "NORMAL"}, "normal")),
+    ),
+    "rural_quote": PublicTask(
+        (PICKUP_QUOTE,),
+        br"""<?php
+declare(strict_types=1);
+require '/fixture/app/CodingV1/PickupQuote.php';
+return static function (mixed $input): mixed {
+    return \App\CodingV1\PickupQuote::cents($input['kilometers'], $input['rural']);
+};
+""",
+        (*(Probe("behavior", {"kilometers": distance, "rural": True}, 550 + 25 * distance)
+           for distance in (0, 2, 10)),
+         *(Probe("regression", {"kilometers": distance, "rural": False}, 450 + 25 * distance)
+           for distance in (0, 2, 10))),
+    ),
     "booking_availability": PublicTask(
         (BOOKING_RULES, BOOKING),
         br"""<?php

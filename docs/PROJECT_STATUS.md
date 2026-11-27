@@ -89,8 +89,11 @@ Follow the [contained qualification checkpoint](research/2026-11-27-contained-qu
 Recheck exact-head CI and approve supersession only after review. The original
 PRs remain open; their useful proposal paths, historical evidence and controls
 are retained, while legacy generated-code execution is intentionally disabled.
-Continue trusted model-free tests and
-prepare portable evaluation on a separately approved Linux environment.
+Eight of twelve public corpus tasks now have dependency-free contained
+bridges (72 reference observations); trusted source-control tests are added.
+Four framework-dependent public tasks, full route validation and private
+bridges require real reviewed dependencies and a separate evaluator.
+Continue trusted model-free tests and prepare portable evaluation on a separately approved Linux environment.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.
 Do not execute arbitrary generated PHP on the ordinary host or transfer

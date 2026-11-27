@@ -170,3 +170,31 @@ No releases, training, paid compute, downloads, private transfer, Windows
 system changes, or merges performed. Benchmark skill and active lab docs
 updated; no new skill needed. Next: validate final-head hosted trusted CI;
 then review an experimental-only merge, retaining the separate live gate.
+
+## Public bridge expansion — trusted controls only
+
+Expanded the dependency-free public contained scoring lane from four to
+eight of the twelve corpus tasks: patient visibility (9 observations),
+urgent reminders (2), priority normalization (4), rural quote (6), plus
+existing tax (9), booking (14), deadline (10) and parcel (18). Total 72
+planned observations across the reference suite. Every expected value stays
+outside PHP. The new test executes only fixed repository-authored baseline,
+reference, known-wrong, narrow, partial and hardcoded policy controls through
+the actual reviewed PHP bridge and probe entrypoint with temporary relative
+paths. It skips explicitly if PHP is absent. This is trusted code testing,
+not a Docker or live model run; it may be run on ordinary hosted CI.
+
+The remaining four tasks (contact validation, available stock, group
+inventory, listing response) require real Laravel/Illuminate dependencies,
+including SQLite for the database tasks. Do not replace them with imitation
+framework stubs or weaken the original PHPUnit oracles. Implement and review
+the framework bridge with an exact trusted dependency/lockfile and image
+manifest, no host mounts or network, then run its trusted controls in the
+separately approved evaluator. Full route-validation and private bridges
+also remain pending. Do not provision the owner's personal PC.
+
+At b237aa9, Python, native deterministic, guidance and candidate security
+workflows passed; native rewrite and package workflows were running.
+The current bridge expansion needs exact-head CI. Direct GitHub access
+from the review container failed DNS; repository changes were made via
+the connected GitHub API. No candidate, guest, model, or private data ran.
