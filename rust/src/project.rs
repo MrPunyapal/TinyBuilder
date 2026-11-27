@@ -33,6 +33,7 @@ pub struct ContextExcerpt {
     pub last_line: usize,
 }
 pub struct Patch {
+    root: PathBuf,
     path: String,
     original_hash: [u8; 32],
     replacement: String,
@@ -370,10 +371,11 @@ impl Project {
             .header("before", "after").to_string();
         ensure!(!diff.is_empty(), "No change");
         ensure!(diff.len() <= 64 * 1024, "Diff too large to review");
-        Ok(Patch { path: self.relative(&resolved)?, original_hash: hash(&bytes), replacement, diff })
+        Ok(Patch { root: self.root.clone(), path: self.relative(&resolved)?, original_hash: hash(&bytes), replacement, diff })
     }
     pub fn apply(&self, patch: Patch, approved: bool) -> Result<()> {
         ensure!(approved, "Permission denied");
+        ensure!(patch.root == self.root, "Patch belongs to a different project");
         let path = self.resolve(&patch.path)?;
         ensure!(path.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&path, PATCH_MAX)?;
@@ -424,6 +426,19 @@ mod tests {
         assert_eq!(p.read("a.txt").unwrap().text, "alpha\nbeta\n");
         p.apply(p.propose("a.txt", "alpha", "gamma").unwrap(), true).unwrap();
         assert_eq!(p.read("a.txt").unwrap().text, "gamma\nbeta\n");
+    }
+    #[test]
+    fn approved_patch_cannot_be_transferred_to_another_project() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        fs::write(first.path().join("a.txt"), "old").unwrap();
+        fs::write(second.path().join("a.txt"), "old").unwrap();
+        let source = Project::new(first.path()).unwrap();
+        let other = Project::new(second.path()).unwrap();
+        let patch = source.propose("a.txt", "old", "new").unwrap();
+        assert!(other.apply(patch, true).is_err());
+        assert_eq!(source.read("a.txt").unwrap().text, "old");
+        assert_eq!(other.read("a.txt").unwrap().text, "old");
     }
     #[test]
     fn stale_patch_denied_and_secret_rejected() {
