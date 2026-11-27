@@ -3,7 +3,7 @@ use anyhow::{ensure, Result};
 use clap::{Parser, Subcommand};
 use serde_json::{json, Value};
 use std::{io::{self,Write}, path::PathBuf, time::Instant};
-use tinybuilder::{workbench, project::Project, runtime::Runtime, show, terminal};
+use tinybuilder::{context::{retrieve_lab, LabRetrieval}, workbench, project::Project, runtime::Runtime, show, terminal};
 
 #[derive(Parser)]
 struct Cli {
@@ -26,6 +26,9 @@ enum Action {
         /// Use the lab's selective lexical retriever without a target hint.
         #[arg(long, conflicts_with = "target", requires = "allowed_edit_path")]
         selective_context: bool,
+        /// Choose an opt-in lab-only retrieval arm.
+        #[arg(long, requires = "selective_context", value_enum)]
+        retrieval_strategy: Option<LabRetrieval>,
         /// Restrict the approved edit to this exact relative path. Repeat for multiple files.
         #[arg(long)]
         allowed_edit_path: Vec<String>,
@@ -45,18 +48,19 @@ fn metric(enabled: bool, row: Value) {
 fn main() -> Result<()> {
     let args=Cli::parse();
     let project=Project::new(&args.project)?;
-    let (task, edit, target, line, selective, allowed, metrics, context_tokens)=match args.command {
-        Action::Ask{task}=>(task,false,None,None,false,Vec::new(),false,None),
-        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path,proposal_metrics,context_tokens}=>{
+    let (task, edit, target, line, retrieval, allowed, metrics, context_tokens)=match args.command {
+        Action::Ask{task}=>(task,false,None,None,None,Vec::new(),false,None),
+        Action::Edit{task,allow_write,target,line,selective_context,retrieval_strategy,allowed_edit_path,proposal_metrics,context_tokens}=>{
             ensure!(allow_write,"Edit requires explicit --allow-write lab opt-in");
-            (task,true,target,line,selective_context,allowed_edit_path,proposal_metrics,context_tokens)
+            let retrieval = selective_context.then_some(retrieval_strategy.unwrap_or(LabRetrieval::Baseline));
+            (task,true,target,line,retrieval,allowed_edit_path,proposal_metrics,context_tokens)
         }
     };
     let retrieval_start = Instant::now();
-    let selected = match target {
-        Some(path) => workbench::collect_edit_target(&project, &path),
-        None if selective => tinybuilder::context::retrieve_selective(&project, &task),
-        None => workbench::collect(&project, &task),
+    let selected = match (target, retrieval) {
+        (Some(path), _) => workbench::collect_edit_target(&project, &path),
+        (None, Some(arm)) => retrieve_lab(&project, &task, arm),
+        (None, None) => workbench::collect(&project, &task),
     };
     let retrieval_ms = retrieval_start.elapsed().as_millis() as u64;
     let selected = selected.inspect_err(|_| metric(metrics, json!({

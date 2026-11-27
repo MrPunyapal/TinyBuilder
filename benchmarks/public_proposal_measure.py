@@ -10,6 +10,7 @@ from time import monotonic
 from .identity import sha256_file
 from .laravel_pilot import monitor
 from .public_proposal_campaign import MANIFEST, inspect, plan
+from .public_retrieval_measure import STRATEGIES
 
 
 METRIC_PREFIX = "Proposal metrics: "
@@ -28,13 +29,15 @@ def _metrics(output):
     return events
 
 
-def measure(lab, runtime, model, project, task, context_tokens=None):
+def measure(lab, runtime, model, project, task, context_tokens=None, retrieval_strategy="baseline"):
     argv = [lab, "--project", project, "--runtime", runtime, "--model", model,
             "edit", "--allow-write", "--selective-context", "--proposal-metrics"]
     for path in task["allowed_edit_paths"]:
         argv.extend(("--allowed-edit-path", path))
     if context_tokens is not None:
         argv.extend(("--context-tokens", str(context_tokens)))
+    if retrieval_strategy != "baseline":
+        argv.extend(("--retrieval-strategy", retrieval_strategy))
     argv.extend(("--", task["prompt"]))
     samples, stop = [], Event()
     start = monotonic()
@@ -80,6 +83,8 @@ def main():
     parser.add_argument("--expected-runtime-manifest-sha256", required=True)
     parser.add_argument("--context-tokens", type=int, choices=range(2048, 8193),
                         metavar="2048..8192")
+    parser.add_argument("--retrieval-strategy", choices=STRATEGIES, default="baseline")
+    parser.add_argument("--task", action="append", help="Restrict the measurement to a named public task")
     args = parser.parse_args()
     root = args.root.absolute()
     output = args.output.resolve()
@@ -90,6 +95,11 @@ def main():
     before = inspect(root)
     if before["counts"]["no_change"] != len(tasks):
         parser.error("Use a pristine public campaign")
+    if args.task:
+        requested = set(args.task)
+        if not requested <= {task["task"] for task in tasks}:
+            parser.error("Unknown public campaign task")
+        tasks = [task for task in tasks if task["task"] in requested]
     lab, runtime, model = (path.resolve(strict=True) for path in (args.lab, args.runtime, args.model))
     manifest = runtime / "runtime-manifest.json"
     inputs = {"model_sha256": sha256_file(model), "runtime_manifest_sha256": sha256_file(manifest),
@@ -100,12 +110,13 @@ def main():
     output.mkdir(exist_ok=False)
     evidence = {"condition": "public-source-only-review", **inputs, "planned_tasks": len(tasks),
                 "context_tokens": args.context_tokens,
-                "planned_semantic_observations": before["planned_observations"],
+                "retrieval_strategy": args.retrieval_strategy,
+                "planned_semantic_observations": sum(task["planned_observations"] for task in tasks),
                 "attempted_semantic_observations": 0, "patches_applied": 0, "trials": []}
     report = output / "proposal-measurements.json"
     try:
         for task in tasks:
-            row = measure(lab, runtime, model, root / task["project"], task, args.context_tokens)
+            row = measure(lab, runtime, model, root / task["project"], task, args.context_tokens, args.retrieval_strategy)
             evidence["trials"].append(row)
             print(task["task"], row["status"], flush=True)
             if row["status"] in STOP_STATUSES:
