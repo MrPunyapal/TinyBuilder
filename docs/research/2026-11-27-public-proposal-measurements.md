@@ -49,6 +49,10 @@ python -m benchmarks.public_proposal_measure --root PUBLIC_CAMPAIGN_DIR --lab GR
 
 ## Next
 
+The [Retrieval Intelligence v2 comparison](2026-11-27-retrieval-intelligence-v2.md)
+completed this retrieval-only follow-up and records the blocked and failed
+model results alongside the recall improvement.
+
 Measure a retrieval-only comparison on the same natural-language tasks
 before spending more inference. Keep evaluator-owned allowed targets out
 of model context. Test the existing cutoff against a bounded, more

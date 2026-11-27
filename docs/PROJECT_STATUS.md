@@ -8,12 +8,13 @@ milestone, owner, blocker or evidence changes materially.
 
 ## Current milestone: Coding Intelligence v1
 
-Improve retrieval coverage on public tasks before collecting more proposals.
-The first [local public campaign](research/2026-11-27-public-proposal-measurements.md)
-produced one review-ready proposal per model. Eleven of twelve tasks per
-model stopped at retrieval. Semantic qualification still requires a
-separately approved isolated Linux evaluator. Use the existing 1.5B and
-research-only 3B weights. Candidate downloads, training, and personal
+Evaluate the [normalized retrieval lab candidate](research/2026-11-27-retrieval-intelligence-v2.md)
+on independent public repositories. Rust verified 12/12 task recall and
+14/14 required files on the current public source-only fixtures, with
+58.3% edit-target precision. The 1.5B review-only follow-up produced one
+proposal ready for approval across two multi-file tasks. Available RAM
+blocked the 3B follow-up. Semantic qualification still requires a separately
+approved isolated Linux evaluator. Candidate downloads, training, and personal
 Windows provisioning remain deferred.
 
 | Workstream | Snapshot and next action |
@@ -97,7 +98,8 @@ validation bridge adds nine probes without changing the original PHPUnit
 oracle; its trusted CI must pass. The public source-only campaign prepares
 isolated model-facing source roots. The separate measurement runner makes
 review-only model calls and records scope-only proposal readiness.
-Measure retrieval coverage on public prompts before repeating inference.
+Continue retrieval-only measurement on additional public fixtures before
+promoting a strategy. Keep proposal readiness separate from correctness.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.
 Do not execute arbitrary generated PHP on the ordinary host or transfer

@@ -45,3 +45,9 @@ For the public source-only proposal condition, use
 then inspect after explicitly approved lab proposals. Keep the plan and
 scorer outside every model-facing root. Scope readiness is not a pass;
 never turn it into a semantic score or use it for private fixtures.
+
+For retrieval changes, run `python -m benchmarks.public_retrieval_measure`
+against the pristine public campaign before using either model. Keep the
+target list in the scorer, report missing paths and extra context, and
+preserve the baseline. See the
+[Retrieval v2 ablation](../../../docs/research/2026-11-27-retrieval-intelligence-v2.md).
