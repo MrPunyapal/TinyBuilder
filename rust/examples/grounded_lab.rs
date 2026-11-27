@@ -1,7 +1,8 @@
 //! Experimental context-first natural language read/patch workbench.
 use anyhow::{ensure, Result};
 use clap::{Parser, Subcommand};
-use std::{io::{self,Write}, path::PathBuf};
+use serde_json::{json, Value};
+use std::{io::{self,Write}, path::PathBuf, time::Instant};
 use tinybuilder::{workbench, project::Project, runtime::Runtime, show, terminal};
 
 #[derive(Parser)]
@@ -28,38 +29,99 @@ enum Action {
         /// Restrict the approved edit to this exact relative path. Repeat for multiple files.
         #[arg(long)]
         allowed_edit_path: Vec<String>,
+        /// Emit sanitized retrieval, inference and approval measurements.
+        #[arg(long)]
+        proposal_metrics: bool,
     },
+}
+
+fn metric(enabled: bool, row: Value) {
+    if enabled { println!("Proposal metrics: {row}"); }
 }
 
 fn main() -> Result<()> {
     let args=Cli::parse();
     let project=Project::new(&args.project)?;
-    let (task, edit, target, line, selective, allowed)=match args.command {
-        Action::Ask{task}=>(task,false,None,None,false,Vec::new()),
-        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path}=>{
+    let (task, edit, target, line, selective, allowed, metrics)=match args.command {
+        Action::Ask{task}=>(task,false,None,None,false,Vec::new(),false),
+        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path,proposal_metrics}=>{
             ensure!(allow_write,"Edit requires explicit --allow-write lab opt-in");
-            (task,true,target,line,selective_context,allowed_edit_path)
+            (task,true,target,line,selective_context,allowed_edit_path,proposal_metrics)
         }
     };
+    let retrieval_start = Instant::now();
     let selected = match target {
-        Some(path) => workbench::collect_edit_target(&project, &path)?,
-        None if selective => tinybuilder::context::retrieve_selective(&project, &task)?,
-        None => workbench::collect(&project, &task)?,
+        Some(path) => workbench::collect_edit_target(&project, &path),
+        None if selective => tinybuilder::context::retrieve_selective(&project, &task),
+        None => workbench::collect(&project, &task),
     };
+    let retrieval_ms = retrieval_start.elapsed().as_millis() as u64;
+    let selected = selected.inspect_err(|_| metric(metrics, json!({
+        "phase":"retrieval", "status":"context_retrieval_failed", "elapsed_ms":retrieval_ms
+    })))?;
+    if metrics {
+        let files: Vec<_> = selected.files.iter().map(|f| json!({"path":f.path,"complete":!f.truncated})).collect();
+        metric(true, json!({"phase":"retrieval","status":"selected","elapsed_ms":retrieval_ms,
+                            "files":files,"incomplete":selected.incomplete}));
+    }
     println!("Deterministic context selection (not model-selected tool use):");
     for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
-    let server=Runtime::start(&args.runtime,&args.model)?;
+    let startup = Instant::now();
+    let server=Runtime::start(&args.runtime,&args.model).inspect_err(|_| metric(metrics, json!({
+        "phase":"startup","status":"startup_failed","elapsed_ms":startup.elapsed().as_millis() as u64
+    })))?;
+    metric(metrics, json!({"phase":"startup","status":"ready","elapsed_ms":startup.elapsed().as_millis() as u64}));
     if !edit {
         let answer=workbench::ask(&task,&selected,|request|server.complete(request))?;
         println!("Model answer (verify factual claims):");
         show(&answer);
     } else {
-        let complete = |request| server.complete(request);
-        let patch = match line {
-            Some(line) => tinybuilder::grounded::propose_edit_at_line(&project, &task, &selected.files[0], line, complete)?,
-            None => workbench::propose(&project, &task, &selected, complete)?,
+        let mut calls = 0;
+        let mut inference_error = false;
+        let mut usage = (None, None);
+        let mut finish_reason = None;
+        let start = Instant::now();
+        let complete = |request| {
+            calls += 1;
+            match server.complete_with_usage(request) {
+                Ok(reply) => {
+                    usage = (reply.prompt_tokens, reply.completion_tokens);
+                    Ok(reply.message)
+                }
+                Err(error) => {
+                    inference_error = true;
+                    if let Some(detail) = error.downcast_ref::<tinybuilder::runtime::IncompleteCompletion>() {
+                        usage = (detail.prompt_tokens, detail.completion_tokens);
+                        finish_reason = Some(detail.reason);
+                    }
+                    Err(error)
+                }
+            }
         };
+        let patch = match line {
+            Some(line) => tinybuilder::grounded::propose_edit_at_line(&project, &task, &selected.files[0], line, complete),
+            None => workbench::propose(&project, &task, &selected, complete),
+        };
+        let status = match &patch {
+            Ok(patch) if allowed.is_empty() || allowed.contains(&patch.path) => "proposal_ready",
+            Ok(_) => "scope_rejected",
+            Err(_) if finish_reason.is_some() => "incomplete_response",
+            Err(_) if inference_error => "runtime_failure",
+            Err(error) => match error.to_string().as_str() {
+                "Replacement must match exactly once" => "replacement_match",
+                "Patch target not in complete evidence" => "target_not_in_evidence",
+                "File changed since context selection" => "stale_evidence",
+                "No change" => "no_change",
+                _ if calls == 0 => "request_rejected",
+                _ => "proposal_invalid",
+            },
+        };
+        metric(metrics, json!({"phase":"proposal","status":status,"calls":calls,
+            "elapsed_ms":start.elapsed().as_millis() as u64,
+            "prompt_tokens":usage.0,"completion_tokens":usage.1,"finish_reason":finish_reason,
+            "path":patch.as_ref().ok().filter(|_| status == "proposal_ready").map(|p| &p.path)}));
+        let patch = patch?;
         ensure!(allowed.is_empty() || allowed.contains(&patch.path), "Proposal is outside the approved file scope");
         println!("Proposed model-generated replacement in {}",terminal(&patch.path));
         show(&patch.patch.diff);
@@ -70,8 +132,10 @@ fn main() -> Result<()> {
         if approved {
             project.apply(patch.patch,true)?;
             println!("Approved patch applied. Independent tests are still required.");
+            metric(metrics, json!({"phase":"approval","status":"applied"}));
         } else {
             println!("Patch declined. No changes made.");
+            metric(metrics, json!({"phase":"approval","status":"not_approved"}));
         }
     }
     Ok(())
