@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from time import monotonic
 
-from .contained_php import CandidateFailure, EvaluationBlocked, PROBE_TIMEOUT, VERSION, observe
+from .contained_php import CandidateFailure, EvaluationBlocked, ProbeDeadlineExceeded, PROBE_TIMEOUT, VERSION, observe
 
 
 QUALIFICATION_BRIDGE = br"""<?php
@@ -82,10 +82,9 @@ def qualify(docker: Path, image_id: str, approved_guest: bool) -> dict:
         start = monotonic()
         try:
             probe("timeout")
-        except EvaluationBlocked as error:
+        except ProbeDeadlineExceeded:
             # observe() propagates cleanup failure instead of the original timeout.
-            report["checks"]["timeout_and_cleanup"] = (
-                str(error) == "container command deadline exceeded" and monotonic() - start >= PROBE_TIMEOUT - 1)
+            report["checks"]["timeout_and_cleanup"] = monotonic() - start >= PROBE_TIMEOUT - 1
         else:
             report["checks"]["timeout_and_cleanup"] = False
     except (EvaluationBlocked, CandidateFailure, OSError):

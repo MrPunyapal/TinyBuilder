@@ -34,6 +34,14 @@ class EvaluationBlocked(RuntimeError):
     """A named containment requirement could not be verified."""
 
 
+class ContainerCommandDeadline(EvaluationBlocked):
+    """A Docker CLI operation exceeded its deadline."""
+
+
+class ProbeDeadlineExceeded(EvaluationBlocked):
+    """The attach deadline expired and the probe container was removed."""
+
+
 class CandidateFailure(RuntimeError):
     """A terminated container or successful transport proved a probe failure."""
 
@@ -102,19 +110,19 @@ def _call(argv: list[str], cwd: Path, deadline_seconds: int, *, data: bytes = b"
                         selector.register(process.stdout, selectors.EVENT_READ)
                         while selector.select(max(0, deadline - monotonic())):
                             if monotonic() >= deadline:
-                                raise EvaluationBlocked("container command deadline exceeded")
+                                raise ContainerCommandDeadline("container command deadline exceeded")
                             part = os.read(process.stdout.fileno(), 8192)
                             if not part:
                                 return process.wait(timeout=max(0, deadline - monotonic())), bytes(result)
                             result.extend(part)
                             if len(result) > cap:
                                 raise EvaluationBlocked("container response exceeds output budget")
-                    raise EvaluationBlocked("container command deadline exceeded")
+                    raise ContainerCommandDeadline("container command deadline exceeded")
                 finally:
                     if process.poll() is None:
                         process.kill()
     except subprocess.TimeoutExpired:
-        raise EvaluationBlocked("container command deadline exceeded") from None
+        raise ContainerCommandDeadline("container command deadline exceeded") from None
     except OSError:
         raise EvaluationBlocked("container command unavailable") from None
 
@@ -287,8 +295,11 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
             if status != 0:
                 raise EvaluationBlocked("container creation rejected")
             _check_container(run, name, fixture)
-            status, raw = run(["container", "start", "--attach", "--interactive", name],
-                              PROBE_TIMEOUT, payload)
+            try:
+                status, raw = run(["container", "start", "--attach", "--interactive", name],
+                                  PROBE_TIMEOUT, payload)
+            except ContainerCommandDeadline:
+                raise ProbeDeadlineExceeded("probe attachment deadline exceeded") from None
             _verify_exit(run, name, status)
         finally:
             _cleanup(run, name)
