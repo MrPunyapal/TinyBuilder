@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from benchmarks.contained_corpus import TAX_PATH, score_tax
-from benchmarks.contained_php import EvaluationBlocked, Observation
+from benchmarks.contained_php import CandidateFailure, EvaluationBlocked, Observation
 
 
 class ContainedCorpusTests(unittest.TestCase):
@@ -61,3 +61,16 @@ class ContainedCorpusTests(unittest.TestCase):
         self.assertEqual(report["behavior"]["passed"], 1)
         self.assertEqual(report["behavior"]["blocked"], 1)
         self.assertEqual(report["behavior"]["remaining"], 3)
+
+    def test_candidate_failure_retains_failed_count_and_continues(self):
+        report = self.score([CandidateFailure("candidate_output"),
+                             EvaluationBlocked("untrusted detail")])
+        self.assertEqual(report["candidate_failures"], {"candidate_output": 1})
+        self.assertEqual(report["behavior"]["failed"], 1)
+        self.assertEqual(report["behavior"]["blocked"], 1)
+        self.assertEqual(report["behavior"]["remaining"], 3)
+
+    def test_protocol_mismatch_is_an_infrastructure_block(self):
+        report = self.score([Observation(0, "fixture", "image", protocol=-1)])
+        self.assertEqual(report["blocked_reason"], "identity_mismatch")
+        self.assertEqual(report["behavior"]["blocked"], 1)

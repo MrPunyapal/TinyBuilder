@@ -34,6 +34,16 @@ class EvaluationBlocked(RuntimeError):
     """A named containment requirement could not be verified."""
 
 
+class CandidateFailure(RuntimeError):
+    """A terminated container or successful transport proved a probe failure."""
+
+    def __init__(self, reason: str):
+        if reason not in ("candidate_exit", "candidate_resource", "candidate_output"):
+            raise ValueError("Unknown probe failure category")
+        super().__init__(reason)
+        self.reason = reason
+
+
 @dataclass(frozen=True)
 class Observation:
     # These are observations from untrusted PHP, never a qualification verdict.
@@ -230,6 +240,23 @@ def _cleanup(run, name: str) -> None:
             raise EvaluationBlocked("container cleanup could not be verified")
 
 
+def _verify_exit(run, name: str, attach_status: int) -> None:
+    status, raw = run(["container", "inspect", "--format", "{{json .State}}", name])
+    if status != 0:
+        raise EvaluationBlocked("probe execution state could not be verified")
+    state = _json(raw)
+    if (not isinstance(state, dict) or state.get("Status") != "exited"
+            or state.get("Running") is not False or state.get("Error") != ""
+            or type(state.get("ExitCode")) is not int or type(state.get("OOMKilled")) is not bool):
+        raise EvaluationBlocked("probe termination was not independently verified")
+    if state["OOMKilled"] and state["ExitCode"] != 0:
+        raise CandidateFailure("candidate_resource")
+    if state["OOMKilled"] or state["ExitCode"] != attach_status:
+        raise EvaluationBlocked("probe attachment and recorded exit differ")
+    if state["ExitCode"] != 0:
+        raise CandidateFailure("candidate_exit")
+
+
 def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], request: object,
             trusted_bridge: bytes, approved_guest: bool = False) -> Observation:
     """Run the pinned PHP probe. Only the outside caller may score its observations."""
@@ -243,7 +270,10 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
         root = Path(temp)
         fixture = root / "fixture"
         fixture.mkdir()
-        fixture_sha256 = _stage(fixture, {**fixtures, BRIDGE: trusted_bridge})
+        try:
+            fixture_sha256 = _stage(fixture, {**fixtures, BRIDGE: trusted_bridge})
+        except OSError:
+            raise EvaluationBlocked("fixture could not be staged") from None
         prefix = [str(docker), "--host", f"unix://{SOCKET}", "--config", temp]
 
         def run(args: list[str], timeout: int = CONTROL_TIMEOUT, data: bytes = b""):
@@ -259,8 +289,11 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
             _check_container(run, name, fixture)
             status, raw = run(["container", "start", "--attach", "--interactive", name],
                               PROBE_TIMEOUT, payload)
-            if status != 0:
-                raise EvaluationBlocked("container probe failed")
+            _verify_exit(run, name, status)
         finally:
             _cleanup(run, name)
-        return Observation(response=_json(raw), fixture_sha256=fixture_sha256, image_id=image_id)
+        try:
+            response = _json(raw)
+        except EvaluationBlocked:
+            raise CandidateFailure("candidate_output") from None
+        return Observation(response=response, fixture_sha256=fixture_sha256, image_id=image_id)

@@ -30,12 +30,15 @@ def configuration(stage):
 
 
 class FakeDocker:
-    def __init__(self, *, start_error=None, cleanup_residue=False, policy_change=None, response=b'{"value":9}'):
+    def __init__(self, *, start_error=None, cleanup_residue=False, policy_change=None,
+                 response=b'{"value":9}', attach_status=0, state_change=None):
         self.calls = []
         self.start_error = start_error
         self.cleanup_residue = cleanup_residue
         self.policy_change = policy_change
         self.response = response
+        self.attach_status = attach_status
+        self.state_change = state_change
 
     def __call__(self, argv, cwd, deadline_seconds, *, data):
         self.calls.append(argv[5:])
@@ -47,6 +50,11 @@ class FakeDocker:
         if args[:2] == ["container", "create"]:
             return 0, b"id"
         if args[:2] == ["container", "inspect"]:
+            if args[3] == "{{json .State}}":
+                state = {"Status": "exited", "Running": False, "Error": "",
+                         "ExitCode": self.attach_status, "OOMKilled": False}
+                state.update(self.state_change or {})
+                return 0, json.dumps(state).encode()
             policy = configuration(cwd / "fixture")
             if self.policy_change:
                 self.policy_change(policy)
@@ -55,7 +63,7 @@ class FakeDocker:
             if self.start_error:
                 raise self.start_error
             assert json.loads(data) == {"input": 8}
-            return 0, self.response
+            return self.attach_status, self.response
         if args[:2] == ["container", "rm"]:
             return 0, b""
         if args[:2] == ["container", "ls"]:
@@ -112,8 +120,8 @@ class ContainedPHPTests(unittest.TestCase):
                      "--cpus=1", "--memory=512m", "--memory-swap=512m", "--log-driver=none"):
             self.assertIn(flag, create)
         self.assertNotIn("--privileged", create)
-        self.assertEqual([call[:2] for call in engine.calls[-3:]],
-                         [["container", "start"], ["container", "rm"], ["container", "ls"]])
+        self.assertEqual([call[:2] for call in engine.calls[-4:]],
+                         [["container", "start"], ["container", "inspect"], ["container", "rm"], ["container", "ls"]])
         self.assertIsNone(getattr(observed, "passed", None))
 
     def test_broader_container_policy_is_blocked_before_start(self):
@@ -143,8 +151,19 @@ class ContainedPHPTests(unittest.TestCase):
     def test_untrusted_observation_must_be_strict_single_json(self):
         for raw in (b'{"value":1,"value":2}', b'9 10', b'{"x":NaN}', b'{"x":1e999}', b"\xff"):
             with self.subTest(raw=raw):
-                with self.assertRaisesRegex(runner.EvaluationBlocked, "invalid container observation"):
+                with self.assertRaisesRegex(runner.CandidateFailure, "candidate_output"):
                     run_fake(FakeDocker(response=raw))
+
+    def test_candidate_exit_requires_authoritative_state_and_successful_cleanup(self):
+        with self.assertRaisesRegex(runner.CandidateFailure, "candidate_exit"):
+            run_fake(FakeDocker(attach_status=17))
+        with self.assertRaisesRegex(runner.CandidateFailure, "candidate_resource"):
+            run_fake(FakeDocker(attach_status=137, state_change={"OOMKilled": True}))
+        for change in ({"Status": "created"}, {"Error": "daemon error"}, {"ExitCode": 0}):
+            with self.subTest(change=change), self.assertRaises(runner.EvaluationBlocked):
+                run_fake(FakeDocker(attach_status=17, state_change=change))
+        with self.assertRaisesRegex(runner.EvaluationBlocked, "cleanup"):
+            run_fake(FakeDocker(attach_status=17, cleanup_residue=True))
 
 
 if __name__ == "__main__":

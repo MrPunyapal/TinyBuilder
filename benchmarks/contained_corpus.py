@@ -3,7 +3,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .contained_php import EvaluationBlocked, MAX_FIXTURE_BYTES, observe
+from .contained_php import CandidateFailure, EvaluationBlocked, MAX_FIXTURE_BYTES, VERSION, observe
 
 
 TAX_PATH = "app/CodingV1/Tax.php"
@@ -27,6 +27,7 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
     }
     fixture_digest = None
     blocked_reason = None
+    candidate_failures = {}
     for net, exempt in cases:
         group = results["regression" if exempt else "behavior"]
         group["attempted"] += 1
@@ -34,14 +35,17 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
             event = observe(docker=docker, image_id=image_id, fixtures={TAX_PATH: candidate},
                             request={"net": net, "exempt": exempt}, trusted_bridge=TAX_BRIDGE,
                             approved_guest=approved_guest)
+        except CandidateFailure as error:
+            group["failed"] += 1
+            candidate_failures[error.reason] = candidate_failures.get(error.reason, 0) + 1
+            continue
         except EvaluationBlocked:
-            # The adapter cannot yet attribute all nonzero exits to the
-            # candidate rather than the daemon. Fail closed without logging
-            # arbitrary exception text or treating a blocked probe as a pass.
+            # Transport, timeout and cleanup uncertainty are not candidate failures.
             group["blocked"] += 1
             blocked_reason = "probe_blocked_unattributed"
             break
-        if event.image_id != image_id or (fixture_digest is not None and event.fixture_sha256 != fixture_digest):
+        if (event.protocol != VERSION or event.image_id != image_id
+                or (fixture_digest is not None and event.fixture_sha256 != fixture_digest)):
             group["blocked"] += 1
             blocked_reason = "identity_mismatch"
             break
@@ -53,7 +57,7 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
         group["remaining"] = group["total"] - group["attempted"]
     return {"task": "exempt_tax", "image_id": image_id, "fixture_sha256": fixture_digest,
             "status": "blocked" if blocked_reason else "completed",
-            "blocked_reason": blocked_reason, **results}
+            "blocked_reason": blocked_reason, "candidate_failures": candidate_failures, **results}
 
 
 def main():
