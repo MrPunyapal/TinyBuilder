@@ -8,11 +8,10 @@ milestone, owner, blocker or evidence changes materially.
 
 ## Current milestone: Coding Intelligence v1
 
-Improve the edit representation and repository context before selecting or
-training a new model. Use existing 1.5B and 3B GGUFs in matched diagnostics;
-expand from narrow fixtures to independent behavioral tests across repositories.
-No new downloads or training authorized. The research roadmap is not a
-release contract.
+Qualify the isolated PHP evaluator, then score broader coding tasks using
+exact-text edits and selective lexical retrieval. Use the existing 1.5B
+and research-only 3B weights. Candidate model downloads and training remain
+deferred. Follow the [contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
 
 | Workstream | Snapshot and next action |
 | --- | --- |

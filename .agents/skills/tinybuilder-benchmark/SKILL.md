@@ -20,3 +20,9 @@ and runtime failures separately. Record all attempts, missing trials, hashes,
 tokens, latency, peak RAM/VRAM where measured; unavailable metrics are null.
 Fake tests qualify infrastructure only. Do not alter the release oracle.
 Keep reports sanitized and record negative results. Use knowledge-maintenance.
+
+Before running generated PHP, verify the offline outer guest and run the
+[trusted isolation probes](../../../docs/research/2026-11-27-contained-qualification.md).
+Count an exit as a candidate failure only when the container state proves it
+and cleanup succeeds. Keep unverified transport, timeouts and cleanup
+failures in the blocked denominator.
