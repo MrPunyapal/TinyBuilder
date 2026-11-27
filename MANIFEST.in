@@ -1,4 +1,5 @@
 include benchmarks/*.py
+include benchmarks/contained_php_probe.php
 include benchmarks/README.md benchmarks/RETEST.md
 recursive-include docs *.md
 include examples/mcp.json

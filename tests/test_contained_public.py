@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 from benchmarks.contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, Observation, VERSION
 from benchmarks.contained_public import (
-    BOOKING, BOOKING_RULES, PARCEL_INTAKE, PARCEL_LIMIT, TIMING, score_public,
+    BOOKING, BOOKING_RULES, PARCEL_INTAKE, PARCEL_LIMIT, TIMING, LISTING, ITEM,
+    FRAMEWORK_VERSION, FRAMEWORK_CHECK, _matches, score_public,
 )
 
 
@@ -114,3 +115,43 @@ class ContainedPublicTests(unittest.TestCase):
         self.assertEqual(report["blocked_reason"], "guest_qualification_failed")
         self.assertEqual([report[k] for k in ("planned", "attempted", "passed", "failed", "blocked", "remaining")],
                          [10, 0, 0, 0, 0, 10])
+
+    def test_framework_requires_exact_lock_and_preflight_before_candidate(self):
+        lock = "a" * 64
+        with patch("benchmarks.contained_public.require_qualified_guest") as qualify:
+            with self.assertRaises(ValueError):
+                score_public("available_stock", {LISTING: b"candidate"}, docker=Path("/unused"),
+                             image_id=IMAGE, approved_guest=True)
+            qualify.assert_not_called()
+        with (patch("benchmarks.contained_public.require_qualified_guest"),
+              patch("benchmarks.contained_public.observe", return_value=Observation({}, "fixture", IMAGE)) as observe):
+            report = score_public("available_stock", {LISTING: b"candidate"}, docker=Path("/unused"),
+                                  image_id=IMAGE, approved_guest=True, framework_lock_sha256=lock)
+        self.assertEqual(report["blocked_reason"], "framework_identity_unverified")
+        self.assertEqual(report["attempted"], 0)
+        self.assertEqual(report["remaining"], 3)
+        observe.assert_called_once()
+        self.assertEqual(observe.call_args.kwargs["fixtures"], {"fixture-marker": b"framework-preflight"})
+
+    def test_framework_preflight_and_trusted_dependency(self):
+        lock = "b" * 64
+        events = []
+        def observe(**call):
+            events.append(call)
+            if len(events) == 1:
+                self.assertEqual(call["trusted_bridge"], FRAMEWORK_CHECK)
+                return Observation({"version": FRAMEWORK_VERSION, "lock_sha256": lock,
+                                    "sqlite": True, "validator": True, "response": True}, "preflight", IMAGE)
+            self.assertEqual(set(call["fixtures"]), {ITEM, LISTING})
+            self.assertEqual(call["fixtures"][LISTING], b"candidate")
+            return Observation([2] if len(events) == 2 else [71] if len(events) == 3 else False,
+                               "fixture", IMAGE)
+        report = self.score("available_stock", {LISTING: b"candidate"}, observe, framework_lock_sha256=lock)
+        self.assertEqual(report["passed"], 3)
+        self.assertEqual(len(events), 4)
+
+    def test_structured_observations_are_type_strict_at_every_depth(self):
+        self.assertFalse(_matches([True], [1]))
+        self.assertFalse(_matches({"data": {"listed": 0}}, {"data": {"listed": False}}))
+        self.assertTrue(_matches({"data": {"listed": False}}, {"data": {"listed": False}}))
+        self.assertFalse(_matches([2, 1], [1, 2]))

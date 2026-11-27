@@ -35,6 +35,7 @@ class BlockedReason(str, Enum):
     UNATTRIBUTED = "probe_blocked_unattributed"
     GUEST = "approved_guest_unavailable"
     QUALIFICATION = "guest_qualification_failed"
+    FRAMEWORK = "framework_identity_unverified"
     DAEMON = "docker_unavailable"
     IMAGE = "image_unverified"
     STAGING = "fixture_staging_failed"

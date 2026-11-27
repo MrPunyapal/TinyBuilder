@@ -1,10 +1,13 @@
 """Execute only checked-in trusted corpus controls, never model/candidate input.
 
 The subprocess adapter exists in this test module only. It does not exercise
-Docker, guest isolation or inference. No vendor or framework is needed.
+Docker, guest isolation or inference. The optional framework suite uses
+only a reviewed disposable Laravel dependency tree supplied by trusted CI.
 """
 import hashlib
 import json
+import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -20,17 +23,20 @@ from benchmarks.contained_public import TASKS, score_public
 PHP = shutil.which("php")
 IMAGE = "sha256:" + "1" * 64
 ROOT = Path(__file__).resolve().parents[1]
+LARAVEL = os.environ.get("TINYBUILDER_TRUSTED_LARAVEL")
 SUPPORTED = {
     "patient_visibility": 9, "urgent_reminders": 2, "booking_availability": 14,
     "exempt_tax": 9, "priority_normalization": 4, "deadline_boundary": 10,
     "rural_quote": 6, "parcel_weight": 18,
 }
 
+FRAMEWORK = {"contact_channel": 7, "available_stock": 3, "group_inventory": 3, "listing_response": 2}
 
-def controls():
+
+def controls(names=SUPPORTED):
     for _, files, tasks in REPOSITORIES.values():
         for task in tasks:
-            if task.name not in SUPPORTED:
+            if task.name not in names:
                 continue
             baseline, reference, wrong = {}, {}, {}
             for (cls, old, new), replacement in zip(task.changes, WRONG_REPLACEMENTS[task.name], strict=True):
@@ -61,25 +67,39 @@ def controls():
 
 class TrustedBridgeInventoryTests(unittest.TestCase):
     def test_exact_public_pure_php_coverage(self):
-        self.assertEqual(set(TASKS) | {"exempt_tax"}, set(SUPPORTED))
+        self.assertEqual(set(TASKS) | {"exempt_tax"}, set(SUPPORTED) | set(FRAMEWORK))
         self.assertEqual(sum(SUPPORTED.values()), 72)
         self.assertEqual({name for name, _ in controls()}, set(SUPPORTED))
+        self.assertEqual({name for name, _ in controls(FRAMEWORK)}, set(FRAMEWORK))
+        self.assertEqual(sum(FRAMEWORK.values()), 15)
         for name, spec in TASKS.items():
-            self.assertEqual(len(spec.probes), SUPPORTED[name])
+            self.assertEqual(len(spec.probes), (FRAMEWORK if spec.framework else SUPPORTED)[name])
 
 
 @unittest.skipUnless(PHP, "PHP unavailable; trusted bridge controls not executed")
 class TrustedBridgeTests(unittest.TestCase):
     def test_reference_wrong_seeded_and_adversarial_controls(self):
-        # No arbitrary bytes, command arguments or file paths enter this test
-        # from users, a model, Git worktrees, environment or fixture transfer.
-        for name, variants in controls():
+        self.run_controls(SUPPORTED)
+
+    @unittest.skipUnless(LARAVEL, "Trusted Laravel dependency tree not supplied")
+    def test_framework_reference_wrong_seeded_and_adversarial_controls(self):
+        framework = Path(LARAVEL).resolve(strict=True)
+        self.assertRegex(framework.as_posix(), r"^/[A-Za-z0-9_./-]+$")
+        self.assertTrue((framework / "vendor/autoload.php").is_file())
+        self.run_controls(FRAMEWORK, framework)
+
+    def run_controls(self, names, framework=None):
+        # Candidate fixtures are only repository-authored controls.
+        for name, variants in controls(names):
             for variant, files in variants.items():
                 with self.subTest(task=name, variant=variant):
-                    allowed = [files]
+                    dependencies = dict(TASKS[name].trusted_files) if name in TASKS else {}
+                    allowed = [{**dependencies, **files}]
+                    if framework is not None:
+                        allowed.append({"fixture-marker": b"framework-preflight"})
                     if name in TASKS and TASKS[name].policy_variant:
                         path, content = TASKS[name].policy_variant
-                        allowed.append({**files, path: content})
+                        allowed.append({**dependencies, **files, path: content})
 
                     def trusted_observe(*, fixtures, request, trusted_bridge, **kwargs):
                         self.assertIn(fixtures, allowed)
@@ -92,11 +112,13 @@ class TrustedBridgeTests(unittest.TestCase):
                             # Use relative paths only in trusted, checked-in bridge
                             # and entrypoint. The production paths remain unchanged.
                             bridge = trusted_bridge.replace(b"'/fixture/", b"__DIR__ . '/")
+                            if framework is not None:
+                                bridge = bridge.replace(b"/tinybuilder/laravel/", (framework.as_posix() + "/").encode())
                             (root / "probe_entry.php").write_bytes(bridge)
                             entry = (ROOT / "benchmarks/contained_php_probe.php").read_bytes()
                             (root / "probe.php").write_bytes(entry.replace(b"'/fixture/", b"__DIR__ . '/"))
                             result = subprocess.run(
-                                [PHP, "-n", str(root / "probe.php")], cwd=root,
+                                [PHP, *(["-n"] if framework is None else ["-d", "opcache.enable_cli=0"]), str(root / "probe.php")], cwd=root,
                                 input=json.dumps(request).encode(), capture_output=True, timeout=5,
                             )
                             self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
@@ -114,12 +136,14 @@ class TrustedBridgeTests(unittest.TestCase):
                             passed = sum(report[phase]["passed"] for phase in ("behavior", "regression"))
                             failed = sum(report[phase]["failed"] for phase in ("behavior", "regression"))
                         else:
+                            if framework is not None:
+                                kwargs["framework_lock_sha256"] = hashlib.sha256((framework / "composer.lock").read_bytes()).hexdigest()
                             report = score_public(name, files, **kwargs)
                             passed, failed = report["passed"], report["failed"]
                     self.assertEqual(report["status"], "completed")
-                    self.assertEqual(passed + failed, SUPPORTED[name])
+                    self.assertEqual(passed + failed, names[name])
                     if variant == "reference":
-                        self.assertEqual(passed, SUPPORTED[name])
+                        self.assertEqual(passed, names[name])
                     else:
                         self.assertGreater(failed, 0)
                         if variant == "hardcoded":

@@ -198,3 +198,33 @@ workflows passed; native rewrite and package workflows were running.
 The current bridge expansion needs exact-head CI. Direct GitHub access
 from the review container failed DNS; repository changes were made via
 the connected GitHub API. No candidate, guest, model, or private data ran.
+
+## Framework bridge implementation and source packaging correction
+
+At 919bf89, checkout Python 3.13 passed all 278 tests, including actual
+trusted PHP controls; the extracted sdist failed because it omitted
+benchmarks/contained_php_probe.php (34 errors). Other five retrieved
+workflows passed. The manifest now includes that exact trusted PHP asset;
+no tests were skipped to mask the failure.
+
+The framework bridge source now covers contact validation (7), stock
+listing (3), group inventory (3), and listing response (2). Together with
+72 dependency-free probes, all 12 public tasks have 87 planned observations.
+The real Laravel/Illuminate bootstrap is required, not stubs. The image
+must supply the reviewed app and Composer dependencies under
+/tinybuilder/laravel. Framework tasks require an explicit reviewed
+composer.lock SHA-256 and verify version 13.42.0, lock identity, SQLite,
+validation and response capabilities with a trusted preflight before any
+candidate bytes. The fixed Item dependency is staged from reviewed source,
+not candidate input. Nested observation types are compared strictly.
+A narrowly scoped trusted CI workflow uses the existing project Laravel
+version pins; it resolves transitive dependencies and logs the lock digest,
+which is development evidence, not an approved image or frozen release
+lock. Tests run only repository-authored controls. No arbitrary candidate
+execution, Docker, weights or private fixtures on CI.
+
+Full HTTP route validation, independently held private fixtures, exact
+reviewed offline image construction and live guest qualification remain
+separate gates. An app that boots in ordinary CI may still fail in the
+read-only container; live trusted preflight must establish that. Keep the
+personal Windows host outside provisioning.
