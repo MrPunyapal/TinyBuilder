@@ -140,11 +140,14 @@ class ContainedPHPTests(unittest.TestCase):
                              [["container", "rm"], ["container", "ls"]])
 
     def test_timeout_cleanup_and_unverified_cleanup_are_fail_closed(self):
-        engine = FakeDocker(start_error=runner.ContainerCommandDeadline("container command deadline exceeded"))
+        deadline = runner.ContainerCommandDeadline("container command deadline exceeded")
+        engine = FakeDocker(start_error=deadline, state_change={"Status": "running", "Running": True})
         with self.assertRaisesRegex(runner.ProbeDeadlineExceeded, "deadline"):
             run_fake(engine)
         self.assertEqual([call[:2] for call in engine.calls[-2:]],
                          [["container", "rm"], ["container", "ls"]])
+        with self.assertRaisesRegex(runner.EvaluationBlocked, "without proof"):
+            run_fake(FakeDocker(start_error=deadline))
         with self.assertRaisesRegex(runner.EvaluationBlocked, "cleanup"):
             run_fake(FakeDocker(cleanup_residue=True))
 

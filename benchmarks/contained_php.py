@@ -248,13 +248,19 @@ def _cleanup(run, name: str) -> None:
             raise EvaluationBlocked("container cleanup could not be verified")
 
 
-def _verify_exit(run, name: str, attach_status: int) -> None:
+def _execution_state(run, name: str) -> dict:
     status, raw = run(["container", "inspect", "--format", "{{json .State}}", name])
     if status != 0:
         raise EvaluationBlocked("probe execution state could not be verified")
     state = _json(raw)
-    if (not isinstance(state, dict) or state.get("Status") != "exited"
-            or state.get("Running") is not False or state.get("Error") != ""
+    if not isinstance(state, dict) or state.get("Error") != "":
+        raise EvaluationBlocked("probe execution state could not be verified")
+    return state
+
+
+def _verify_exit(run, name: str, attach_status: int) -> None:
+    state = _execution_state(run, name)
+    if (state.get("Status") != "exited" or state.get("Running") is not False
             or type(state.get("ExitCode")) is not int or type(state.get("OOMKilled")) is not bool):
         raise EvaluationBlocked("probe termination was not independently verified")
     if state["OOMKilled"] and state["ExitCode"] != 0:
@@ -299,6 +305,9 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
                 status, raw = run(["container", "start", "--attach", "--interactive", name],
                                   PROBE_TIMEOUT, payload)
             except ContainerCommandDeadline:
+                state = _execution_state(run, name)
+                if state.get("Status") != "running" or state.get("Running") is not True:
+                    raise EvaluationBlocked("deadline expired without proof of a running probe") from None
                 raise ProbeDeadlineExceeded("probe attachment deadline exceeded") from None
             _verify_exit(run, name, status)
         finally:
