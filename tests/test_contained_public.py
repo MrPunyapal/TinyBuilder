@@ -5,7 +5,7 @@ from unittest.mock import patch
 from benchmarks.contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, Observation, VERSION
 from benchmarks.contained_public import (
     BOOKING, BOOKING_RULES, PARCEL_INTAKE, PARCEL_LIMIT, TIMING, LISTING, ITEM,
-    FRAMEWORK_VERSION, FRAMEWORK_CHECK, _matches, score_public,
+    FRAMEWORK_VERSION, FRAMEWORK_CHECK, ROUTE_PATH, ROUTE_REFERENCE, ROUTE_PROBES, _matches, score_public,
 )
 
 
@@ -155,3 +155,21 @@ class ContainedPublicTests(unittest.TestCase):
         self.assertFalse(_matches({"data": {"listed": 0}}, {"data": {"listed": False}}))
         self.assertTrue(_matches({"data": {"listed": False}}, {"data": {"listed": False}}))
         self.assertFalse(_matches([2, 1], [1, 2]))
+
+    def test_route_kernel_preflight_blocks_before_candidate_bytes(self):
+        lock = "c" * 64
+        good = {"version": FRAMEWORK_VERSION, "lock_sha256": lock,
+                "sqlite": True, "validator": True, "response": True}
+        events = []
+        def observe(**call):
+            events.append(call)
+            if len(events) == 1:
+                return Observation(good, "preflight", IMAGE)
+            self.assertEqual(call["fixtures"], {ROUTE_PATH: ROUTE_REFERENCE})
+            return Observation({"unexpected": True}, "trusted-route", IMAGE)
+        report = self.score("route_validation", {ROUTE_PATH: b"candidate"}, observe, framework_lock_sha256=lock)
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["blocked_reason"], "framework_identity_unverified")
+        self.assertEqual(report["attempted"], 0)
+        self.assertEqual(report["remaining"], len(ROUTE_PROBES))
+        self.assertEqual(len(events), 2)

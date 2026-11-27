@@ -8,6 +8,7 @@ import re
 from .coding_v1_corpus import REPOSITORIES, source
 from .contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, MAX_FIXTURE_BYTES, VERSION, observe
 from .qualify_contained_php import require_qualified_guest
+from .validation_case import BAD_ROUTE, reference_fixed_route
 
 
 @dataclass(frozen=True)
@@ -79,7 +80,82 @@ $schema->create('items', function ($table) {
 """
 TRUSTED_ITEM = ((ITEM, REPOSITORIES["catalog"][1]["Item"].encode()),)
 
+# A distinct public HTTP task, not an extra member of the 12-task corpus.
+ROUTE_PATH = "routes/web.php"
+ROUTE_SEED = (
+    "<?php\nuse Illuminate\\Support\\Facades\\Route;\n"
+    "Route::get('/', function () { return view('welcome'); });\n"
+    + BAD_ROUTE
+    + "\nRoute::get('/tinybuilder-preserve-contained', fn () => "
+      "response()->json(['marker'=>'preserve-contained']));\n"
+)
+ROUTE_REFERENCE = reference_fixed_route(ROUTE_SEED).encode()
+ROUTE_BRIDGE = br"""<?php
+declare(strict_types=1);
+// Fixed test-only app settings; no deployment secrets or persistent storage.
+foreach ([
+    'APP_ENV'=>'testing', 'APP_DEBUG'=>'false',
+    'APP_KEY'=>'base64:' . base64_encode(str_repeat('x', 32)),
+    'SESSION_DRIVER'=>'array', 'CACHE_STORE'=>'array',
+    'LOG_CHANNEL'=>'stderr', 'VIEW_COMPILED_PATH'=>sys_get_temp_dir(),
+    'APP_CONFIG_CACHE'=>sys_get_temp_dir() . '/tb-config-' . getmypid() . '.php',
+    'APP_ROUTES_CACHE'=>sys_get_temp_dir() . '/tb-routes-' . getmypid() . '.php',
+] as $key=>$value) {
+    putenv($key . '=' . $value);
+    $_ENV[$key] = $_SERVER[$key] = $value;
+}
+require '/tinybuilder/laravel/vendor/autoload.php';
+$app = \Illuminate\Foundation\Application::configure(basePath: '/tinybuilder/laravel/')
+    ->withRouting(web: '/fixture/routes/web.php', health: '/up')
+    ->withMiddleware(function (\Illuminate\Foundation\Configuration\Middleware $middleware): void {})
+    ->withExceptions(function (\Illuminate\Foundation\Configuration\Exceptions $exceptions): void {})
+    ->create();
+return static function (mixed $input) use ($app): mixed {
+    $request = \Illuminate\Http\Request::create(
+        $input['uri'], $input['method'], [], [], [],
+        ['HTTP_ACCEPT'=>'application/json', 'CONTENT_TYPE'=>'application/json'],
+        json_encode($input['data'], JSON_THROW_ON_ERROR)
+    );
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    $response = $kernel->handle($request);
+    $status = $response->getStatusCode();
+    $body = json_decode($response->getContent(), true);
+    $kernel->terminate($request, $response);
+    if ($input['observation'] === 'status') {
+        return $status;
+    }
+    if ($input['observation'] === 'errors') {
+        $errors = is_array($body['errors'] ?? null) ? array_keys($body['errors']) : [];
+        sort($errors);
+        return ['status'=>$status, 'errors'=>$errors];
+    }
+    return ['status'=>$status, 'data'=>$body];
+};
+"""
+
+
+def _route_probe(phase, data, expected, *, uri="/tinybuilder/contact", method="POST", observation="errors"):
+    return Probe(phase, {"uri": uri, "method": method, "data": data, "observation": observation}, expected)
+
+
+ROUTE_PROBES = (
+    _route_probe("behavior", {"email": "invalid-email", "message": "x"}, {"status": 422, "errors": ["email", "message"]}),
+    _route_probe("behavior", {}, {"status": 422, "errors": ["email", "message"]}),
+    _route_probe("behavior", {"email": "not-an-email", "message": "Valid message"}, {"status": 422, "errors": ["email"]}),
+    _route_probe("behavior", {"email": "tinybuilder@example.test", "message": "ab"}, {"status": 422, "errors": ["message"]}),
+    _route_probe("behavior", {"email": "tinybuilder@example.test", "message": ["a", "b", "c"]}, {"status": 422, "errors": ["message"]}),
+    _route_probe("regression", {"email": "tinybuilder@example.test", "message": "A real message"},
+                 {"status": 200, "data": {"accepted": True}}, observation="body"),
+    _route_probe("regression", {"email": "tinybuilder@example.test", "message": "abc"},
+                 {"status": 200, "data": {"accepted": True}}, observation="body"),
+    _route_probe("regression", {}, 200, uri="/", method="GET", observation="status"),
+    _route_probe("regression", {}, {"status": 200, "data": {"marker": "preserve-contained"}},
+                 uri="/tinybuilder-preserve-contained", method="GET", observation="body"),
+)
+
+
 TASKS = {
+    "route_validation": PublicTask((ROUTE_PATH,), ROUTE_BRIDGE, ROUTE_PROBES, framework=True),
     "contact_channel": PublicTask(
         (CONTACT,),
         FRAMEWORK_BOOT + br"""
@@ -276,6 +352,20 @@ def require_framework(docker: Path, image_id: str, approved_guest: bool, lock_sh
         raise EvaluationBlocked("Framework identity or capabilities differ", reason=BlockedReason.FRAMEWORK)
 
 
+def require_route_kernel(docker: Path, image_id: str, approved_guest: bool) -> None:
+    # Establish actual HTTP kernel and view capability using trusted source.
+    for index in (0, 5, 7, 8):
+        probe = ROUTE_PROBES[index]
+        try:
+            event = observe(docker=docker, image_id=image_id, approved_guest=approved_guest,
+                            fixtures={ROUTE_PATH: ROUTE_REFERENCE}, request=probe.request,
+                            trusted_bridge=ROUTE_BRIDGE)
+        except CandidateFailure:
+            raise EvaluationBlocked("Trusted HTTP kernel probe failed", reason=BlockedReason.FRAMEWORK) from None
+        if event.image_id != image_id or event.protocol != VERSION or not _matches(event.response, probe.expected):
+            raise EvaluationBlocked("Trusted HTTP kernel capability differs", reason=BlockedReason.FRAMEWORK)
+
+
 def score_public(task: str, candidates: dict[str, bytes], *, docker: Path, image_id: str,
                  approved_guest: bool, feedback_only: bool = False,
                  framework_lock_sha256: str | None = None) -> dict:
@@ -315,6 +405,8 @@ def score_public(task: str, candidates: dict[str, bytes], *, docker: Path, image
         require_qualified_guest(docker, image_id, approved_guest)
         if spec.framework:
             require_framework(docker, image_id, approved_guest, framework_lock_sha256)
+        if task == "route_validation":
+            require_route_kernel(docker, image_id, approved_guest)
     except EvaluationBlocked as error:
         blocked_reason = error.reason
     for case in (() if blocked_reason else cases):

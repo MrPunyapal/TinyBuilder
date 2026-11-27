@@ -228,3 +228,29 @@ reviewed offline image construction and live guest qualification remain
 separate gates. An app that boots in ordinary CI may still fail in the
 read-only container; live trusted preflight must establish that. Keep the
 personal Windows host outside provisioning.
+
+## Separate public HTTP route bridge
+
+At 1554af7, the dedicated real Laravel trusted-control workflow
+[46000801927](https://github.com/MrPunyapal/TinyBuilder/actions/runs/46000801927)
+passed with no inference and no Docker execution. All 12 corpus tasks now
+have implemented and trusted-control-tested bridges. Source-distribution
+verification and remaining native CI were still running at this inspection.
+
+The separate route_validation bridge uses a real Laravel HTTP kernel over
+the candidate routes/web.php and trusted image app dependencies. Nine
+observations cover malformed/missing fields, wrong message type, exact
+minimum length, valid responses, home and a fixed sibling route. Expected
+observations stay outside PHP. A trusted reference HTTP preflight runs
+before any candidate can be blamed for app bootstrap, view or validation
+failures. Uses test-only fixed settings, array cache/session, temporary
+compiled views and no production secrets. This is a separate public
+evaluation, not a change to the historical full PHPUnit oracle. Actual
+read-only guest behavior still needs qualification.
+
+Next physical-access step is only to reconcile and verify already present
+trusted model/runtime identities and, if separately approved, conduct
+inference-only proposal generation on disposable public source. Do not
+execute those proposals, provision Windows, transfer private data or
+download weights. The isolated evaluator needs separate approval; local
+Codex access alone is not approval to run generated code.

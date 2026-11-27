@@ -91,8 +91,10 @@ PRs remain open; their useful proposal paths, historical evidence and controls
 are retained, while legacy generated-code execution is intentionally disabled.
 All twelve public corpus tasks have bridge source (87 reference observations):
 eight dependency-free and four real Laravel-dependent. Exact-lock and capability
-preflight is required for the latter. Trusted control CI must pass; live guest,
-full route validation and private bridges remain separate gates.
+preflight is required for the latter. Trusted control CI must pass; live guest
+and private bridges remain separate gates. A separate real-HTTP route
+validation bridge adds nine probes without changing the original PHPUnit
+oracle; its trusted CI must pass.
 Continue trusted model-free tests and prepare portable evaluation on a separately approved Linux environment.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.

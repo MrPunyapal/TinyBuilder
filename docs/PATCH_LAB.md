@@ -39,8 +39,10 @@ controls. It does not invoke the model or evaluate a generated patch.
 The old invocation that applied a model patch and then ran local PHPUnit
 is historical, not an authorized execution path. See the
 [contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
-Do not revive it merely because a human approves a diff. The contained
-public scorer does not yet cover full Laravel route validation.
+Do not revive it merely because a human approves a diff. The separate public HTTP bridge now exercises a real Laravel kernel, field
+errors, exact successful responses, home and sibling routes. It is not a
+replacement for the original full PHPUnit oracle. It requires the separately
+approved evaluator and exact framework lock preflight.
 
 Lab apply requires explicit permission plus per-patch approval, complete
 fresh source evidence and exact unique replacement. Patches are bound to

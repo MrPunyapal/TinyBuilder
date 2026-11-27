@@ -18,7 +18,7 @@ from unittest.mock import patch
 from benchmarks.coding_v1_corpus import REPOSITORIES, WRONG_REPLACEMENTS, NARROW_WITNESSES
 from benchmarks.contained_corpus import TAX_PATH, score_tax
 from benchmarks.contained_php import Observation
-from benchmarks.contained_public import TASKS, score_public
+from benchmarks.contained_public import TASKS, ROUTE_PATH, ROUTE_SEED, ROUTE_REFERENCE, score_public
 
 PHP = shutil.which("php")
 IMAGE = "sha256:" + "1" * 64
@@ -31,9 +31,17 @@ SUPPORTED = {
 }
 
 FRAMEWORK = {"contact_channel": 7, "available_stock": 3, "group_inventory": 3, "listing_response": 2}
+ROUTES = {"route_validation": 9}
 
 
 def controls(names=SUPPORTED):
+    if "route_validation" in names:
+        yield "route_validation", {
+            "baseline": {ROUTE_PATH: ROUTE_SEED.encode()},
+            "reference": {ROUTE_PATH: ROUTE_REFERENCE},
+            "wrong": {ROUTE_PATH: ROUTE_REFERENCE.replace(b"'required', 'email'", b"'required'")},
+            "lost_sibling": {ROUTE_PATH: ROUTE_REFERENCE.split(b"Route::get('/tinybuilder-preserve-contained'")[0]},
+        }
     for _, files, tasks in REPOSITORIES.values():
         for task in tasks:
             if task.name not in names:
@@ -67,13 +75,13 @@ def controls(names=SUPPORTED):
 
 class TrustedBridgeInventoryTests(unittest.TestCase):
     def test_exact_public_pure_php_coverage(self):
-        self.assertEqual(set(TASKS) | {"exempt_tax"}, set(SUPPORTED) | set(FRAMEWORK))
+        self.assertEqual(set(TASKS) | {"exempt_tax"}, set(SUPPORTED) | set(FRAMEWORK) | set(ROUTES))
         self.assertEqual(sum(SUPPORTED.values()), 72)
         self.assertEqual({name for name, _ in controls()}, set(SUPPORTED))
         self.assertEqual({name for name, _ in controls(FRAMEWORK)}, set(FRAMEWORK))
         self.assertEqual(sum(FRAMEWORK.values()), 15)
         for name, spec in TASKS.items():
-            self.assertEqual(len(spec.probes), (FRAMEWORK if spec.framework else SUPPORTED)[name])
+            self.assertEqual(len(spec.probes), ({**SUPPORTED, **FRAMEWORK, **ROUTES})[name])
 
 
 @unittest.skipUnless(PHP, "PHP unavailable; trusted bridge controls not executed")
@@ -87,6 +95,7 @@ class TrustedBridgeTests(unittest.TestCase):
         self.assertRegex(framework.as_posix(), r"^/[A-Za-z0-9_./-]+$")
         self.assertTrue((framework / "vendor/autoload.php").is_file())
         self.run_controls(FRAMEWORK, framework)
+        self.run_controls(ROUTES, framework)
 
     def run_controls(self, names, framework=None):
         # Candidate fixtures are only repository-authored controls.
@@ -97,6 +106,8 @@ class TrustedBridgeTests(unittest.TestCase):
                     allowed = [{**dependencies, **files}]
                     if framework is not None:
                         allowed.append({"fixture-marker": b"framework-preflight"})
+                    if name == "route_validation":
+                        allowed.append({ROUTE_PATH: ROUTE_REFERENCE})
                     if name in TASKS and TASKS[name].policy_variant:
                         path, content = TASKS[name].policy_variant
                         allowed.append({**dependencies, **files, path: content})
