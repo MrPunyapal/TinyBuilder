@@ -1,0 +1,54 @@
+{
+  "scope": "diagnostic replay, excluded from the 30 paired smoke trials",
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "models": {
+    "1.5B": {
+      "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "events": [
+        {
+          "ready_ms": 1691
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "protocol",
+          "completion_tokens": 55,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 2882,
+          "prompt_tokens": 230,
+          "proposal_detail": "invalid_replacement",
+          "request_json_bytes": 1462
+        }
+      ]
+    },
+    "3B": {
+      "sha256": "4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+      "events": [
+        {
+          "ready_ms": 3315
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "output_limit",
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 68870,
+          "proposal_detail": "other",
+          "request_json_bytes": 1462
+        }
+      ]
+    }
+  }
+}

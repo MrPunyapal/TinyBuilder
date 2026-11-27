@@ -1,0 +1,656 @@
+{
+  "scope": "trusted synthetic PHP controls only",
+  "corpus_source_sha256": "13cdf0874558567c5b347797a00420cbd7b1940564fa457267db8c35da3b13eb",
+  "initial_default_cli_opcache": {
+    "laravel_skeleton": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+    "composer_lock_sha256": "bb99c0775487693b15a617a632d635f0a35167d9ed8c3c6bb7769ef8583f6525",
+    "evaluator": "trusted source controls only",
+    "control_order": [
+      "behavior",
+      "regression"
+    ],
+    "repositories": {
+      "clinic": {
+        "split": "development",
+        "commit": "9b1f905be29266d24d5f86b71c35a85a17ab3656",
+        "tasks": [
+          {
+            "task": "contact_channel",
+            "family": "validation",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null
+          },
+          {
+            "task": "patient_visibility",
+            "family": "authorization",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ]
+          },
+          {
+            "task": "urgent_reminders",
+            "family": "business_logic",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null
+          },
+          {
+            "task": "booking_availability",
+            "family": "multi_file_repair",
+            "changed_files": 2,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {
+              "BookingRules": 1,
+              "Booking": 1
+            },
+            "policy_variation": {
+              "reference_under_variant": 0,
+              "hardcoded_under_default": [
+                0,
+                0
+              ],
+              "hardcoded_under_variant": 1
+            },
+            "narrow_witness": null
+          }
+        ]
+      },
+      "catalog": {
+        "split": "validation",
+        "commit": "37d7c48b8e4ec9a866fa93f80a2df21e85e5260a",
+        "tasks": [
+          {
+            "task": "available_stock",
+            "family": "eloquent_query",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ]
+          },
+          {
+            "task": "group_inventory",
+            "family": "eloquent_relationship",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null
+          },
+          {
+            "task": "exempt_tax",
+            "family": "feature",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ]
+          },
+          {
+            "task": "listing_response",
+            "family": "controller",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null
+          }
+        ]
+      },
+      "dispatch": {
+        "split": "public-challenge",
+        "commit": "715351323ff2d5053e95458bd86a0a0d7d4b8bfb",
+        "tasks": [
+          {
+            "task": "priority_normalization",
+            "family": "unfamiliar_repository",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null
+          },
+          {
+            "task": "deadline_boundary",
+            "family": "test_feedback",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              1,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ]
+          },
+          {
+            "task": "rural_quote",
+            "family": "service",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ]
+          },
+          {
+            "task": "parcel_weight",
+            "family": "multi_file_repair",
+            "changed_files": 2,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {
+              "ParcelLimit": 1,
+              "ParcelIntake": 1
+            },
+            "policy_variation": {
+              "reference_under_variant": 0,
+              "hardcoded_under_default": [
+                0,
+                0
+              ],
+              "hardcoded_under_variant": 1
+            },
+            "narrow_witness": null
+          }
+        ]
+      }
+    }
+  },
+  "verified_replay_cli_opcache_disabled": {
+    "laravel_skeleton": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+    "composer_lock_sha256": "bb99c0775487693b15a617a632d635f0a35167d9ed8c3c6bb7769ef8583f6525",
+    "evaluator": "trusted source controls only",
+    "control_order": [
+      "behavior",
+      "regression"
+    ],
+    "php_version": "8.5.13",
+    "php_cli_opcache": "off",
+    "repositories": {
+      "clinic": {
+        "split": "development",
+        "commit": "9b1f905be29266d24d5f86b71c35a85a17ab3656",
+        "tasks": [
+          {
+            "task": "contact_channel",
+            "family": "validation",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "patient_visibility",
+            "family": "authorization",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ],
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "urgent_reminders",
+            "family": "business_logic",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "booking_availability",
+            "family": "multi_file_repair",
+            "changed_files": 2,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {
+              "BookingRules": 1,
+              "Booking": 1
+            },
+            "policy_variation": {
+              "reference_under_variant": 0,
+              "hardcoded_under_default": [
+                0,
+                0
+              ],
+              "hardcoded_under_variant": 1
+            },
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          }
+        ]
+      },
+      "catalog": {
+        "split": "validation",
+        "commit": "37d7c48b8e4ec9a866fa93f80a2df21e85e5260a",
+        "tasks": [
+          {
+            "task": "available_stock",
+            "family": "eloquent_query",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ],
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "group_inventory",
+            "family": "eloquent_relationship",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "exempt_tax",
+            "family": "feature",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ],
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "listing_response",
+            "family": "controller",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          }
+        ]
+      },
+      "dispatch": {
+        "split": "public-challenge",
+        "commit": "715351323ff2d5053e95458bd86a0a0d7d4b8bfb",
+        "tasks": [
+          {
+            "task": "priority_normalization",
+            "family": "unfamiliar_repository",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "deadline_boundary",
+            "family": "test_feedback",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ],
+            "public_feedback": [
+              1,
+              0
+            ],
+            "public_feedback_narrow": 0
+          },
+          {
+            "task": "rural_quote",
+            "family": "service",
+            "changed_files": 1,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              0
+            ],
+            "with_one_file_reverted": {},
+            "policy_variation": null,
+            "narrow_witness": [
+              1,
+              0
+            ],
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          },
+          {
+            "task": "parcel_weight",
+            "family": "multi_file_repair",
+            "changed_files": 2,
+            "broken": [
+              1,
+              0
+            ],
+            "reference": [
+              0,
+              0
+            ],
+            "wrong": [
+              1,
+              1
+            ],
+            "with_one_file_reverted": {
+              "ParcelLimit": 1,
+              "ParcelIntake": 1
+            },
+            "policy_variation": {
+              "reference_under_variant": 0,
+              "hardcoded_under_default": [
+                0,
+                0
+              ],
+              "hardcoded_under_variant": 1
+            },
+            "narrow_witness": null,
+            "public_feedback": null,
+            "public_feedback_narrow": null
+          }
+        ]
+      }
+    }
+  },
+  "cache_witness": {
+    "initial": 11,
+    "default_reopen": 11,
+    "opcache_disabled_reopen": 22
+  },
+  "private_holdout": {
+    "repositories": 2,
+    "disjoint_task_families": 2,
+    "trusted_controls_passed": 2,
+    "multi_file_tasks": 1,
+    "live_model_attempts": 0,
+    "manifest_sha256": "25daac001c55a8b3f637a62b6bd0b9880cb58756458cfcf1520b5bd695ea2fde",
+    "trusted_controls_sha256": "df89e927a46fb1150bb5a7ba7aa8429efcf79c523135b8f9f2fb4669abad5f1c",
+    "broader_runner_image_digest": null
+  }
+}

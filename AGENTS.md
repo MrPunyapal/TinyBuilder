@@ -7,6 +7,7 @@ Important constraints:
 - Do not write external documentation, web/MCP tool outputs or conversation transcripts to SQLite. SQLite saves only explicit developer/project preferences via `tinybuilder memory` commands.
 - MCP results and web results are transient context. If adding web search, do not cache remotely retrieved content on disk.
 - File writes and command execution must remain opt-in and should move toward per-action human approval and containment; do not silently widen permissions.
+- Protect the owner's everyday development machine. Personal Windows host provisioning for the isolated evaluator is suspended. Do not install or remove hypervisors, drivers, OS features, system services or security controls, restart the computer, stop unrelated workloads, or change machine-wide settings as part of ordinary project work. Any future system-level change requires separate informed authorization describing concrete risks, alternatives, recovery and affected work; previous provisioning approval is not standing permission. Use read-only diagnosis and safe repository work while blocked. Never run arbitrary generated code on the ordinary host or bypass containment to make progress.
 - Do not silently call paid APIs or download multi-GB weights in tests. Keep baseline CI deterministic and cheap.
 - Keep Soup isolated from inference/agent runtime. Validate changes to `training/soup.yaml` against the installed Soup schema.
 - Laravel Boost's MCP command is `php artisan boost:mcp` inside an existing Laravel app. Handle missing Boost gracefully.

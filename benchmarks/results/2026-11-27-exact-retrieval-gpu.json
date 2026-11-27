@@ -1,0 +1,6 @@
+{
+  "scope": "RTX 3050 whole device during exact retrieval lab execution",
+  "sample_count": 32,
+  "max_utilization_percent": 0.0,
+  "max_memory_mib": 0.0
+}

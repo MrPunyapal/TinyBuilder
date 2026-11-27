@@ -1,0 +1,6 @@
+{
+  "scope": "whole-device during lab execution",
+  "max_utilization_percent": 0.0,
+  "sample_count": 79,
+  "max_memory_mib": 0.0
+}

@@ -2,7 +2,7 @@
 use anyhow::{ensure, Result};
 use clap::{Parser, Subcommand};
 use std::{io::{self,Write}, path::PathBuf};
-use tinybuilder::{context, grounded::{self, AnswerMode}, project::Project, runtime::Runtime, show, terminal};
+use tinybuilder::{workbench, project::Project, runtime::Runtime, show, terminal};
 
 #[derive(Parser)]
 struct Cli {
@@ -17,33 +17,50 @@ enum Action {
     Edit {
         task: String,
         #[arg(long)] allow_write: bool,
+        /// Supply one project-relative file as the complete patch context.
+        #[arg(long)] target: Option<String>,
+        /// Replace one explicitly selected source line using model-generated text.
+        #[arg(long, requires = "target")]
+        line: Option<usize>,
+        /// Use the lab's selective lexical retriever without a target hint.
+        #[arg(long, conflicts_with = "target", requires = "allowed_edit_path")]
+        selective_context: bool,
+        /// Restrict the approved edit to this exact relative path. Repeat for multiple files.
+        #[arg(long)]
+        allowed_edit_path: Vec<String>,
     },
 }
 
 fn main() -> Result<()> {
     let args=Cli::parse();
     let project=Project::new(&args.project)?;
-    let (task, edit)=match args.command {
-        Action::Ask{task}=>(task,false),
-        Action::Edit{task,allow_write}=>{
+    let (task, edit, target, line, selective, allowed)=match args.command {
+        Action::Ask{task}=>(task,false,None,None,false,Vec::new()),
+        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path}=>{
             ensure!(allow_write,"Edit requires explicit --allow-write lab opt-in");
-            (task,true)
+            (task,true,target,line,selective_context,allowed_edit_path)
         }
     };
-    let selected=context::retrieve(&project,&task)?;
+    let selected = match target {
+        Some(path) => workbench::collect_edit_target(&project, &path)?,
+        None if selective => tinybuilder::context::retrieve_selective(&project, &task)?,
+        None => workbench::collect(&project, &task)?,
+    };
     println!("Deterministic context selection (not model-selected tool use):");
-    for f in &selected.files {println!("File read verified: {}{}",terminal(&f.path),if f.truncated{" [prefix only]"}else{""});}
+    for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
     let server=Runtime::start(&args.runtime,&args.model)?;
     if !edit {
-        let request=grounded::answer_request(&task,&selected.files,AnswerMode::Plain)?;
-        let answer=grounded::decode_answer(&server.complete(request)?,AnswerMode::Plain)?;
+        let answer=workbench::ask(&task,&selected,|request|server.complete(request))?;
         println!("Model answer (verify factual claims):");
         show(&answer);
     } else {
-        let proposal=grounded::edit_request(&task,&selected.files)?;
-        let response=server.complete(proposal)?;
-        let patch=grounded::prepare_edit(&project,&selected.files,&response)?;
+        let complete = |request| server.complete(request);
+        let patch = match line {
+            Some(line) => tinybuilder::grounded::propose_edit_at_line(&project, &task, &selected.files[0], line, complete)?,
+            None => workbench::propose(&project, &task, &selected, complete)?,
+        };
+        ensure!(allowed.is_empty() || allowed.contains(&patch.path), "Proposal is outside the approved file scope");
         println!("Proposed model-generated replacement in {}",terminal(&patch.path));
         show(&patch.patch.diff);
         print!("Apply this exact patch? Type yes: ");
@@ -58,4 +75,19 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn selective_lab_requires_scope_and_excludes_operator_target_hints() {
+        let base = ["lab", "--project", "fixture", "--runtime", "runtime", "--model", "model",
+                    "edit", "task", "--allow-write", "--selective-context"];
+        assert!(Cli::try_parse_from(base).is_err());
+        let args = base.into_iter().chain(["--allowed-edit-path", "app/Case.php"]);
+        assert!(Cli::try_parse_from(args.clone()).is_ok());
+        assert!(Cli::try_parse_from(args.chain(["--target", "app/Case.php"])).is_err());
+    }
 }

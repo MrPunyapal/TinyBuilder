@@ -1,0 +1,436 @@
+{
+  "profile": "coding-source-ids",
+  "baseline": "b8f1471d477b127cc62674e9f37110e2dc80d8c4",
+  "control_order": [
+    "behavior",
+    "regression"
+  ],
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "lab_sha256": "1e052c7ce5cf818d8d47cc098e5fb0ad03ed24b458b28e58a54709fd4ed2a38d",
+  "configuration": {
+    "temperature": 0,
+    "selection_max_tokens": 128,
+    "replacement_max_tokens": 1024,
+    "arms": [
+      "A",
+      "B",
+      "C"
+    ],
+    "context": "A exact-text and B model-selected source ID with same supplied evidence; C operator-selected file/line",
+    "arm_order": {
+      "default": [
+        "A",
+        "B",
+        "C"
+      ],
+      "seat_policy": [
+        "B",
+        "A",
+        "C"
+      ]
+    }
+  },
+  "requested_per_model": 9,
+  "controls": {
+    "contact_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    },
+    "seat_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    },
+    "editor_policy": {
+      "broken": [
+        1,
+        0
+      ],
+      "reference": [
+        0,
+        0
+      ],
+      "wrong": "reasoning"
+    }
+  },
+  "models": [
+    {
+      "model": "1.5B Q4_K_M",
+      "sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "bytes": 1117320768,
+      "unchanged": true,
+      "ready_ms": 3650,
+      "counts": {
+        "out_of_scope": 1,
+        "syntax": 3,
+        "pass": 1,
+        "replacement_match": 2,
+        "reasoning": 1,
+        "outside_safe_subset": 1
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "out_of_scope",
+          "completion_tokens": 43,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 3493,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 252,
+          "request_json_bytes": 1590,
+          "lint_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "syntax",
+          "completion_tokens": 25,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 3805,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 236,
+          "request_json_bytes": 1256,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 132,
+          "evidence_paths": [
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 2843,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 181,
+          "request_json_bytes": 1187,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "replacement_match",
+          "completion_tokens": 88,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 7807,
+          "prompt_tokens": 260,
+          "request_json_bytes": 1551
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "syntax",
+          "completion_tokens": 32,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 4518,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 245,
+          "request_json_bytes": 1218,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "reasoning",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 145,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php"
+          ],
+          "latency_ms": 2072,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 197,
+          "request_json_bytes": 1178,
+          "lint_exit": 0,
+          "behavior_exit": 1,
+          "regression_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "replacement_match",
+          "completion_tokens": 83,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 4860,
+          "prompt_tokens": 257,
+          "request_json_bytes": 1569
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "syntax",
+          "completion_tokens": 31,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 2743,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 241,
+          "request_json_bytes": 1236,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 34,
+          "event": "provided_source",
+          "evidence_bytes": 166,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php"
+          ],
+          "latency_ms": 2479,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 192,
+          "request_json_bytes": 1195,
+          "lint_exit": 0
+        }
+      ],
+      "wall_seconds": 39.5,
+      "runtime_peak_working_set_bytes": 2688524288,
+      "app_runtime_peak_sampled_bytes": 2679529472,
+      "driver_failure": null
+    },
+    {
+      "model": "3B Q4_K_M research",
+      "sha256": "4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+      "bytes": 1929903072,
+      "unchanged": true,
+      "ready_ms": 3440,
+      "counts": {
+        "pass": 4,
+        "syntax": 3,
+        "outside_safe_subset": 2
+      },
+      "trials": [
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 45,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 7749,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 252,
+          "request_json_bytes": 1590,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "syntax",
+          "completion_tokens": 30,
+          "event": "provided_source",
+          "evidence_bytes": 243,
+          "evidence_paths": [
+            "app/Pilot/ContactPolicy.php",
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 6470,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 236,
+          "request_json_bytes": 1256,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "contact_policy",
+          "category": "pass",
+          "completion_tokens": 21,
+          "event": "provided_source",
+          "evidence_bytes": 132,
+          "evidence_paths": [
+            "app/Pilot/ContactRules.php"
+          ],
+          "latency_ms": 5208,
+          "path": "app/Pilot/ContactRules.php",
+          "prompt_tokens": 181,
+          "request_json_bytes": 1187,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "pass",
+          "completion_tokens": 131,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 16386,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 260,
+          "request_json_bytes": 1551,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "syntax",
+          "completion_tokens": 32,
+          "event": "provided_source",
+          "evidence_bytes": 229,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php",
+            "app/Pilot/SeatPolicy.php"
+          ],
+          "latency_ms": 6408,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 245,
+          "request_json_bytes": 1218,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "seat_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 23,
+          "event": "provided_source",
+          "evidence_bytes": 145,
+          "evidence_paths": [
+            "app/Pilot/SeatEligibility.php"
+          ],
+          "latency_ms": 4932,
+          "path": "app/Pilot/SeatEligibility.php",
+          "prompt_tokens": 197,
+          "request_json_bytes": 1178,
+          "lint_exit": 0
+        },
+        {
+          "arm": "A",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "pass",
+          "completion_tokens": 59,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 7544,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 257,
+          "request_json_bytes": 1569,
+          "lint_exit": 0,
+          "behavior_exit": 0,
+          "regression_exit": 0
+        },
+        {
+          "arm": "B",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "syntax",
+          "completion_tokens": 36,
+          "event": "provided_source",
+          "evidence_bytes": 271,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php",
+            "app/Pilot/EditorPolicy.php"
+          ],
+          "latency_ms": 5683,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 241,
+          "request_json_bytes": 1236,
+          "lint_exit": 255
+        },
+        {
+          "arm": "C",
+          "calls": 1,
+          "case": "editor_policy",
+          "category": "outside_safe_subset",
+          "completion_tokens": 22,
+          "event": "provided_source",
+          "evidence_bytes": 166,
+          "evidence_paths": [
+            "app/Pilot/EditorAccess.php"
+          ],
+          "latency_ms": 3577,
+          "path": "app/Pilot/EditorAccess.php",
+          "prompt_tokens": 192,
+          "request_json_bytes": 1195,
+          "lint_exit": 0
+        }
+      ],
+      "wall_seconds": 68.28,
+      "runtime_peak_working_set_bytes": 4632813568,
+      "app_runtime_peak_sampled_bytes": 4618477568,
+      "driver_failure": null
+    }
+  ]
+}

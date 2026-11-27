@@ -1,0 +1,45 @@
+name: Trusted contained framework controls
+on:
+  pull_request:
+    paths:
+      - 'benchmarks/contained*.py'
+      - 'benchmarks/contained_php_probe.php'
+      - 'benchmarks/coding_v1_corpus.py'
+      - 'tests/test_contained*.py'
+      - '.github/workflows/contained-framework-controls.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trusted-framework:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, pdo_sqlite, sqlite3, intl
+          tools: composer:v2
+          coverage: none
+      - name: Prepare reviewed public Laravel dependency tree (no model)
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/tinybuilder-trusted-laravel"
+          composer create-project laravel/laravel "$APP" 13.11.0 --no-install --no-scripts --no-plugins --no-interaction
+          cd "$APP"
+          composer require laravel/framework:13.42.0 --no-update --no-scripts --no-plugins --no-interaction
+          composer install --prefer-dist --no-interaction --no-progress --no-scripts --no-plugins
+          php artisan package:discover --ansi
+          sha256sum composer.lock
+          echo "TINYBUILDER_TRUSTED_LARAVEL=$APP" >> "$GITHUB_ENV"
+      - name: Execute only repository-authored bridge controls
+        run: |
+          python -m pip install -e .
+          python -m unittest discover -s tests -p test_contained_trusted_controls.py -v

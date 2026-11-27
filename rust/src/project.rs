@@ -33,10 +33,15 @@ pub struct ContextExcerpt {
     pub last_line: usize,
 }
 pub struct Patch {
+    root: PathBuf,
     path: String,
     original_hash: [u8; 32],
     replacement: String,
     pub diff: String,
+}
+impl Patch {
+    /// Prospective complete source for independent lab scoring; never writes.
+    pub fn preview_text(&self) -> &str { &self.replacement }
 }
 fn link_like(meta: &Metadata) -> bool {
     if meta.file_type().is_symlink() {
@@ -328,26 +333,49 @@ impl Project {
     }
     fn propose_checked(&self,path: &str, old: &str, new: &str, expected: Option<[u8;32]>) -> Result<Patch> {
         ensure!(!old.is_empty() && old.len() <= PATCH_MAX && new.len() <= PATCH_MAX && !new.contains('\0'), "Invalid replacement");
+        self.build_patch(path, expected, |content| {
+            ensure!(old != new, "No change");
+            // Count overlapping occurrences as ambiguous too.
+            ensure!(content.char_indices().filter(|(i, _)| content[*i..].starts_with(old)).take(2).count() == 1,
+                "Replacement must match exactly once");
+            Ok(content.replacen(old, new, 1))
+        })
+    }
+    /// A model-selected line is resolved against the supplied complete snapshot.
+    pub fn propose_line_from_read(&self, read: &ReadResult, line: usize, new: &str) -> Result<Patch> {
+        ensure!(!read.truncated, "Cannot patch truncated evidence");
+        ensure!(line > 0 && !new.trim().is_empty() && new.len() <= PATCH_MAX
+            && !new.contains(['\r', '\n', '\0']), "Invalid line replacement");
+        self.build_patch(&read.path, Some(hash(read.text.as_bytes())), |content| {
+            let mut lines = content.split_inclusive('\n');
+            let start: usize = (&mut lines).take(line - 1).map(str::len).sum();
+            let selected = lines.next().context("Selected line does not exist")?;
+            let old = selected.strip_suffix("\r\n").or_else(|| selected.strip_suffix('\n')).unwrap_or(selected);
+            ensure!(!old.trim().is_empty(), "Selected line is blank");
+            let mut replacement = content.to_owned();
+            replacement.replace_range(start..start + old.len(), new);
+            Ok(replacement)
+        })
+    }
+    fn build_patch(&self, path: &str, expected: Option<[u8;32]>,
+        edit: impl FnOnce(&str) -> Result<String>) -> Result<Patch> {
         let resolved = self.resolve(path)?;
         ensure!(resolved.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&resolved, PATCH_MAX)?;
         ensure!(!truncated, "File too large for patch");
         ensure!(expected.is_none_or(|value|value==hash(&bytes)), "File changed since context selection");
         let content = utf8(&bytes, false)?;
-        ensure!(old != new, "No change");
-        // Count overlapping occurrences as ambiguous too.
-        ensure!(content.char_indices().filter(|(i, _)| content[*i..].starts_with(old)).take(2).count() == 1,
-            "Replacement must match exactly once");
-        let replacement = content.replacen(old, new, 1);
+        let replacement = edit(&content)?;
         ensure!(replacement.len() <= PATCH_MAX, "Replacement too large");
         let diff = TextDiff::from_lines(&content, &replacement).unified_diff()
             .header("before", "after").to_string();
         ensure!(!diff.is_empty(), "No change");
         ensure!(diff.len() <= 64 * 1024, "Diff too large to review");
-        Ok(Patch { path: self.relative(&resolved)?, original_hash: hash(&bytes), replacement, diff })
+        Ok(Patch { root: self.root.clone(), path: self.relative(&resolved)?, original_hash: hash(&bytes), replacement, diff })
     }
     pub fn apply(&self, patch: Patch, approved: bool) -> Result<()> {
         ensure!(approved, "Permission denied");
+        ensure!(patch.root == self.root, "Patch belongs to a different project");
         let path = self.resolve(&patch.path)?;
         ensure!(path.is_file(), "Not a regular file");
         let (bytes, truncated) = read_bounded(&path, PATCH_MAX)?;
@@ -398,6 +426,19 @@ mod tests {
         assert_eq!(p.read("a.txt").unwrap().text, "alpha\nbeta\n");
         p.apply(p.propose("a.txt", "alpha", "gamma").unwrap(), true).unwrap();
         assert_eq!(p.read("a.txt").unwrap().text, "gamma\nbeta\n");
+    }
+    #[test]
+    fn approved_patch_cannot_be_transferred_to_another_project() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        fs::write(first.path().join("a.txt"), "old").unwrap();
+        fs::write(second.path().join("a.txt"), "old").unwrap();
+        let source = Project::new(first.path()).unwrap();
+        let other = Project::new(second.path()).unwrap();
+        let patch = source.propose("a.txt", "old", "new").unwrap();
+        assert!(other.apply(patch, true).is_err());
+        assert_eq!(source.read("a.txt").unwrap().text, "old");
+        assert_eq!(other.read("a.txt").unwrap().text, "old");
     }
     #[test]
     fn stale_patch_denied_and_secret_rejected() {
