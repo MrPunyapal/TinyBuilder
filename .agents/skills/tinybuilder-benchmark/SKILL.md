@@ -39,3 +39,9 @@ of an approved outer isolation boundary. Keep private fixtures and model
 outputs local unless the user separately approves a specific transfer. If a
 separate qualified evaluator is unavailable, record a blocker and continue
 model-free work; no host fallback.
+
+For the public source-only proposal condition, use
+`python -m benchmarks.public_proposal_campaign prepare --output NEW_DIR`,
+then inspect after explicitly approved lab proposals. Keep the plan and
+scorer outside every model-facing root. Scope readiness is not a pass;
+never turn it into a semantic score or use it for private fixtures.

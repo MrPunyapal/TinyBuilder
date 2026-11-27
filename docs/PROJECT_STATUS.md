@@ -94,7 +94,9 @@ eight dependency-free and four real Laravel-dependent. Exact-lock and capability
 preflight is required for the latter. Trusted control CI must pass; live guest
 and private bridges remain separate gates. A separate real-HTTP route
 validation bridge adds nine probes without changing the original PHPUnit
-oracle; its trusted CI must pass.
+oracle; its trusted CI must pass. The public source-only campaign prepares
+isolated model-facing source roots and records scope-only proposal readiness;
+it performs no model inference or PHP execution.
 Continue trusted model-free tests and prepare portable evaluation on a separately approved Linux environment.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.

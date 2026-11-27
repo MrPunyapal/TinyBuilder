@@ -254,3 +254,37 @@ inference-only proposal generation on disposable public source. Do not
 execute those proposals, provision Windows, transfer private data or
 download weights. The isolated evaluator needs separate approval; local
 Codex access alone is not approval to run generated code.
+
+## Local inference-only handoff preparation
+
+The public source-only proposal campaign now generates 12 independent
+project directories with the seeded public repository classes and a
+manifest outside every model-facing root. It exposes task prompts,
+allowed paths, per-task edit budgets and source hashes, not hidden
+assertions, reference implementations or private fixtures. This is a
+new explicitly labeled source-only proposal condition, not the original
+full Laravel repository experiment or semantic qualification.
+
+```text
+python -m benchmarks.public_proposal_campaign prepare --output NEW_PUBLIC_CAMPAIGN_DIR
+python -m benchmarks.public_proposal_campaign inspect --root PUBLIC_CAMPAIGN_DIR
+```
+
+Inspect reports planned task/probe totals, no-change, proposal-ready and
+scope-rejected counts; it rejects unknown paths, missing sources, links,
+reparse points, oversized files, out-of-scope changes and altered plan.
+It never invokes a subprocess, a model or PHP, and never transfers files.
+It cannot establish race-proof safety against hostile concurrent writers.
+Do not use private source or an ordinary development project as its root.
+
+For each task use only the task's own project root and prompt from the
+outside plan. Existing grounded_lab remains the per-action approval
+boundary: selective-context, exact-text edits, explicit allowed paths,
+and no more than the recorded patch budget. Do not pass the entire
+manifest or evaluator repository to the model. Record model/runtime
+identity and all attempted, rejected and missing proposals locally.
+After inference inspect the campaign. A proposal-ready status is not a
+semantic pass, and all 87 semantic observations remain unattempted.
+Candidate scoring still requires a separate qualified evaluator.
+No system installation, weight download or candidate execution is part
+of these commands.
