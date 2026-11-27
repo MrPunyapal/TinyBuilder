@@ -8,20 +8,22 @@ milestone, owner, blocker or evidence changes materially.
 
 ## Current milestone: Coding Intelligence v1
 
-Qualify the isolated PHP evaluator, then score broader coding tasks using
+Continue model-free lab review and seek a separately approved isolated Linux
+evaluator; live qualification is blocked. Then score broader coding tasks using
 exact-text edits and selective lexical retrieval. Use the existing 1.5B
 and research-only 3B weights. Candidate model downloads and training remain
-deferred. Follow the [contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
+deferred. Personal Windows provisioning is suspended; no further system-level changes.
+Follow the [contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
 
 | Workstream | Snapshot and next action |
 | --- | --- |
-| Native 0.1 | Main `9d4343141bab4d710f7d16450105673c994d5c51`; read-only, not qualified for publication. All five retrieved push workflows passed. Fresh candidate artifacts available for all three platforms; continue clean-machine acceptance and release review. |
+| Native 0.1 | Main `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; read-only, not qualified for publication. Earlier Windows developer-host read pass is not clean-host acceptance. |
 | Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Retain draft for provenance; candidate superseded by #23 after integration review and explicit approval. |
 | Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Retain original research draft; candidate successor #23 replays and extends its work. Verify overlap before supersession. |
-| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Phase 1 archive and this canonical status refresh. Previous reviewed head `a0c4fe0b6ee254da6afbe8e0801350f332210f31` passed all four workflows; recheck revised head. |
+| Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Merged at `4be34b7f737e29c1436fcb269dfd10295457740d`. |
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
-| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Local checkpoint `560e2ce7f04fb04fce288566cda5444a00232826`; remote follow-up `4559cec5f62590ebccd440885ec2b998462dbde8` reconciles main ancestry and accounts for blocked probe denominators. Revised CI and guest qualification pending. |
-| Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Phase 2 archive and maintainer corrections at `74aba166d1ad38d87621b518638180fdfe85ae44`; candidate dossier and isolated evaluation plan, no downloads or training authorized. |
+| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Latest reviewed checkpoint `0ecc06f6b853c83699110f17b918b4cbcfcd7ef6` passed all seven retrieved workflows. Candidate failure attribution and public multi-file/feedback probes added. Live guest unqualified; personal Windows provisioning cancelled. Recheck revised head CI. |
+| Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Merged at `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; candidate dossiers only, no model downloads or training. Historical VM recommendation superseded on the personal Windows host. |
 
 ## Evidence to read first
 
@@ -84,18 +86,18 @@ deferred. Follow the [contained qualification checkpoint](research/2026-11-27-co
 
 ## Next handoff
 
-Review and qualify the integrated evaluator on an explicitly approved,
-disposable offline Linux VM (see Phase 2 roadmap). Complete structured
-failure attribution and benchmark bridges, run trusted containment smoke
-tests and broaden existing-model development scoring with exact-text plus
-selective retrieval. Freeze settings and keep private evaluation independent.
-Do not execute arbitrary generated PHP on the ordinary development host or
-use the private set to tune. Defer new parser dependencies, model downloads
-and training until evidence warrants. Recheck exact-head CI and complete
-integration/security review before considering #23 and superseding #18/#20.
-Recommended merge order: #21, #24, then #23 after its additional gates;
-reconcile main and rerun applicable CI each time. No merge or publication
-authorized. Native clean-host qualification stays separate.
+Review the integrated lab and reconcile exact-head CI, legacy PR overlap and
+shared native runtime behavior. Continue trusted model-free tests and
+prepare portable evaluation on a separately approved Linux environment.
+Do not provision or modify the owner's personal Windows host; live guest
+qualification remains blocked. Ordinary CI is not an isolation approval.
+Do not execute arbitrary generated PHP on the ordinary host or transfer
+private data without approval. Freeze development evaluation before private
+confirmation; retain exact text plus selective lexical retrieval. Do not
+repeat the completed smoke campaigns, download weights or train without
+evidence and approval. #21 and #24 are merged; #23 remains draft until
+integration and safety review, with #18/#20 preserved. Keep native clean-host
+qualification separate. No release, tag or publication authorized.
 
 See [Agent guide](AGENT_GUIDE.md) for stable mission and authority boundaries,
 and [knowledge-maintenance](../.agents/skills/tinybuilder-knowledge-maintenance/SKILL.md)

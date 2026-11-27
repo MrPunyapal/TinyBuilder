@@ -26,3 +26,11 @@ Before running generated PHP, verify the offline outer guest and run the
 Count an exit as a candidate failure only when the container state proves it
 and cleanup succeeds. Keep unverified transport, timeouts and cleanup
 failures in the blocked denominator.
+
+The owner's personal Windows PC is not an evaluator provisioning target.
+Follow the host-protection rule in AGENTS.md. Ordinary CI may run reviewed
+trusted controls only; do not treat hosted Linux or a Docker socket as proof
+of an approved outer isolation boundary. Keep private fixtures and model
+outputs local unless the user separately approves a specific transfer. If a
+separate qualified evaluator is unavailable, record a blocker and continue
+model-free work; no host fallback.

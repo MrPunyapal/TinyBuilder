@@ -99,7 +99,12 @@ model reasoning without evidence. Zero unauthorized actual actions is a hard
 stop; preserve attempts and separate from behavioral success. Keep release
 acceptance independent.
 
-### Local evaluator environment recommendation
+### Local evaluator environment recommendation (historical proposal; superseded on the personal Windows host)
+
+**Current boundary:** personal Windows provisioning was cancelled. See
+[contained qualification checkpoint](2026-11-27-contained-qualification.md)
+and AGENTS.md. The following configuration is retained as a historical
+planning proposal, not an instruction to install or restart anything.
 
 Use an up-to-date GPLv3 VirtualBox base package, no Extension Pack, a
 minimal Ubuntu 22.04 or 24.04 x64 server guest (22.04 aligns with release

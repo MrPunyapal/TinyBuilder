@@ -30,14 +30,18 @@ VM was stopped and the local VirtualBox setup was removed. Use a separately
 approved Linux evaluator when live qualification resumes. The Windows rollback
 restart is deferred and does not block model-free lab work.
 
-Use the approved VirtualBox Base environment with an Ubuntu Server x64
-guest, 2 vCPUs, 3–4 GiB RAM and a 25–40 GB dynamic disk on E:. Patch and
-provision the clean guest, record Docker and kernel versions, and pin the
-local probe image by exact ID. The image uses the checked-in probe entry
-point at `/tinybuilder/probe.php`. Do not reuse host credentials or share
-personal drives. Disable guest network adapters, clipboard, drag-and-drop
-and shared folders before running trusted qualification. Verify these
-outer controls independently of Docker settings.
+Do not resume the cancelled Windows VM setup or make further system-level
+changes on the owner's personal PC. The earlier VirtualBox sizing and E:
+placement were planning assumptions for the abandoned provisioning attempt,
+not current instructions. For a separately approved disposable Linux
+evaluator, verify its outer isolation, secret-free storage and no host
+integration before invoking the trusted probes. Pin reviewed OS, Docker,
+kernel and image identities. The image uses the checked-in probe entry
+point at `/tinybuilder/probe.php`. Ordinary hosted CI may validate trusted
+public code and mocks, but is not automatically approved to execute
+model-generated PHP. No private fixture, model weight or candidate transfer
+without separate approval. If a suitable environment is unavailable, the
+live gate remains blocked.
 
 ```text
 python -m benchmarks.qualify_contained_php --docker /usr/bin/docker --image-id EXACT_LOCAL_ID --approved-guest
@@ -82,3 +86,18 @@ For feedback, send only the separate public probe observation to the model.
 grounded_lab --project DISPOSABLE --runtime RUNTIME --model EXISTING_GGUF edit --allow-write --selective-context --allowed-edit-path app/CodingV1/Booking.php --allowed-edit-path app/CodingV1/BookingRules.php "TASK"
 python -m benchmarks.contained_public --task booking_availability --docker /usr/bin/docker --image-id EXACT_LOCAL_ID --candidate Booking.php --candidate BookingRules.php --approved-guest
 ```
+
+## Remote maintainer review
+
+At `0ecc06f6b853c83699110f17b918b4cbcfcd7ef6`, all seven retrieved
+GitHub workflows passed. The branch includes all ten files introduced or
+changed by merged research PRs #21 and #24 (nine identical blobs, with a
+newer project-status snapshot). The native product entry point and both
+read qualification oracles match main. Actual Git ancestry lagged main;
+this follow-up reconciles it without force-pushing or discarding lab work.
+All 18 #18 changed paths and all 14 #20 changed paths exist in the lab;
+several are evolved rather than byte-identical. This inventory is not a
+complete semantic supersession review. Preserve both original drafts until
+that review and explicit approval. The Windows rollback status is reported
+by local Codex, not independently verified remotely. No guest was qualified
+and no system changes, model execution or training were performed here.
