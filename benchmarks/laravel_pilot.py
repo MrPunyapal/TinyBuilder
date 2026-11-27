@@ -130,10 +130,17 @@ def prepare(case, base, root, revision, php, related=None):
 
 
 def evaluate_preview(row, case, root, php):
+    """Legacy model proposals are never executed by the host evaluator."""
+    if row.pop("preview", None) is not None:
+        row["category"] = "containment_blocked"
+
+
+def evaluate_trusted_control(row, case, root, php):
+    """Only repository-authored comparator repairs may reach host PHP."""
     preview = row.pop("preview", None)
     if preview is None:
         return
-    # PHP lint checks syntax without executing the generated program.
+    # PHP lint and behavior checks below are for trusted controls only.
     target = root / case.path
     original = case.source.encode()
     if target.is_symlink() or target.read_bytes() != original:
@@ -285,7 +292,7 @@ def main():
                 raise ValueError(f"Oracle controls failed for {case.name}: {controls}")
             if case.name in wrong_controls:
                 wrong = {"preview": case.source.replace(case.broken, wrong_controls[case.name])}
-                evaluate_preview(wrong, case, projects[case.name], args.php)
+                evaluate_trusted_control(wrong, case, projects[case.name], args.php)
                 controls["wrong"] = wrong["category"]
                 if controls["wrong"] != "reasoning":
                     raise ValueError(f"Wrong-repair control failed for {case.name}")
@@ -325,7 +332,7 @@ def main():
         save()
     return int(any(not model["unchanged"] or model["driver_failure"] or
                    model["counts"].get("not_run") or model["counts"].get("evaluator") or
-                   model["counts"].get("safety") for model in report["models"]))
+                   model["counts"].get("safety") or model["counts"].get("containment_blocked") for model in report["models"]))
 
 
 if __name__ == "__main__":

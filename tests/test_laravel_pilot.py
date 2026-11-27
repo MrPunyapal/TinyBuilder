@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 
-from benchmarks.laravel_pilot import CASES, patch_category
+from benchmarks.laravel_pilot import CASES, evaluate_preview, patch_category
 
 
 class LaravelPilotPatchTests(unittest.TestCase):
@@ -19,3 +20,12 @@ class LaravelPilotPatchTests(unittest.TestCase):
                 self.assertEqual(patch_category(case, changed), "out_of_scope")
                 unsafe = case.source.replace(case.broken, "return helper();")
                 self.assertEqual(patch_category(case, unsafe), "outside_safe_subset")
+
+    def test_generated_preview_never_reaches_host_php_even_if_it_matches_subset(self):
+        case = CASES[0]
+        row = {"category": "proposal", "preview": case.source.replace(case.broken, case.reference)}
+        with patch("benchmarks.laravel_pilot.command") as command, patch("benchmarks.laravel_pilot.test") as test:
+            evaluate_preview(row, case, None, "unused")
+        self.assertEqual(row, {"category": "containment_blocked"})
+        command.assert_not_called()
+        test.assert_not_called()

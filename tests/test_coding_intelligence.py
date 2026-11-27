@@ -55,6 +55,7 @@ class CodingIntelligenceTests(unittest.TestCase):
             with (patch("sys.argv", argv),
                   patch("benchmarks.laravel_pilot.validate_laravel_baseline", return_value="test"),
                   patch("benchmarks.laravel_pilot.prepare", side_effect=controls),
+                  patch("benchmarks.laravel_pilot.evaluate_trusted_control", side_effect=score),
                   patch("benchmarks.laravel_pilot.evaluate_preview", side_effect=score),
                   patch("benchmarks.laravel_pilot.infer", side_effect=infer),
                   redirect_stdout(StringIO())):

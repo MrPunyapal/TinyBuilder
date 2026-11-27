@@ -17,6 +17,9 @@ INFO = {
 
 def configuration(stage):
     return {
+        "Image": IMAGE, "Path": "/usr/bin/env",
+        "Args": ["-i", "HOME=/tmp", "PATH=/usr/local/bin:/usr/bin:/bin",
+                 "/usr/local/bin/php", "/tinybuilder/probe.php"],
         "HostConfig": {
             "NetworkMode": "none", "ReadonlyRootfs": True, "Privileged": False,
             "IpcMode": "private", "CgroupnsMode": "private", "PidMode": "",
@@ -126,6 +129,9 @@ class ContainedPHPTests(unittest.TestCase):
 
     def test_broader_container_policy_is_blocked_before_start(self):
         for change in (
+            lambda cfg: cfg.update(Image="sha256:" + "b" * 64),
+            lambda cfg: cfg.update(Path="/unexpected"),
+            lambda cfg: cfg.update(Args=["/unexpected"]),
             lambda cfg: cfg["HostConfig"].update(NetworkMode="host"),
             lambda cfg: cfg["Mounts"][0].update(RW=True),
             lambda cfg: cfg["Mounts"].append({"Type": "bind", "Destination": "/unexpected"}),

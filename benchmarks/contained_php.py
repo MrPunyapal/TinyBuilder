@@ -171,7 +171,7 @@ def _create(name: str, fixture: Path, image_id: str) -> list[str]:
     ]
 
 
-def _check_container(run, name: str, fixture: Path) -> None:
+def _check_container(run, name: str, fixture: Path, image_id: str) -> None:
     status, raw = run(["container", "inspect", "--format", "{{json .}}", name])
     if status != 0:
         raise EvaluationBlocked("created container policy could not be inspected", reason=BlockedReason.POLICY)
@@ -193,6 +193,10 @@ def _check_container(run, name: str, fixture: Path) -> None:
                    if mount.get("Type") == "tmpfs" and mount.get("Destination") == "/tmp"]
         accepted_mounts = len(staged) == 1 and len(scratch) <= 1 and len(mounts) == 1 + len(scratch)
     if (not isinstance(host, dict) or not isinstance(config, dict)
+            or container.get("Image") != image_id
+            or container.get("Path") != "/usr/bin/env"
+            or container.get("Args") != ["-i", "HOME=/tmp", "PATH=/usr/local/bin:/usr/bin:/bin",
+                                         "/usr/local/bin/php", "/tinybuilder/probe.php"]
             or any(host.get(key) != value for key, value in required.items())
             or host.get("CapDrop") not in (["ALL"], ["all"]) or host.get("CapAdd")
             or host.get("PidMode") not in ("", "private") or host.get("Devices")
@@ -331,7 +335,7 @@ def observe(*, docker: Path, image_id: str, fixtures: Mapping[str, bytes], reque
             status, _ = run(create)
             if status != 0:
                 raise EvaluationBlocked("container creation rejected", reason=BlockedReason.POLICY)
-            _check_container(run, name, fixture)
+            _check_container(run, name, fixture, image_id)
             try:
                 status, raw = run(["container", "start", "--attach", "--interactive", name],
                                   PROBE_TIMEOUT, payload)
