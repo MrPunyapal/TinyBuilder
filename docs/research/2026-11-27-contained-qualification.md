@@ -52,3 +52,16 @@ Freeze controller, corpus, limits, model and image digests before private
 confirmation. The private two-task set remains a pilot. Its source,
 assertions and expected values stay out of model context and Git. Hold
 MiniCPM5-2B for a named decision after the existing-model baseline.
+
+For a public development task, use only a secret-free disposable source
+copy. Keep hidden tests in the separate scorer. The lab requires an explicit
+write opt-in, retrieves context without receiving a path hint, checks its
+proposed path against an evaluator-owned allowlist, and prompts for approval.
+Repeat for a second proposal only within the frozen task budget. Transfer
+candidate source bytes to the offline guest and run the family scorer there.
+For feedback, send only the separate public probe observation to the model.
+
+```text
+grounded_lab --project DISPOSABLE --runtime RUNTIME --model EXISTING_GGUF edit --allow-write --selective-context --allowed-edit-path app/CodingV1/Booking.php --allowed-edit-path app/CodingV1/BookingRules.php "TASK"
+python -m benchmarks.contained_public --task booking_availability --docker /usr/bin/docker --image-id EXACT_LOCAL_ID --candidate Booking.php --candidate BookingRules.php --approved-guest
+```
