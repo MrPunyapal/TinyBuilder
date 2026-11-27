@@ -101,3 +101,30 @@ complete semantic supersession review. Preserve both original drafts until
 that review and explicit approval. The Windows rollback status is reported
 by local Codex, not independently verified remotely. No guest was qualified
 and no system changes, model execution or training were performed here.
+
+## Independent review checkpoint
+
+Reviewed starting head `4caf8c8d9fe1f8e3f8222ba8db6efccc7a7f8eac`
+against main `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`. Independently
+compared blob identities for the native product entry point, both read
+oracles and native package workflow; all four matched. Shared runtime
+completion handling retains the finish-reason gate. Agent edits require
+complete fresh evidence and approval; grounded lab checks allowed paths.
+Filesystem checks are not race-proof against a hostile concurrent writer.
+
+Fixed a cross-project patch-binding weakness in [5a1bb8a](https://github.com/MrPunyapal/TinyBuilder/commit/5a1bb8ada7d10c614c2a574510449fb7e7634528):
+a patch previously carried a relative path and content hash but no project
+root. It now carries the originating canonical root; application to another
+root is rejected. Added a model-free two-project regression test. This does
+not establish hostile-filesystem containment. New exact-head CI is required.
+
+Starting-head CI observed successful guidance, security, Python and native
+deterministic workflows; native rewrite and packages were still running at
+last inspection. No independent local test execution. PR #18 head is an
+ancestor; #20 diverges and was replayed. All changed paths retained, but
+full semantic supersession and complete integrated diff review remain open.
+Do not close either draft or merge #23 yet. No new skill is warranted: the
+existing implementation and benchmark skills already require scoped approval,
+regression tests and containment. No model execution, private transfer,
+training, host changes or publication performed. Next: verify new exact-head
+CI, finish benchmark and replay review before an experimental merge decision.
