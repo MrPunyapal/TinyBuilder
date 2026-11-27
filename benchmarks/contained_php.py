@@ -34,6 +34,7 @@ TMPFS = "rw,noexec,nosuid,nodev,size=32m,mode=1777"
 class BlockedReason(str, Enum):
     UNATTRIBUTED = "probe_blocked_unattributed"
     GUEST = "approved_guest_unavailable"
+    QUALIFICATION = "guest_qualification_failed"
     DAEMON = "docker_unavailable"
     IMAGE = "image_unverified"
     STAGING = "fixture_staging_failed"

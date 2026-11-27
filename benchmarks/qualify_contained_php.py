@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from time import monotonic
 
-from .contained_php import CandidateFailure, EvaluationBlocked, ProbeDeadlineExceeded, PROBE_TIMEOUT, VERSION, observe
+from .contained_php import BlockedReason, CandidateFailure, EvaluationBlocked, ProbeDeadlineExceeded, PROBE_TIMEOUT, VERSION, observe
 
 
 QUALIFICATION_BRIDGE = br"""<?php
@@ -101,6 +101,18 @@ def qualify(docker: Path, image_id: str, approved_guest: bool) -> dict:
     else:
         report["blocked_reason"] = "qualification_enforcement_failed"
     return report
+
+
+def require_qualified_guest(docker: Path, image_id: str, approved_guest: bool) -> None:
+    """Re-run trusted probes before a candidate-scoring session; never attest the outer guest."""
+    if approved_guest is not True:
+        raise EvaluationBlocked("Operator must approve the separate guest", reason=BlockedReason.GUEST)
+    report = qualify(docker, image_id, approved_guest)
+    checks = report.get("checks", {})
+    expected = {*CHECKS, "memory_enforced", "timeout_and_cleanup"}
+    if (report.get("status") != "qualified" or report.get("image_id") != image_id
+            or set(checks) != expected or any(checks[key] is not True for key in expected)):
+        raise EvaluationBlocked("Trusted guest qualification failed", reason=BlockedReason.QUALIFICATION)
 
 
 def main():

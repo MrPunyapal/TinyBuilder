@@ -13,7 +13,8 @@ IMAGE = "sha256:" + "1" * 64
 
 class ContainedPublicTests(unittest.TestCase):
     def score(self, task, candidates, observe, **options):
-        with patch("benchmarks.contained_public.observe", side_effect=observe):
+        with (patch("benchmarks.contained_public.require_qualified_guest"),
+              patch("benchmarks.contained_public.observe", side_effect=observe)):
             return score_public(task, candidates, docker=Path("/usr/bin/docker"),
                                 image_id=IMAGE, approved_guest=True, **options)
 
@@ -101,3 +102,15 @@ class ContainedPublicTests(unittest.TestCase):
                 score_public("deadline_boundary", {TIMING: b"source", "tests/test.php": b"extra"},
                              docker=Path("/usr/bin/docker"), image_id=IMAGE, approved_guest=True)
             observe.assert_not_called()
+
+    def test_failed_qualification_never_submits_candidate(self):
+        error = EvaluationBlocked("unverified guest", reason=BlockedReason.QUALIFICATION)
+        with (patch("benchmarks.contained_public.require_qualified_guest", side_effect=error),
+              patch("benchmarks.contained_public.observe") as observe):
+            report = score_public("deadline_boundary", {TIMING: b"candidate"},
+                                  docker=Path("/usr/bin/docker"), image_id=IMAGE, approved_guest=True)
+        observe.assert_not_called()
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["blocked_reason"], "guest_qualification_failed")
+        self.assertEqual([report[k] for k in ("planned", "attempted", "passed", "failed", "blocked", "remaining")],
+                         [10, 0, 0, 0, 0, 10])

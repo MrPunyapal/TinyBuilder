@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .coding_v1_corpus import source
 from .contained_php import CandidateFailure, EvaluationBlocked, MAX_FIXTURE_BYTES, VERSION, observe
+from .qualify_contained_php import require_qualified_guest
 
 
 @dataclass(frozen=True)
@@ -114,7 +115,11 @@ def score_public(task: str, candidates: dict[str, bytes], *, docker: Path, image
     digests = {}
     failures = {}
     blocked_reason = None
-    for case in cases:
+    try:
+        require_qualified_guest(docker, image_id, approved_guest)
+    except EvaluationBlocked as error:
+        blocked_reason = error.reason
+    for case in (() if blocked_reason else cases):
         group = groups[case.phase]
         variant = "policy_mutation" if case.phase == "policy_mutation" else "baseline"
         group["attempted"] += 1

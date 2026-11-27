@@ -29,3 +29,14 @@ class LaravelPilotPatchTests(unittest.TestCase):
         self.assertEqual(row, {"category": "containment_blocked"})
         command.assert_not_called()
         test.assert_not_called()
+
+    def test_route_validation_old_mode_is_rejected_before_worktree_or_php(self):
+        from benchmarks import rust_patch_validation
+        argv = ["rust_patch_validation", "--baseline", "unused", "--output", "unused", "--php", "unused"]
+        with (patch("sys.argv", argv), patch.object(rust_patch_validation, "require") as run,
+              patch.object(rust_patch_validation, "validate_laravel_baseline") as validate,
+              self.assertRaises(SystemExit) as error):
+            rust_patch_validation.main()
+        self.assertEqual(error.exception.code, 2)
+        run.assert_not_called()
+        validate.assert_not_called()

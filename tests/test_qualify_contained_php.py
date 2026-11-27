@@ -35,3 +35,19 @@ class GuestQualificationTests(unittest.TestCase):
             report = qualification.qualify(Path("/usr/bin/docker"), "image", True)
         self.assertEqual(report["blocked_reason"], "approved_guest_unavailable")
         self.assertNotIn("sensitive path", str(report))
+
+    def test_candidate_gate_requires_operator_and_fresh_complete_qualification(self):
+        image = "image"
+        checks = dict.fromkeys((*qualification.CHECKS, "memory_enforced", "timeout_and_cleanup"), True)
+        valid = {"status": "qualified", "image_id": image, "checks": checks}
+        with patch.object(qualification, "qualify", return_value=valid) as run:
+            with self.assertRaises(EvaluationBlocked):
+                qualification.require_qualified_guest(Path("/usr/bin/docker"), image, False)
+            run.assert_not_called()
+            qualification.require_qualified_guest(Path("/usr/bin/docker"), image, True)
+            run.assert_called_once_with(Path("/usr/bin/docker"), image, True)
+        for report in ({**valid, "status": "blocked"}, {**valid, "image_id": "other"},
+                       {**valid, "checks": {}}, {**valid, "checks": {**checks, "memory_enforced": False}}):
+            with (self.subTest(report=report), patch.object(qualification, "qualify", return_value=report),
+                  self.assertRaises(EvaluationBlocked)):
+                qualification.require_qualified_guest(Path("/usr/bin/docker"), image, True)

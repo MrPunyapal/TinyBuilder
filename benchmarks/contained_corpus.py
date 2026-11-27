@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .contained_php import CandidateFailure, EvaluationBlocked, MAX_FIXTURE_BYTES, VERSION, observe
+from .qualify_contained_php import require_qualified_guest
 
 
 TAX_PATH = "app/CodingV1/Tax.php"
@@ -18,6 +19,8 @@ return static function (mixed $input): mixed {
 
 def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: bool) -> dict:
     """Keep assertions and expected results in the caller, outside PHP."""
+    if not isinstance(candidate, bytes) or len(candidate) + len(TAX_BRIDGE) > MAX_FIXTURE_BYTES:
+        raise ValueError("Candidate must be explicit bytes within evaluator budget")
     cases = ((9, False), (10, False), (109, False), (999, False), (1009, False),
              (0, True), (9, True), (109, True), (1009, True))
     results = {
@@ -28,7 +31,11 @@ def score_tax(candidate: bytes, *, docker: Path, image_id: str, approved_guest: 
     fixture_digest = None
     blocked_reason = None
     candidate_failures = {}
-    for net, exempt in cases:
+    try:
+        require_qualified_guest(docker, image_id, approved_guest)
+    except EvaluationBlocked as error:
+        blocked_reason = error.reason
+    for net, exempt in (() if blocked_reason else cases):
         group = results["regression" if exempt else "behavior"]
         group["attempted"] += 1
         try:

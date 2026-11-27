@@ -8,7 +8,8 @@ from benchmarks.contained_php import BlockedReason, CandidateFailure, Evaluation
 
 class ContainedCorpusTests(unittest.TestCase):
     def score(self, observe):
-        with patch("benchmarks.contained_corpus.observe", side_effect=observe):
+        with (patch("benchmarks.contained_corpus.require_qualified_guest"),
+              patch("benchmarks.contained_corpus.observe", side_effect=observe)):
             return score_tax(b"candidate bytes", docker=Path("/usr/bin/docker"),
                              image_id="image", approved_guest=True)
 
@@ -76,3 +77,16 @@ class ContainedCorpusTests(unittest.TestCase):
         report = self.score([Observation(0, "fixture", "image", protocol=-1)])
         self.assertEqual(report["blocked_reason"], "identity_mismatch")
         self.assertEqual(report["behavior"]["blocked"], 1)
+
+    def test_failed_qualification_leaves_all_candidate_probes_unattempted(self):
+        error = EvaluationBlocked("unverified guest", reason=BlockedReason.QUALIFICATION)
+        with (patch("benchmarks.contained_corpus.require_qualified_guest", side_effect=error),
+              patch("benchmarks.contained_corpus.observe") as observe):
+            report = score_tax(b"candidate", docker=Path("/usr/bin/docker"),
+                               image_id="image", approved_guest=True)
+        observe.assert_not_called()
+        self.assertEqual(report["status"], "blocked")
+        self.assertEqual(report["blocked_reason"], "guest_qualification_failed")
+        self.assertEqual(report["behavior"]["attempted"], 0)
+        self.assertEqual(report["behavior"]["remaining"], 5)
+        self.assertEqual(report["regression"]["remaining"], 4)
