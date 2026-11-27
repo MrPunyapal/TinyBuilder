@@ -295,3 +295,15 @@ The earlier 1554af7 full Python workflow passed on Python 3.10, 3.12, 3.13,
 including extracted sdist and wheel. The campaign uses a byte-exact plan
 and bounded descriptor/path identity checks that ignore access-time-only
 updates. No semantic observation was attempted in this review.
+
+Windows hosted native deterministic job
+[140513939990](https://github.com/MrPunyapal/TinyBuilder/actions/runs/46001481252/job/140513939990)
+at 0189363 rejected valid campaign paths (three tests failed with scope or
+source-changed false positives; 288 tests, two skipped). The prior code
+compared path stat and descriptor fstat ctime directly. CPython documents
+a Windows discrepancy in [issue 157671](https://github.com/python/cpython/issues/157671).
+The correction uses same-file identity plus file type, single-link,
+size and mtime across providers, and checks ctime only within the same
+provider. A model-free regression simulates the timestamp discrepancy
+and rejected identity/size/link/mtime/reparse changes. Exact-head hosted
+verification is required; this is not a claim of hostile-writer safety.

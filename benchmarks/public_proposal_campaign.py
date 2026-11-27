@@ -98,16 +98,30 @@ def _signature(info):
             info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 
+def _same_open_file(by_path, by_handle):
+    # Windows stat(path) and fstat(fd) can expose different ctime semantics.
+    # Match identity and size/mtime across providers, and compare ctime only
+    # within each provider. Fail closed if file identity is unavailable.
+    return (by_path.st_ino != 0 and by_handle.st_ino != 0
+            and os.path.samestat(by_path, by_handle)
+            and stat.S_ISREG(by_handle.st_mode) and by_handle.st_nlink == 1
+            and not (getattr(by_handle, "st_file_attributes", 0)
+                     & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400))
+            and by_path.st_size == by_handle.st_size
+            and by_path.st_mtime_ns == by_handle.st_mtime_ns)
+
+
 def _bounded_read(path: Path, limit: int) -> bytes:
     before = _metadata(path, False)
     if before.st_size > limit:
         raise ValueError("source_budget")
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
     with os.fdopen(os.open(path, flags), "rb") as handle:
-        if _signature(os.fstat(handle.fileno())) != _signature(before):
+        opened = os.fstat(handle.fileno())
+        if not _same_open_file(before, opened):
             raise ValueError("source_changed_or_oversize")
         content = handle.read(limit + 1)
-        if _signature(os.fstat(handle.fileno())) != _signature(before):
+        if _signature(os.fstat(handle.fileno())) != _signature(opened):
             raise ValueError("source_changed_or_oversize")
     after = _metadata(path, False)
     if len(content) > limit or _signature(before) != _signature(after) or len(content) != after.st_size:

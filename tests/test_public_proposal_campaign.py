@@ -1,10 +1,12 @@
 """Model-free workspace preparation and scope checks."""
 import json
 from pathlib import Path
+import stat
+from types import SimpleNamespace
 import tempfile
 import unittest
 
-from benchmarks.public_proposal_campaign import MANIFEST, prepare, inspect, plan
+from benchmarks.public_proposal_campaign import MANIFEST, prepare, inspect, plan, _same_open_file, _signature
 
 
 class PublicProposalCampaignTests(unittest.TestCase):
@@ -90,3 +92,15 @@ class PublicProposalCampaignTests(unittest.TestCase):
             path.write_bytes(original.replace(b'"version": 1', b'"version": 2, "version": 1'))
             with self.assertRaisesRegex(ValueError, "manifest_differs"):
                 inspect(root)
+
+    def test_cross_provider_ctime_semantics_do_not_confuse_file_identity(self):
+        info = dict(st_dev=4, st_ino=7, st_mode=stat.S_IFREG | 0o600,
+                    st_nlink=1, st_size=8, st_mtime_ns=100, st_ctime_ns=10)
+        path = SimpleNamespace(**info)
+        opened = SimpleNamespace(**{**info, "st_ctime_ns": 200})
+        self.assertTrue(_same_open_file(path, opened))
+        self.assertNotEqual(_signature(path), _signature(opened))
+        for changed in ({"st_ino": 9}, {"st_ino": 0}, {"st_nlink": 2},
+                        {"st_size": 9}, {"st_mtime_ns": 101},
+                        {"st_file_attributes": 0x400}):
+            self.assertFalse(_same_open_file(path, SimpleNamespace(**{**info, **changed})))
