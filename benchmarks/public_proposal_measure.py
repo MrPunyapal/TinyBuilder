@@ -28,11 +28,13 @@ def _metrics(output):
     return events
 
 
-def measure(lab, runtime, model, project, task):
+def measure(lab, runtime, model, project, task, context_tokens=None):
     argv = [lab, "--project", project, "--runtime", runtime, "--model", model,
             "edit", "--allow-write", "--selective-context", "--proposal-metrics"]
     for path in task["allowed_edit_paths"]:
         argv.extend(("--allowed-edit-path", path))
+    if context_tokens is not None:
+        argv.extend(("--context-tokens", str(context_tokens)))
     argv.extend(("--", task["prompt"]))
     samples, stop = [], Event()
     start = monotonic()
@@ -76,6 +78,8 @@ def main():
         parser.add_argument(f"--{key}", type=Path, required=True)
     parser.add_argument("--expected-model-sha256", required=True)
     parser.add_argument("--expected-runtime-manifest-sha256", required=True)
+    parser.add_argument("--context-tokens", type=int, choices=range(2048, 8193),
+                        metavar="2048..8192")
     args = parser.parse_args()
     root = args.root.absolute()
     output = args.output.resolve()
@@ -95,12 +99,13 @@ def main():
         parser.error("Model or runtime identity mismatch")
     output.mkdir(exist_ok=False)
     evidence = {"condition": "public-source-only-review", **inputs, "planned_tasks": len(tasks),
+                "context_tokens": args.context_tokens,
                 "planned_semantic_observations": before["planned_observations"],
                 "attempted_semantic_observations": 0, "patches_applied": 0, "trials": []}
     report = output / "proposal-measurements.json"
     try:
         for task in tasks:
-            row = measure(lab, runtime, model, root / task["project"], task)
+            row = measure(lab, runtime, model, root / task["project"], task, args.context_tokens)
             evidence["trials"].append(row)
             print(task["task"], row["status"], flush=True)
             if row["status"] in STOP_STATUSES:

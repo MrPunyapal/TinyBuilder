@@ -32,6 +32,9 @@ enum Action {
         /// Emit sanitized retrieval, inference and approval measurements.
         #[arg(long)]
         proposal_metrics: bool,
+        /// Bound the pinned runtime's context for a measured lab condition.
+        #[arg(long, requires = "selective_context", value_parser = clap::value_parser!(u32).range(2048..=8192))]
+        context_tokens: Option<u32>,
     },
 }
 
@@ -42,11 +45,11 @@ fn metric(enabled: bool, row: Value) {
 fn main() -> Result<()> {
     let args=Cli::parse();
     let project=Project::new(&args.project)?;
-    let (task, edit, target, line, selective, allowed, metrics)=match args.command {
-        Action::Ask{task}=>(task,false,None,None,false,Vec::new(),false),
-        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path,proposal_metrics}=>{
+    let (task, edit, target, line, selective, allowed, metrics, context_tokens)=match args.command {
+        Action::Ask{task}=>(task,false,None,None,false,Vec::new(),false,None),
+        Action::Edit{task,allow_write,target,line,selective_context,allowed_edit_path,proposal_metrics,context_tokens}=>{
             ensure!(allow_write,"Edit requires explicit --allow-write lab opt-in");
-            (task,true,target,line,selective_context,allowed_edit_path,proposal_metrics)
+            (task,true,target,line,selective_context,allowed_edit_path,proposal_metrics,context_tokens)
         }
     };
     let retrieval_start = Instant::now();
@@ -68,10 +71,14 @@ fn main() -> Result<()> {
     for (f,(first,last)) in selected.files.iter().zip(&selected.ranges) {println!("File read verified: {} (lines {}–{}){}",terminal(&f.path),first,last,if f.truncated{" [excerpt only]"}else{""});}
     if selected.incomplete {println!("Context may be incomplete; search and file budgets apply.");}
     let startup = Instant::now();
-    let server=Runtime::start(&args.runtime,&args.model).inspect_err(|_| metric(metrics, json!({
+    let server=match context_tokens {
+        Some(tokens) => Runtime::start_bounded(&args.runtime, &args.model, tokens),
+        None => Runtime::start(&args.runtime, &args.model),
+    }.inspect_err(|_| metric(metrics, json!({
         "phase":"startup","status":"startup_failed","elapsed_ms":startup.elapsed().as_millis() as u64
     })))?;
-    metric(metrics, json!({"phase":"startup","status":"ready","elapsed_ms":startup.elapsed().as_millis() as u64}));
+    metric(metrics, json!({"phase":"startup","status":"ready","context_tokens":context_tokens,
+        "elapsed_ms":startup.elapsed().as_millis() as u64}));
     if !edit {
         let answer=workbench::ask(&task,&selected,|request|server.complete(request))?;
         println!("Model answer (verify factual claims):");
@@ -152,6 +159,8 @@ mod tests {
         assert!(Cli::try_parse_from(base).is_err());
         let args = base.into_iter().chain(["--allowed-edit-path", "app/Case.php"]);
         assert!(Cli::try_parse_from(args.clone()).is_ok());
+        assert!(Cli::try_parse_from(args.clone().chain(["--context-tokens", "4096"])).is_ok());
+        assert!(Cli::try_parse_from(args.clone().chain(["--context-tokens", "100000"])).is_err());
         assert!(Cli::try_parse_from(args.chain(["--target", "app/Case.php"])).is_err());
     }
 }
