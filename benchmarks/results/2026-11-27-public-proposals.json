@@ -1,0 +1,691 @@
+{
+  "runtime_revision": "b12359",
+  "device": "CPU",
+  "runs": {
+    "1.5B-run": {
+      "condition": "public-source-only-review",
+      "model_sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+      "lab_sha256": "29433dbfa20088f126c28a3d4202a9940fe038eff73a3fd397b212f61e063130",
+      "plan_sha256": "2f8fa7985c70500e5a8165ecdac8104c58b9ff31b7f1a7480a9e134fe8a23aa4",
+      "planned_tasks": 12,
+      "planned_semantic_observations": 87,
+      "attempted_semantic_observations": 0,
+      "patches_applied": 0,
+      "trials": [
+        {
+          "task": "contact_channel",
+          "wall_ms": 1421,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "patient_visibility",
+          "wall_ms": 610,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "urgent_reminders",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "booking_availability",
+          "wall_ms": 594,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "available_stock",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "group_inventory",
+          "wall_ms": 8546,
+          "exit_code": 0,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "files": [
+                {
+                  "complete": true,
+                  "path": "app/CodingV1/Group.php"
+                }
+              ],
+              "incomplete": false,
+              "status": "selected"
+            },
+            "startup": {
+              "elapsed_ms": 3359,
+              "status": "ready"
+            },
+            "proposal": {
+              "calls": 1,
+              "completion_tokens": 72,
+              "elapsed_ms": 4882,
+              "finish_reason": null,
+              "path": "app/CodingV1/Group.php",
+              "prompt_tokens": 217,
+              "status": "proposal_ready"
+            },
+            "approval": {
+              "status": "not_approved"
+            }
+          },
+          "combined_peak_sampled_bytes": 2669633536,
+          "server_peak_working_set_bytes": 2683043840,
+          "status": "proposal_ready",
+          "allowed_paths_retrieved": [
+            "app/CodingV1/Group.php"
+          ]
+        },
+        {
+          "task": "exempt_tax",
+          "wall_ms": 641,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "listing_response",
+          "wall_ms": 578,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "priority_normalization",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "deadline_boundary",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "rural_quote",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "parcel_weight",
+          "wall_ms": 594,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        }
+      ],
+      "attempted_tasks": 12,
+      "remaining_tasks": 0,
+      "counts": {
+        "context_retrieval_failed": 11,
+        "proposal_ready": 1
+      },
+      "source_unchanged": true,
+      "model_unchanged": true,
+      "runtime_manifest_unchanged": true
+    },
+    "1.5B-4096": {
+      "condition": "public-source-only-review",
+      "model_sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+      "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+      "lab_sha256": "055c487330707b99c27427d8cb92c6154dedb1db7be621f57fdf7b87baf19721",
+      "plan_sha256": "2f8fa7985c70500e5a8165ecdac8104c58b9ff31b7f1a7480a9e134fe8a23aa4",
+      "planned_tasks": 12,
+      "context_tokens": 4096,
+      "planned_semantic_observations": 87,
+      "attempted_semantic_observations": 0,
+      "patches_applied": 0,
+      "trials": [
+        {
+          "task": "contact_channel",
+          "wall_ms": 1922,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 6,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "patient_visibility",
+          "wall_ms": 687,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "urgent_reminders",
+          "wall_ms": 641,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "booking_availability",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "available_stock",
+          "wall_ms": 640,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "group_inventory",
+          "wall_ms": 7469,
+          "exit_code": 0,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "files": [
+                {
+                  "complete": true,
+                  "path": "app/CodingV1/Group.php"
+                }
+              ],
+              "incomplete": false,
+              "status": "selected"
+            },
+            "startup": {
+              "context_tokens": 4096,
+              "elapsed_ms": 1746,
+              "status": "ready"
+            },
+            "proposal": {
+              "calls": 1,
+              "completion_tokens": 72,
+              "elapsed_ms": 5317,
+              "finish_reason": null,
+              "path": "app/CodingV1/Group.php",
+              "prompt_tokens": 217,
+              "status": "proposal_ready"
+            },
+            "approval": {
+              "status": "not_approved"
+            }
+          },
+          "combined_peak_sampled_bytes": 1846976512,
+          "server_peak_working_set_bytes": 1859739648,
+          "status": "proposal_ready",
+          "allowed_paths_retrieved": [
+            "app/CodingV1/Group.php"
+          ]
+        },
+        {
+          "task": "exempt_tax",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "listing_response",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "priority_normalization",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "deadline_boundary",
+          "wall_ms": 656,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "rural_quote",
+          "wall_ms": 625,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "parcel_weight",
+          "wall_ms": 656,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        }
+      ],
+      "attempted_tasks": 12,
+      "remaining_tasks": 0,
+      "counts": {
+        "context_retrieval_failed": 11,
+        "proposal_ready": 1
+      },
+      "source_unchanged": true,
+      "model_unchanged": true,
+      "runtime_manifest_unchanged": true
+    },
+    "3B-4096": {
+      "condition": "public-source-only-review",
+      "model_sha256": "4a188102020e9c9530b687fd6400f775c45e90a0d7baafe65bd0a36963fbb7ba",
+      "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+      "lab_sha256": "055c487330707b99c27427d8cb92c6154dedb1db7be621f57fdf7b87baf19721",
+      "plan_sha256": "2f8fa7985c70500e5a8165ecdac8104c58b9ff31b7f1a7480a9e134fe8a23aa4",
+      "planned_tasks": 12,
+      "context_tokens": 4096,
+      "planned_semantic_observations": 87,
+      "attempted_semantic_observations": 0,
+      "patches_applied": 0,
+      "trials": [
+        {
+          "task": "contact_channel",
+          "wall_ms": 1046,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 5,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "patient_visibility",
+          "wall_ms": 610,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "urgent_reminders",
+          "wall_ms": 672,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "booking_availability",
+          "wall_ms": 609,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "available_stock",
+          "wall_ms": 656,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "group_inventory",
+          "wall_ms": 17578,
+          "exit_code": 0,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "files": [
+                {
+                  "complete": true,
+                  "path": "app/CodingV1/Group.php"
+                }
+              ],
+              "incomplete": false,
+              "status": "selected"
+            },
+            "startup": {
+              "context_tokens": 4096,
+              "elapsed_ms": 4306,
+              "status": "ready"
+            },
+            "proposal": {
+              "calls": 1,
+              "completion_tokens": 72,
+              "elapsed_ms": 12812,
+              "finish_reason": null,
+              "path": "app/CodingV1/Group.php",
+              "prompt_tokens": 217,
+              "status": "proposal_ready"
+            },
+            "approval": {
+              "status": "not_approved"
+            }
+          },
+          "combined_peak_sampled_bytes": 3532140544,
+          "server_peak_working_set_bytes": 3545542656,
+          "status": "proposal_ready",
+          "allowed_paths_retrieved": [
+            "app/CodingV1/Group.php"
+          ]
+        },
+        {
+          "task": "exempt_tax",
+          "wall_ms": 688,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "listing_response",
+          "wall_ms": 641,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 1,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "priority_normalization",
+          "wall_ms": 671,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "deadline_boundary",
+          "wall_ms": 750,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 2,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "rural_quote",
+          "wall_ms": 907,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        },
+        {
+          "task": "parcel_weight",
+          "wall_ms": 1000,
+          "exit_code": 1,
+          "events": {
+            "retrieval": {
+              "elapsed_ms": 3,
+              "status": "context_retrieval_failed"
+            }
+          },
+          "combined_peak_sampled_bytes": null,
+          "server_peak_working_set_bytes": null,
+          "status": "context_retrieval_failed",
+          "allowed_paths_retrieved": []
+        }
+      ],
+      "attempted_tasks": 12,
+      "remaining_tasks": 0,
+      "counts": {
+        "context_retrieval_failed": 11,
+        "proposal_ready": 1
+      },
+      "source_unchanged": true,
+      "model_unchanged": true,
+      "runtime_manifest_unchanged": true
+    }
+  }
+}
