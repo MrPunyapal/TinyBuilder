@@ -4,6 +4,8 @@ from hashlib import sha256
 import json
 from pathlib import Path
 
+from .retrieval_laravel_fixtures import LARAVEL_PROJECTS
+
 
 def _laravel_file(namespace, body, imports=()):
     uses = "".join(f"use {name};\n" for name in imports)
@@ -206,11 +208,13 @@ pub fn reconnect_delay(attempt: u8) -> Option<u64> {
 
 
 # Neighbouring modules provide both neutral and vocabulary-overlap distractors.
-for entries, root, suffix, stub in [
-    (LARAVEL, "app", "php", "<?php\nreturn ['module' => '%s', 'enabled' => true];\n"),
-    (PYTHON, "src/observatory", "py", "MODULE = '%s'\nENABLED = True\n"),
-    (RUST, "src", "rs", 'pub const MODULE: &str = "%s";\npub const ENABLED: bool = true;\n'),
+DISTRACTORS = {}
+for label, entries, root, suffix, stub in [
+    ("theatre", LARAVEL, "app", "php", "<?php\nreturn ['module' => '%s', 'enabled' => true];\n"),
+    ("observatory", PYTHON, "src/observatory", "py", "MODULE = '%s'\nENABLED = True\n"),
+    ("dispatch", RUST, "src", "rs", 'pub const MODULE: &str = "%s";\npub const ENABLED: bool = true;\n'),
 ]:
+    distractors = DISTRACTORS[label] = set()
     for group, names in {
         "billing": "payment currency invoice balance receipt",
         "delivery": "retry priority routing delivery queue",
@@ -219,10 +223,15 @@ for entries, root, suffix, stub in [
         "support": "defaults options timezone metrics seats",
     }.items():
         for name in names.split():
-            entries[f"{root}/{group}/{name}.{suffix}"] = stub % name
+            directory = "Support" if label == "theatre" and group == "support" else group
+            path = f"{root}/{directory}/{name}.{suffix}"
+            entries[path] = stub % name
+            distractors.add(path)
 
 
-REPOSITORIES = {"theatre": LARAVEL, "observatory": PYTHON, "dispatch": RUST}
+REPOSITORIES = {"theatre": LARAVEL, "observatory": PYTHON, "dispatch": RUST, **LARAVEL_PROJECTS}
+for repo in LARAVEL_PROJECTS:
+    DISTRACTORS[repo] = {"config/logging.php", "resources/views/dashboard.blade.php"}
 
 
 def snapshot(root):
