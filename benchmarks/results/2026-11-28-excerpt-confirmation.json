@@ -1,0 +1,3620 @@
+{
+  "lab_sha256": "0e33949c27930c6f8d8abd29a0ff43e592be60edc544144c290981e1f3cf1e71",
+  "confirmation_sha256": "2b1af6fd4c665cc7041428df8963ad4ef2039c1a5ce6eac2fd939c8f8c2677b9",
+  "gates": {
+    "overall_span_recall_min_pct": 90,
+    "median_overhead_max_pct": 20
+  },
+  "source_unchanged": true,
+  "summary": {
+    "baseline": {
+      "complete_tasks": 18,
+      "tasks": 24,
+      "required_spans_delivered": 22,
+      "required_spans": 28,
+      "documentation_spans_delivered": 12,
+      "documentation_spans": 12,
+      "context_bytes": 527642,
+      "truncated_excerpts": 43,
+      "median_us": 3206.5,
+      "p95_us": 3860,
+      "peak_rss_bytes": 7065600,
+      "violations": 0
+    },
+    "aligned": {
+      "complete_tasks": 21,
+      "tasks": 24,
+      "required_spans_delivered": 25,
+      "required_spans": 28,
+      "documentation_spans_delivered": 11,
+      "documentation_spans": 12,
+      "context_bytes": 527686,
+      "truncated_excerpts": 43,
+      "median_us": 3655.0,
+      "p95_us": 4130,
+      "peak_rss_bytes": 7098368,
+      "violations": 0
+    },
+    "code_weighted": {
+      "complete_tasks": 19,
+      "tasks": 24,
+      "required_spans_delivered": 23,
+      "required_spans": 28,
+      "documentation_spans_delivered": 8,
+      "documentation_spans": 12,
+      "context_bytes": 527772,
+      "truncated_excerpts": 43,
+      "median_us": 3614.0,
+      "p95_us": 4045,
+      "peak_rss_bytes": 7098368,
+      "violations": 0
+    }
+  },
+  "by_family": {
+    "implementation": {
+      "baseline": {
+        "complete_tasks": 5,
+        "tasks": 8,
+        "required_spans_delivered": 5,
+        "required_spans": 8,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 171685,
+        "truncated_excerpts": 14,
+        "median_us": 3320.0,
+        "p95_us": 3860,
+        "peak_rss_bytes": 7036928,
+        "violations": 0
+      },
+      "aligned": {
+        "complete_tasks": 7,
+        "tasks": 8,
+        "required_spans_delivered": 7,
+        "required_spans": 8,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 171761,
+        "truncated_excerpts": 14,
+        "median_us": 3674.5,
+        "p95_us": 4104,
+        "peak_rss_bytes": 7098368,
+        "violations": 0
+      },
+      "code_weighted": {
+        "complete_tasks": 7,
+        "tasks": 8,
+        "required_spans_delivered": 7,
+        "required_spans": 8,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 171761,
+        "truncated_excerpts": 14,
+        "median_us": 3678.0,
+        "p95_us": 3996,
+        "peak_rss_bytes": 7098368,
+        "violations": 0
+      }
+    },
+    "documentation": {
+      "baseline": {
+        "complete_tasks": 8,
+        "tasks": 8,
+        "required_spans_delivered": 8,
+        "required_spans": 8,
+        "documentation_spans_delivered": 8,
+        "documentation_spans": 8,
+        "context_bytes": 159297,
+        "truncated_excerpts": 13,
+        "median_us": 3033.5,
+        "p95_us": 3894,
+        "peak_rss_bytes": 7004160,
+        "violations": 0
+      },
+      "aligned": {
+        "complete_tasks": 7,
+        "tasks": 8,
+        "required_spans_delivered": 7,
+        "required_spans": 8,
+        "documentation_spans_delivered": 7,
+        "documentation_spans": 8,
+        "context_bytes": 159303,
+        "truncated_excerpts": 13,
+        "median_us": 3541.0,
+        "p95_us": 4130,
+        "peak_rss_bytes": 6995968,
+        "violations": 0
+      },
+      "code_weighted": {
+        "complete_tasks": 5,
+        "tasks": 8,
+        "required_spans_delivered": 5,
+        "required_spans": 8,
+        "documentation_spans_delivered": 5,
+        "documentation_spans": 8,
+        "context_bytes": 159380,
+        "truncated_excerpts": 13,
+        "median_us": 3545.5,
+        "p95_us": 4045,
+        "peak_rss_bytes": 7041024,
+        "violations": 0
+      }
+    },
+    "mixed": {
+      "baseline": {
+        "complete_tasks": 1,
+        "tasks": 4,
+        "required_spans_delivered": 5,
+        "required_spans": 8,
+        "documentation_spans_delivered": 4,
+        "documentation_spans": 4,
+        "context_bytes": 98385,
+        "truncated_excerpts": 8,
+        "median_us": 3239.0,
+        "p95_us": 3573,
+        "peak_rss_bytes": 7065600,
+        "violations": 0
+      },
+      "aligned": {
+        "complete_tasks": 3,
+        "tasks": 4,
+        "required_spans_delivered": 7,
+        "required_spans": 8,
+        "documentation_spans_delivered": 4,
+        "documentation_spans": 4,
+        "context_bytes": 98334,
+        "truncated_excerpts": 8,
+        "median_us": 3788.5,
+        "p95_us": 4392,
+        "peak_rss_bytes": 6983680,
+        "violations": 0
+      },
+      "code_weighted": {
+        "complete_tasks": 3,
+        "tasks": 4,
+        "required_spans_delivered": 7,
+        "required_spans": 8,
+        "documentation_spans_delivered": 3,
+        "documentation_spans": 4,
+        "context_bytes": 98335,
+        "truncated_excerpts": 8,
+        "median_us": 3630.0,
+        "p95_us": 3960,
+        "peak_rss_bytes": 7077888,
+        "violations": 0
+      }
+    },
+    "short": {
+      "baseline": {
+        "complete_tasks": 4,
+        "tasks": 4,
+        "required_spans_delivered": 4,
+        "required_spans": 4,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 98275,
+        "truncated_excerpts": 8,
+        "median_us": 3287.0,
+        "p95_us": 3553,
+        "peak_rss_bytes": 7045120,
+        "violations": 0
+      },
+      "aligned": {
+        "complete_tasks": 4,
+        "tasks": 4,
+        "required_spans_delivered": 4,
+        "required_spans": 4,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 98288,
+        "truncated_excerpts": 8,
+        "median_us": 3568.5,
+        "p95_us": 3919,
+        "peak_rss_bytes": 7077888,
+        "violations": 0
+      },
+      "code_weighted": {
+        "complete_tasks": 4,
+        "tasks": 4,
+        "required_spans_delivered": 4,
+        "required_spans": 4,
+        "documentation_spans_delivered": 0,
+        "documentation_spans": 0,
+        "context_bytes": 98296,
+        "truncated_excerpts": 8,
+        "median_us": 3481.5,
+        "p95_us": 4090,
+        "peak_rss_bytes": 6983680,
+        "violations": 0
+      }
+    }
+  },
+  "decisions": {
+    "aligned": {
+      "passed": false,
+      "checks": {
+        "overall_required_span_recall": false,
+        "complete_task_improvement": true,
+        "no_documentation_regression": false,
+        "short_controls_complete": true,
+        "scope_completeness_and_budgets_intact": true,
+        "median_latency_overhead": true
+      },
+      "lost_documentation_spans": [
+        {
+          "case": "calibration-expiration",
+          "span": {
+            "path": "src/assay/thresholds.rs",
+            "first": 367,
+            "last": 368,
+            "documentation": true
+          }
+        }
+      ],
+      "median_overhead_pct": 13.98721347263372
+    },
+    "code_weighted": {
+      "passed": false,
+      "checks": {
+        "overall_required_span_recall": false,
+        "complete_task_improvement": true,
+        "no_documentation_regression": false,
+        "short_controls_complete": true,
+        "scope_completeness_and_budgets_intact": true,
+        "median_latency_overhead": true
+      },
+      "lost_documentation_spans": [
+        {
+          "case": "carrier-handover",
+          "span": {
+            "path": "app/Logistics/ShipmentProbe.php",
+            "first": 554,
+            "last": 555,
+            "documentation": true
+          }
+        },
+        {
+          "case": "recovery-sequence",
+          "span": {
+            "path": "src/caption/segments.py",
+            "first": 367,
+            "last": 368,
+            "documentation": true
+          }
+        },
+        {
+          "case": "calibration-expiration",
+          "span": {
+            "path": "src/assay/thresholds.rs",
+            "first": 367,
+            "last": 368,
+            "documentation": true
+          }
+        },
+        {
+          "case": "protected-coordinate",
+          "span": {
+            "path": "src/observations/survey.ts",
+            "first": 368,
+            "last": 369,
+            "documentation": true
+          }
+        }
+      ],
+      "median_overhead_pct": 12.708560736004992
+    }
+  },
+  "cases": [
+    {
+      "repository": "cold-chain",
+      "case": "excursion-minutes",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "app/Logistics/ShipmentProbe.php",
+          "first": 368,
+          "last": 372,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12287,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            4612,
+            3723,
+            3071,
+            3895,
+            3497,
+            2660,
+            3278,
+            3434,
+            2457
+          ],
+          "peak_rss_bytes": 6930432
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12288,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 434,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12288,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4428,
+            3236,
+            3462,
+            3716,
+            3682,
+            2621,
+            4088,
+            3280,
+            3391
+          ],
+          "peak_rss_bytes": 7098368
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12288,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 434,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12288,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3493,
+            3683,
+            4302,
+            4442,
+            3180,
+            2981,
+            3674,
+            4139,
+            3375
+          ],
+          "peak_rss_bytes": 7061504
+        }
+      }
+    },
+    {
+      "repository": "cold-chain",
+      "case": "broken-seal",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "handbook/dispatch.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12242,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 132,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24529,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4012,
+            3413,
+            3208,
+            4275,
+            3248,
+            2408,
+            3700,
+            2900,
+            3763
+          ],
+          "peak_rss_bytes": 7004160
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12242,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 251,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24529,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4789,
+            4110,
+            3932,
+            4848,
+            4102,
+            3103,
+            4153,
+            4524,
+            3892
+          ],
+          "peak_rss_bytes": 6995968
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12242,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24529,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4294,
+            3909,
+            4045,
+            4435,
+            2997,
+            4246,
+            3977,
+            4230,
+            3583
+          ],
+          "peak_rss_bytes": 7041024
+        }
+      }
+    },
+    {
+      "repository": "cold-chain",
+      "case": "carrier-handover",
+      "family": "mixed",
+      "required": [
+        {
+          "path": "app/Logistics/ShipmentProbe.php",
+          "first": 368,
+          "last": 372,
+          "documentation": false
+        },
+        {
+          "path": "app/Logistics/ShipmentProbe.php",
+          "first": 554,
+          "last": 555,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24545,
+          "delivered": [
+            false,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3940,
+            3376,
+            2609,
+            4874,
+            3150,
+            3573,
+            3940,
+            3773,
+            3156
+          ],
+          "peak_rss_bytes": 7065600
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24545,
+          "delivered": [
+            false,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            6348,
+            5519,
+            4644,
+            4579,
+            4310,
+            4234,
+            3929,
+            4392,
+            3768
+          ],
+          "peak_rss_bytes": 6963200
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12288,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 434,
+              "path": "app/Logistics/ShipmentProbe.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24546,
+          "delivered": [
+            true,
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            5447,
+            3348,
+            3135,
+            4372,
+            3960,
+            3838,
+            4227,
+            4109,
+            3794
+          ],
+          "peak_rss_bytes": 6955008
+        }
+      }
+    },
+    {
+      "repository": "cold-chain",
+      "case": "route-tag",
+      "family": "short",
+      "required": [
+        {
+          "path": "app/Logistics/RouteTag.php",
+          "first": 1,
+          "last": 2,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24545,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4910,
+            3553,
+            2870,
+            3948,
+            3760,
+            3100,
+            4169,
+            2736,
+            3078
+          ],
+          "peak_rss_bytes": 7045120
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24545,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4782,
+            4258,
+            4629,
+            5270,
+            3354,
+            3262,
+            3919,
+            3906,
+            3182
+          ],
+          "peak_rss_bytes": 7077888
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 46,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "app/Logistics/RouteTag.php"
+            },
+            {
+              "bytes": 12212,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/dispatch.md"
+            },
+            {
+              "bytes": 12287,
+              "complete": false,
+              "first_line": 426,
+              "last_line": 555,
+              "path": "app/Logistics/ShipmentProbe.php"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24545,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5255,
+            4090,
+            3787,
+            3931,
+            4359,
+            3541,
+            4467,
+            4344,
+            3350
+          ],
+          "peak_rss_bytes": 6983680
+        }
+      }
+    },
+    {
+      "repository": "harbor-clearance",
+      "case": "tidal-allowance",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "internal/berth/window.go",
+          "first": 365,
+          "last": 367,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12270,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 131,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24579,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            3083,
+            3947,
+            2363,
+            3837,
+            2736,
+            2327,
+            3364,
+            3566,
+            3133
+          ],
+          "peak_rss_bytes": 6946816
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24592,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4121,
+            2976,
+            2954,
+            4111,
+            3027,
+            3437,
+            3943,
+            3676,
+            2750
+          ],
+          "peak_rss_bytes": 6963200
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24592,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3792,
+            2989,
+            3259,
+            4097,
+            3021,
+            3399,
+            3717,
+            3492,
+            3422
+          ],
+          "peak_rss_bytes": 7098368
+        }
+      }
+    },
+    {
+      "repository": "harbor-clearance",
+      "case": "permit-number",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "operator/clearance.md",
+          "first": 367,
+          "last": 368,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12218,
+              "complete": false,
+              "first_line": 235,
+              "last_line": 368,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12270,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 131,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24535,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3249,
+            2551,
+            2474,
+            3082,
+            3031,
+            2722,
+            3955,
+            2538,
+            3116
+          ],
+          "peak_rss_bytes": 7000064
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12218,
+              "complete": false,
+              "first_line": 235,
+              "last_line": 368,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24548,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3823,
+            3040,
+            3796,
+            4554,
+            2974,
+            3558,
+            3976,
+            2827,
+            3212
+          ],
+          "peak_rss_bytes": 6938624
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12218,
+              "complete": false,
+              "first_line": 235,
+              "last_line": 368,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24548,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4515,
+            3194,
+            3416,
+            3845,
+            3021,
+            2818,
+            4141,
+            2895,
+            2923
+          ],
+          "peak_rss_bytes": 6987776
+        }
+      }
+    },
+    {
+      "repository": "harbor-clearance",
+      "case": "tug-clearance",
+      "family": "mixed",
+      "required": [
+        {
+          "path": "internal/berth/window.go",
+          "first": 365,
+          "last": 367,
+          "documentation": false
+        },
+        {
+          "path": "operator/clearance.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12270,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 131,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 49,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/report/depth.go"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24628,
+          "delivered": [
+            false,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3714,
+            2535,
+            3404,
+            3196,
+            2462,
+            3385,
+            3195,
+            3628,
+            3296
+          ],
+          "peak_rss_bytes": 7041024
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 49,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/report/depth.go"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24641,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5156,
+            3199,
+            3567,
+            3844,
+            3638,
+            3097,
+            4665,
+            4215,
+            4108
+          ],
+          "peak_rss_bytes": 6971392
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            },
+            {
+              "bytes": 49,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/report/depth.go"
+            },
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24641,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4257,
+            3014,
+            3400,
+            4279,
+            3370,
+            3301,
+            4513,
+            3481,
+            3792
+          ],
+          "peak_rss_bytes": 7077888
+        }
+      }
+    },
+    {
+      "repository": "harbor-clearance",
+      "case": "retry-constant",
+      "family": "short",
+      "required": [
+        {
+          "path": "internal/berth/retry.go",
+          "first": 1,
+          "last": 2,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12270,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 131,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24579,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4444,
+            3305,
+            2851,
+            3297,
+            2729,
+            3207,
+            3506,
+            3018,
+            3017
+          ],
+          "peak_rss_bytes": 7024640
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24592,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4849,
+            2989,
+            3215,
+            3742,
+            3599,
+            3096,
+            3386,
+            2758,
+            3492
+          ],
+          "peak_rss_bytes": 7045120
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 47,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 2,
+              "path": "internal/berth/retry.go"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 252,
+              "path": "operator/clearance.md"
+            },
+            {
+              "bytes": 12283,
+              "complete": false,
+              "first_line": 237,
+              "last_line": 367,
+              "path": "internal/berth/window.go"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24592,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4444,
+            3000,
+            3611,
+            4438,
+            3133,
+            3413,
+            4805,
+            2813,
+            3912
+          ],
+          "peak_rss_bytes": 6959104
+        }
+      }
+    },
+    {
+      "repository": "caption-relay",
+      "case": "overlapping-cues",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "src/caption/segments.py",
+          "first": 183,
+          "last": 185,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12215,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/snapshot.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24555,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4740,
+            3316,
+            2839,
+            4088,
+            2701,
+            3770,
+            3517,
+            2737,
+            3589
+          ],
+          "peak_rss_bytes": 7036928
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12215,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/snapshot.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24555,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4515,
+            3514,
+            4365,
+            4907,
+            3508,
+            3745,
+            4055,
+            3569,
+            3868
+          ],
+          "peak_rss_bytes": 6930432
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12215,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/snapshot.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24555,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5207,
+            3682,
+            3608,
+            4237,
+            3482,
+            3453,
+            4127,
+            3940,
+            3654
+          ],
+          "peak_rss_bytes": 6946816
+        }
+      }
+    },
+    {
+      "repository": "caption-relay",
+      "case": "recovery-sequence",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "src/caption/segments.py",
+          "first": 367,
+          "last": 368,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12278,
+              "complete": false,
+              "first_line": 301,
+              "last_line": 432,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12205,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24522,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3600,
+            3514,
+            2523,
+            4182,
+            2909,
+            2825,
+            4335,
+            3891,
+            2953
+          ],
+          "peak_rss_bytes": 6901760
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12278,
+              "complete": false,
+              "first_line": 301,
+              "last_line": 432,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12205,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24522,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4515,
+            3349,
+            3300,
+            4381,
+            2962,
+            3689,
+            4890,
+            5128,
+            4130
+          ],
+          "peak_rss_bytes": 6959104
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12286,
+              "complete": false,
+              "first_line": 420,
+              "last_line": 550,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 12205,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24530,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            3941,
+            3737,
+            3003,
+            5237,
+            3691,
+            2927,
+            4334,
+            3879,
+            3881
+          ],
+          "peak_rss_bytes": 7008256
+        }
+      }
+    },
+    {
+      "repository": "caption-relay",
+      "case": "caption-correction",
+      "family": "mixed",
+      "required": [
+        {
+          "path": "src/caption/segments.py",
+          "first": 183,
+          "last": 185,
+          "documentation": false
+        },
+        {
+          "path": "operator/live_captioning.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12279,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 132,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24580,
+          "delivered": [
+            false,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4767,
+            2989,
+            3966,
+            3625,
+            2464,
+            3182,
+            3802,
+            2760,
+            2649
+          ],
+          "peak_rss_bytes": 6897664
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12215,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 249,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24516,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4746,
+            3742,
+            3146,
+            3964,
+            3188,
+            3430,
+            4364,
+            3170,
+            3344
+          ],
+          "peak_rss_bytes": 6983680
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12215,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 249,
+              "path": "src/caption/segments.py"
+            },
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24516,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5221,
+            4925,
+            3529,
+            3779,
+            2974,
+            4206,
+            4030,
+            3463,
+            3296
+          ],
+          "peak_rss_bytes": 6909952
+        }
+      }
+    },
+    {
+      "repository": "caption-relay",
+      "case": "caption-encoding",
+      "family": "short",
+      "required": [
+        {
+          "path": "src/caption/encoding.py",
+          "first": 1,
+          "last": 1,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12278,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 433,
+              "path": "src/caption/segments.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24579,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4551,
+            3367,
+            3324,
+            4699,
+            2913,
+            3216,
+            3843,
+            3795,
+            3157
+          ],
+          "peak_rss_bytes": 6971392
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12278,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 433,
+              "path": "src/caption/segments.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24579,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4454,
+            3420,
+            3176,
+            4325,
+            3678,
+            3357,
+            4476,
+            3751,
+            3887
+          ],
+          "peak_rss_bytes": 6905856
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 39,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/caption/encoding.py"
+            },
+            {
+              "bytes": 12262,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "operator/live_captioning.md"
+            },
+            {
+              "bytes": 12286,
+              "complete": false,
+              "first_line": 420,
+              "last_line": 550,
+              "path": "src/caption/segments.py"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24587,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4111,
+            3218,
+            3430,
+            5154,
+            3345,
+            3105,
+            4450,
+            3352,
+            3100
+          ],
+          "peak_rss_bytes": 6975488
+        }
+      }
+    },
+    {
+      "repository": "alloy-lab",
+      "case": "slag-allowance",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "src/assay/thresholds.rs",
+          "first": 183,
+          "last": 185,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24588,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4124,
+            4300,
+            3465,
+            4734,
+            3860,
+            3184,
+            4269,
+            3381,
+            3282
+          ],
+          "peak_rss_bytes": 6873088
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24588,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5128,
+            3451,
+            4301,
+            4526,
+            2785,
+            3920,
+            3547,
+            4547,
+            4104
+          ],
+          "peak_rss_bytes": 6873088
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24588,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5734,
+            3853,
+            3285,
+            4337,
+            3717,
+            3736,
+            4046,
+            4277,
+            2971
+          ],
+          "peak_rss_bytes": 6926336
+        }
+      }
+    },
+    {
+      "repository": "alloy-lab",
+      "case": "calibration-expiration",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "src/assay/thresholds.rs",
+          "first": 367,
+          "last": 368,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12285,
+              "complete": false,
+              "first_line": 239,
+              "last_line": 368,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12346,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5116,
+            5168,
+            3894,
+            5340,
+            3735,
+            3117,
+            5057,
+            2437,
+            2980
+          ],
+          "peak_rss_bytes": 6873088
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12240,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 130,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12301,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            4877,
+            4220,
+            3394,
+            4184,
+            2884,
+            3953,
+            3392,
+            3185,
+            2866
+          ],
+          "peak_rss_bytes": 6868992
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12240,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 130,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12301,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            6040,
+            3259,
+            4005,
+            4245,
+            2882,
+            4061,
+            4701,
+            3406,
+            2598
+          ],
+          "peak_rss_bytes": 6864896
+        }
+      }
+    },
+    {
+      "repository": "alloy-lab",
+      "case": "slag-release",
+      "family": "mixed",
+      "required": [
+        {
+          "path": "src/assay/thresholds.rs",
+          "first": 183,
+          "last": 185,
+          "documentation": false
+        },
+        {
+          "path": "manual/quality.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24632,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3067,
+            2575,
+            2484,
+            3486,
+            2848,
+            2691,
+            3179,
+            3056,
+            2497
+          ],
+          "peak_rss_bytes": 6963200
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24632,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3751,
+            3453,
+            3733,
+            5154,
+            3933,
+            2786,
+            4287,
+            2809,
+            2975
+          ],
+          "peak_rss_bytes": 6922240
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12284,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/assay/thresholds.rs"
+            },
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 61,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/display.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24632,
+          "delivered": [
+            true,
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4437,
+            3142,
+            3153,
+            3537,
+            3269,
+            2864,
+            4416,
+            3885,
+            2905
+          ],
+          "peak_rss_bytes": 6987776
+        }
+      }
+    },
+    {
+      "repository": "alloy-lab",
+      "case": "assay-stamp",
+      "family": "short",
+      "required": [
+        {
+          "path": "src/assay/code.rs",
+          "first": 1,
+          "last": 1,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12285,
+              "complete": false,
+              "first_line": 239,
+              "last_line": 368,
+              "path": "src/assay/thresholds.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24572,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3794,
+            2210,
+            2115,
+            3398,
+            2570,
+            2755,
+            3542,
+            2395,
+            2865
+          ],
+          "peak_rss_bytes": 7036928
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12285,
+              "complete": false,
+              "first_line": 239,
+              "last_line": 368,
+              "path": "src/assay/thresholds.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24572,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3601,
+            3039,
+            2912,
+            3122,
+            3331,
+            2822,
+            3437,
+            3097,
+            3084
+          ],
+          "peak_rss_bytes": 6934528
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 44,
+              "complete": true,
+              "first_line": 1,
+              "last_line": 1,
+              "path": "src/assay/code.rs"
+            },
+            {
+              "bytes": 12243,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "manual/quality.md"
+            },
+            {
+              "bytes": 12285,
+              "complete": false,
+              "first_line": 239,
+              "last_line": 368,
+              "path": "src/assay/thresholds.rs"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24572,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3582,
+            2624,
+            2983,
+            3471,
+            3403,
+            2427,
+            3354,
+            2904,
+            2405
+          ],
+          "peak_rss_bytes": 6983680
+        }
+      }
+    },
+    {
+      "repository": "seed-library",
+      "case": "extend-loan",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "lib/seed_library/checkouts.rb",
+          "first": 183,
+          "last": 186,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12255,
+              "complete": false,
+              "first_line": 116,
+              "last_line": 249,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12207,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24462,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4193,
+            2618,
+            3036,
+            3718,
+            3468,
+            2712,
+            3220,
+            3437,
+            4047
+          ],
+          "peak_rss_bytes": 6955008
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12255,
+              "complete": false,
+              "first_line": 116,
+              "last_line": 249,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24500,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5050,
+            3289,
+            3387,
+            4366,
+            2990,
+            3636,
+            3932,
+            3663,
+            3184
+          ],
+          "peak_rss_bytes": 6979584
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12255,
+              "complete": false,
+              "first_line": 116,
+              "last_line": 249,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24500,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4459,
+            3449,
+            3557,
+            4102,
+            3432,
+            3088,
+            4610,
+            3496,
+            3243
+          ],
+          "peak_rss_bytes": 7020544
+        }
+      }
+    },
+    {
+      "repository": "seed-library",
+      "case": "reservation-barcode",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "lib/seed_library/checkouts.rb",
+          "first": 551,
+          "last": 553,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12205,
+              "complete": false,
+              "first_line": 422,
+              "last_line": 553,
+              "path": "lib/seed_library/checkouts.rb"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12205,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3393,
+            2455,
+            2952,
+            3525,
+            3942,
+            2588,
+            3601,
+            2457,
+            2984
+          ],
+          "peak_rss_bytes": 6926336
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12275,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 132,
+              "path": "lib/seed_library/checkouts.rb"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12275,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            3523,
+            2958,
+            2888,
+            3896,
+            3678,
+            2629,
+            3782,
+            2581,
+            3170
+          ],
+          "peak_rss_bytes": 6901760
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12275,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 132,
+              "path": "lib/seed_library/checkouts.rb"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12275,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            4237,
+            3757,
+            2834,
+            3740,
+            3220,
+            2477,
+            3224,
+            3012,
+            2786
+          ],
+          "peak_rss_bytes": 7036928
+        }
+      }
+    },
+    {
+      "repository": "seed-library",
+      "case": "unknown-harvest",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "lib/seed_library/checkouts.rb",
+          "first": 368,
+          "last": 369,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12252,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 433,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12207,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24459,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4715,
+            2987,
+            4044,
+            3022,
+            3291,
+            2631,
+            4419,
+            3028,
+            2727
+          ],
+          "peak_rss_bytes": 6971392
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12252,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 433,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24497,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3810,
+            3651,
+            3445,
+            4495,
+            3893,
+            3454,
+            4287,
+            3165,
+            3674
+          ],
+          "peak_rss_bytes": 6946816
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12252,
+              "complete": false,
+              "first_line": 302,
+              "last_line": 433,
+              "path": "lib/seed_library/checkouts.rb"
+            },
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24497,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4497,
+            3406,
+            2930,
+            4891,
+            3840,
+            3762,
+            3617,
+            3097,
+            3334
+          ],
+          "peak_rss_bytes": 6955008
+        }
+      }
+    },
+    {
+      "repository": "seed-library",
+      "case": "donor-receipt",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "handbook/volunteer.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12245,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3308,
+            2617,
+            2398,
+            3067,
+            3446,
+            2388,
+            4012,
+            3036,
+            2665
+          ],
+          "peak_rss_bytes": 6901760
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12245,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3554,
+            3004,
+            2432,
+            3684,
+            3173,
+            3129,
+            3526,
+            2438,
+            2814
+          ],
+          "peak_rss_bytes": 6971392
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "handbook/volunteer.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12245,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3367,
+            3173,
+            2319,
+            3262,
+            3108,
+            2435,
+            3174,
+            3507,
+            3054
+          ],
+          "peak_rss_bytes": 6860800
+        }
+      }
+    },
+    {
+      "repository": "field-census",
+      "case": "duplicate-sightings",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "src/observations/survey.ts",
+          "first": 183,
+          "last": 186,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12276,
+              "complete": false,
+              "first_line": 118,
+              "last_line": 249,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24520,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4675,
+            2874,
+            2856,
+            4190,
+            2803,
+            3206,
+            3953,
+            2949,
+            3620
+          ],
+          "peak_rss_bytes": 6914048
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12276,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12210,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24486,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4277,
+            4026,
+            2986,
+            4008,
+            4015,
+            3041,
+            3852,
+            3307,
+            3666
+          ],
+          "peak_rss_bytes": 6995968
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12276,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12210,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24486,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4262,
+            3551,
+            3988,
+            4148,
+            3630,
+            3515,
+            4281,
+            3254,
+            3686
+          ],
+          "peak_rss_bytes": 7077888
+        }
+      }
+    },
+    {
+      "repository": "field-census",
+      "case": "effort-minutes",
+      "family": "implementation",
+      "required": [
+        {
+          "path": "src/observations/survey.ts",
+          "first": 551,
+          "last": 553,
+          "documentation": false
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12245,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 130,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24489,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            3560,
+            2680,
+            3248,
+            3324,
+            2884,
+            2520,
+            4286,
+            3177,
+            2799
+          ],
+          "peak_rss_bytes": 6922240
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12233,
+              "complete": false,
+              "first_line": 424,
+              "last_line": 553,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24477,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3751,
+            3658,
+            4932,
+            4365,
+            3508,
+            3713,
+            4762,
+            3485,
+            2877
+          ],
+          "peak_rss_bytes": 6909952
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12233,
+              "complete": false,
+              "first_line": 424,
+              "last_line": 553,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24477,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            5011,
+            5139,
+            3130,
+            5915,
+            5528,
+            3663,
+            3996,
+            3100,
+            3302
+          ],
+          "peak_rss_bytes": 6971392
+        }
+      }
+    },
+    {
+      "repository": "field-census",
+      "case": "protected-coordinate",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "src/observations/survey.ts",
+          "first": 368,
+          "last": 369,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12207,
+              "complete": false,
+              "first_line": 303,
+              "last_line": 432,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12210,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24417,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            4253,
+            3319,
+            2726,
+            3023,
+            2814,
+            2560,
+            3221,
+            2612,
+            2760
+          ],
+          "peak_rss_bytes": 6873088
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12207,
+              "complete": false,
+              "first_line": 303,
+              "last_line": 432,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12210,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24417,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3614,
+            3461,
+            2864,
+            4778,
+            2987,
+            3524,
+            3913,
+            3635,
+            3211
+          ],
+          "peak_rss_bytes": 6991872
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12276,
+              "complete": false,
+              "first_line": 117,
+              "last_line": 248,
+              "path": "src/observations/survey.ts"
+            },
+            {
+              "bytes": 12210,
+              "complete": false,
+              "first_line": 1,
+              "last_line": 135,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 24486,
+          "delivered": [
+            false
+          ],
+          "violations": [],
+          "timings_us": [
+            3878,
+            4178,
+            2803,
+            3998,
+            3140,
+            3174,
+            4525,
+            3474,
+            3207
+          ],
+          "peak_rss_bytes": 6967296
+        }
+      }
+    },
+    {
+      "repository": "field-census",
+      "case": "rain-transect",
+      "family": "documentation",
+      "required": [
+        {
+          "path": "field/operations.md",
+          "first": 184,
+          "last": 185,
+          "documentation": true
+        }
+      ],
+      "arms": {
+        "baseline": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12244,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3299,
+            2927,
+            2385,
+            3919,
+            2842,
+            2342,
+            3365,
+            2147,
+            2895
+          ],
+          "peak_rss_bytes": 6897664
+        },
+        "aligned": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12244,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3155,
+            3044,
+            2539,
+            3928,
+            2347,
+            2913,
+            3429,
+            2662,
+            2552
+          ],
+          "peak_rss_bytes": 6963200
+        },
+        "code_weighted": {
+          "status": "selected",
+          "files": [
+            {
+              "bytes": 12244,
+              "complete": false,
+              "first_line": 52,
+              "last_line": 185,
+              "path": "field/operations.md"
+            }
+          ],
+          "context_incomplete": true,
+          "context_bytes": 12244,
+          "delivered": [
+            true
+          ],
+          "violations": [],
+          "timings_us": [
+            3276,
+            2629,
+            2290,
+            3052,
+            2524,
+            2439,
+            3110,
+            2293,
+            2489
+          ],
+          "peak_rss_bytes": 6905856
+        }
+      }
+    }
+  ]
+}

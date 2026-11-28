@@ -65,3 +65,7 @@ and complete-file flags in every arm. Report labelled span delivery
 separately from surrounding bytes. Keep partial excerpts ineligible for
 editing even when they contain the requested line. Use
 `benchmarks.excerpt_alignment_measure` for the frozen development cases.
+Use `benchmarks.excerpt_confirmation_measure` for the separate frozen
+confirmation. Check full-line byte counts and paired documentation
+regressions. Aggregate recall can improve while individual required
+documentation spans disappear.
