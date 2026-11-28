@@ -13,7 +13,9 @@ reached 12/12 complete tasks in development. The
 [independent confirmation](research/2026-11-28-retrieval-confirmation.md)
 missed the proposed 90% gate with 38/45 complete positive tasks overall and
 20/25 on Laravel. Keep the candidate in the lab. The maintainer owns
-multi-edit infrastructure. Review the
+multi-edit infrastructure. The [excerpt alignment experiment](research/2026-11-28-excerpt-alignment.md)
+delivered 10/10 development spans with code weighting. Fresh confirmation
+is pending review. Review the
 [memory and runtime reuse plan](research/2026-11-28-inference-memory-review-plan.md)
 before live inference. Semantic qualification still requires a separately
 approved isolated evaluator.

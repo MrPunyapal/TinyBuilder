@@ -1,0 +1,910 @@
+{
+  "lab_sha256": "935efbc378cab4787bda29453ba6aae473bec2b4b5f331a0a547a387f940869c",
+  "cases": [
+    {
+      "case": "camel",
+      "target": "limits.rs",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12279,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "limits.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12279,
+        "bytes_outside_required_line": 12279,
+        "peak_rss_bytes": 6766592,
+        "timings_us": [
+          21333,
+          2727,
+          2183,
+          2871,
+          1980,
+          2466,
+          2978,
+          1636,
+          1603
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12229,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "limits.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12229,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6733824,
+        "timings_us": [
+          3417,
+          2391,
+          2457,
+          3457,
+          2188,
+          1690,
+          3647,
+          2521,
+          1857
+        ]
+      },
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12229,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "limits.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12229,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6844416,
+        "timings_us": [
+          4742,
+          2774,
+          2503,
+          3134,
+          2071,
+          2140,
+          4148,
+          3532,
+          2717
+        ]
+      }
+    },
+    {
+      "case": "screaming-snake",
+      "target": "configuration.php",
+      "expected_line": 679,
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12279,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "configuration.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12279,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6709248,
+        "timings_us": [
+          36675,
+          2918,
+          2299,
+          3270,
+          2751,
+          2236,
+          3558,
+          2125,
+          1899
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12279,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "configuration.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12279,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6770688,
+        "timings_us": [
+          2549,
+          2416,
+          2037,
+          3856,
+          2167,
+          1957,
+          3351,
+          2373,
+          1893
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12230,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "configuration.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12230,
+        "bytes_outside_required_line": 12230,
+        "peak_rss_bytes": 6746112,
+        "timings_us": [
+          2777,
+          2097,
+          2970,
+          4082,
+          2196,
+          2173,
+          3087,
+          2249,
+          2355
+        ]
+      }
+    },
+    {
+      "case": "plural",
+      "target": "upload.py",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12237,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "upload.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12237,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6746112,
+        "timings_us": [
+          34779,
+          1980,
+          2107,
+          3036,
+          2409,
+          3067,
+          2687,
+          3599,
+          4104
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12237,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "upload.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12237,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6733824,
+        "timings_us": [
+          4021,
+          2797,
+          3702,
+          3653,
+          2214,
+          3246,
+          3659,
+          2363,
+          3229
+        ]
+      },
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12237,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "upload.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12237,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6852608,
+        "timings_us": [
+          4275,
+          2324,
+          3334,
+          3874,
+          3729,
+          3111,
+          4912,
+          3680,
+          3096
+        ]
+      }
+    },
+    {
+      "case": "verb",
+      "target": "clock.rs",
+      "expected_line": 678,
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12276,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "clock.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12276,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6762496,
+        "timings_us": [
+          20717,
+          2949,
+          2571,
+          4161,
+          3631,
+          3611,
+          3539,
+          3186,
+          2405
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12276,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "clock.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12276,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6832128,
+        "timings_us": [
+          4025,
+          3004,
+          2581,
+          3800,
+          2834,
+          3649,
+          4436,
+          2439,
+          4103
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12276,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "clock.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12276,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6770688,
+        "timings_us": [
+          4086,
+          2542,
+          2585,
+          3324,
+          1973,
+          2833,
+          3505,
+          2681,
+          3366
+        ]
+      }
+    },
+    {
+      "case": "competing",
+      "target": "transit.php",
+      "expected_line": 679,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12246,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "transit.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12246,
+        "bytes_outside_required_line": 12246,
+        "peak_rss_bytes": 6742016,
+        "timings_us": [
+          48217,
+          2341,
+          2774,
+          3980,
+          1699,
+          2329,
+          4163,
+          2219,
+          1982
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12283,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "transit.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12283,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6799360,
+        "timings_us": [
+          4513,
+          3069,
+          2153,
+          4591,
+          3041,
+          2853,
+          3584,
+          2597,
+          2789
+        ]
+      },
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12283,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "transit.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12283,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6774784,
+        "timings_us": [
+          4314,
+          2428,
+          2758,
+          3062,
+          3009,
+          2911,
+          3678,
+          2563,
+          2369
+        ]
+      }
+    },
+    {
+      "case": "four-term-cutoff",
+      "target": "scanner.py",
+      "expected_line": 678,
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "scanner.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6721536,
+        "timings_us": [
+          18032,
+          2881,
+          2534,
+          3802,
+          3027,
+          3710,
+          3132,
+          2899,
+          2723
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12245,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 201,
+            "path": "scanner.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12245,
+        "bytes_outside_required_line": 12245,
+        "peak_rss_bytes": 6692864,
+        "timings_us": [
+          3959,
+          3484,
+          2213,
+          3783,
+          2744,
+          2319,
+          3241,
+          2932,
+          2914
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12245,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 201,
+            "path": "scanner.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12245,
+        "bytes_outside_required_line": 12245,
+        "peak_rss_bytes": 6541312,
+        "timings_us": [
+          3584,
+          1989,
+          2526,
+          3056,
+          2495,
+          2625,
+          3581,
+          2482,
+          2636
+        ]
+      }
+    },
+    {
+      "case": "mixed-case",
+      "target": "registry.rs",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "registry.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6832128,
+        "timings_us": [
+          20789,
+          2198,
+          2100,
+          3586,
+          2109,
+          2975,
+          3831,
+          2790,
+          3239
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "registry.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6701056,
+        "timings_us": [
+          4334,
+          2444,
+          3313,
+          4268,
+          2512,
+          2264,
+          4000,
+          2415,
+          2199
+        ]
+      },
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "registry.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6766592,
+        "timings_us": [
+          4716,
+          2856,
+          3239,
+          4084,
+          3069,
+          3391,
+          3573,
+          2366,
+          3179
+        ]
+      }
+    },
+    {
+      "case": "deeper-anchor",
+      "target": "mapping.py",
+      "expected_line": 1155,
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 12257,
+            "complete": false,
+            "first_line": 1037,
+            "last_line": 1272,
+            "path": "mapping.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12257,
+        "bytes_outside_required_line": 12210,
+        "peak_rss_bytes": 6725632,
+        "timings_us": [
+          49852,
+          3917,
+          2622,
+          4202,
+          3516,
+          3311,
+          4314,
+          3454,
+          3156
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12257,
+            "complete": false,
+            "first_line": 1037,
+            "last_line": 1272,
+            "path": "mapping.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12257,
+        "bytes_outside_required_line": 12210,
+        "peak_rss_bytes": 6889472,
+        "timings_us": [
+          3843,
+          2537,
+          2853,
+          5041,
+          2496,
+          3458,
+          4392,
+          2417,
+          3069
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12270,
+            "complete": false,
+            "first_line": 559,
+            "last_line": 797,
+            "path": "mapping.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12270,
+        "bytes_outside_required_line": 12270,
+        "peak_rss_bytes": 6983680,
+        "timings_us": [
+          4291,
+          2137,
+          2538,
+          4186,
+          2779,
+          2716,
+          3820,
+          2598,
+          2253
+        ]
+      }
+    },
+    {
+      "case": "short-file",
+      "target": "palette.py",
+      "expected_line": 1,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 38,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 1,
+            "path": "palette.py"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 38,
+        "bytes_outside_required_line": 0,
+        "peak_rss_bytes": 6381568,
+        "timings_us": [
+          4332,
+          1094,
+          1238,
+          1755,
+          1452,
+          1174,
+          1836,
+          1376,
+          986
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 38,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 1,
+            "path": "palette.py"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 38,
+        "bytes_outside_required_line": 0,
+        "peak_rss_bytes": 6365184,
+        "timings_us": [
+          2750,
+          981,
+          968,
+          2231,
+          1376,
+          1056,
+          2840,
+          1846,
+          1037
+        ]
+      },
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 38,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 1,
+            "path": "palette.py"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 38,
+        "bytes_outside_required_line": 0,
+        "peak_rss_bytes": 6402048,
+        "timings_us": [
+          1788,
+          1394,
+          1225,
+          2408,
+          1489,
+          830,
+          1673,
+          1261,
+          861
+        ]
+      }
+    },
+    {
+      "case": "short-cross-file",
+      "target": "billing.php",
+      "expected_line": 2,
+      "code_weighted": {
+        "files": [
+          {
+            "bytes": 55,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "billing.php"
+          },
+          {
+            "bytes": 37,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "worker.php"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 92,
+        "bytes_outside_required_line": 43,
+        "peak_rss_bytes": 6406144,
+        "timings_us": [
+          3411,
+          1368,
+          1473,
+          1723,
+          1462,
+          1267,
+          2584,
+          1853,
+          1225
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 55,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "billing.php"
+          },
+          {
+            "bytes": 37,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "worker.php"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 92,
+        "bytes_outside_required_line": 43,
+        "peak_rss_bytes": 6434816,
+        "timings_us": [
+          2230,
+          1556,
+          1201,
+          2144,
+          1396,
+          1049,
+          2309,
+          1581,
+          1079
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 55,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "billing.php"
+          },
+          {
+            "bytes": 37,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "worker.php"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 92,
+        "bytes_outside_required_line": 43,
+        "peak_rss_bytes": 6389760,
+        "timings_us": [
+          2727,
+          1855,
+          1306,
+          2039,
+          1246,
+          1251,
+          1880,
+          1566,
+          1445
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "complete_spans": 5,
+      "context_bytes": 98185,
+      "bytes_outside_required_line": 97966,
+      "median_case_us": 2545.5
+    },
+    "aligned": {
+      "complete_spans": 9,
+      "context_bytes": 98208,
+      "bytes_outside_required_line": 97804,
+      "median_case_us": 2722.0
+    },
+    "code_weighted": {
+      "complete_spans": 10,
+      "context_bytes": 98235,
+      "bytes_outside_required_line": 97797,
+      "median_case_us": 2969.0
+    }
+  },
+  "median_latency_overhead_pct": {
+    "aligned": 6.93380475348655,
+    "code_weighted": 16.63720290709094
+  }
+}

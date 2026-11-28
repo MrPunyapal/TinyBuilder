@@ -200,8 +200,17 @@ impl Project {
     /// Read a bounded relevant region, not just a prefix. Excerpts are
     /// always marked truncated and cannot be used as complete patch evidence.
     pub fn excerpt(&self, relative: &str, terms: &[String], budget: usize) -> Result<ContextExcerpt> {
-        ensure!((256..=12*1024).contains(&budget) && terms.len()<=4
-            && terms.iter().all(|t| !t.is_empty() && t.len()<=80), "Invalid excerpt budget");
+        ensure!(terms.len()<=4 && terms.iter().all(|t| !t.is_empty() && t.len()<=80), "Invalid excerpt budget");
+        self.excerpt_with(relative, budget,
+            |line| terms.iter().filter(|term| line.contains(term.as_str())).count(),
+            |line| terms.iter().filter_map(|term| line.find(term)).min().unwrap_or(0))
+    }
+
+    pub(crate) fn excerpt_with(
+        &self, relative: &str, budget: usize,
+        score_line: impl Fn(&str) -> usize, anchor_byte: impl Fn(&str) -> usize,
+    ) -> Result<ContextExcerpt> {
+        ensure!((256..=12*1024).contains(&budget), "Invalid excerpt budget");
         let path=self.resolve(relative)?;
         ensure!(path.is_file(),"Not a regular file");
         let (bytes,scan_truncated)=read_bounded(&path,SEARCH_MAX)?;
@@ -218,7 +227,7 @@ impl Project {
         let mut best=0;
         let mut best_score=0;
         for (i,line) in lines.iter().enumerate() {
-            let score=terms.iter().filter(|term|line.contains(term.as_str())).count();
+            let score=score_line(line);
             if score>best_score {best=i;best_score=score;}
         }
         let mut start=best;
@@ -227,7 +236,7 @@ impl Project {
         if used>budget {
             // For an oversized single line, center around the first match.
             let line=lines[best];
-            let hit=terms.iter().filter_map(|t|line.find(t)).min().unwrap_or(0);
+            let hit=anchor_byte(line).min(line.len());
             let mut from=hit.saturating_sub(budget/3);
             while !line.is_char_boundary(from) {from-=1;}
             let mut to=(from+budget).min(line.len());

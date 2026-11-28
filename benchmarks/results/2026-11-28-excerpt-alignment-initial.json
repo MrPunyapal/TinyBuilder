@@ -1,0 +1,624 @@
+{
+  "lab_sha256": "934a83ea5e02bbc1fa09759e899ad0ebad8661e647785faf38ae3bd5e2b03517",
+  "cases": [
+    {
+      "case": "camel",
+      "target": "limits.rs",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12279,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "limits.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12279,
+        "bytes_outside_required_line": 12279,
+        "peak_rss_bytes": 6623232,
+        "timings_us": [
+          29164,
+          2072,
+          2126,
+          3009,
+          2532,
+          2852,
+          3291,
+          2558,
+          2995
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12229,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "limits.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12229,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6684672,
+        "timings_us": [
+          4064,
+          3471,
+          3074,
+          4686,
+          2606,
+          1896,
+          4469,
+          1982,
+          2567
+        ]
+      }
+    },
+    {
+      "case": "screaming-snake",
+      "target": "configuration.php",
+      "expected_line": 679,
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12279,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "configuration.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12279,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6717440,
+        "timings_us": [
+          114504,
+          2901,
+          2148,
+          3368,
+          3266,
+          3122,
+          3963,
+          2540,
+          2807
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12230,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "configuration.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12230,
+        "bytes_outside_required_line": 12230,
+        "peak_rss_bytes": 6721536,
+        "timings_us": [
+          3563,
+          2984,
+          1723,
+          3819,
+          1801,
+          2383,
+          3799,
+          1901,
+          2101
+        ]
+      }
+    },
+    {
+      "case": "plural",
+      "target": "upload.py",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12237,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "upload.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12237,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6782976,
+        "timings_us": [
+          22488,
+          2167,
+          3233,
+          3419,
+          3015,
+          3573,
+          3759,
+          3182,
+          4488
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12237,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 777,
+            "path": "upload.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12237,
+        "bytes_outside_required_line": 12177,
+        "peak_rss_bytes": 6742016,
+        "timings_us": [
+          3620,
+          2983,
+          3958,
+          4094,
+          3137,
+          4179,
+          2796,
+          3059,
+          4469
+        ]
+      }
+    },
+    {
+      "case": "verb",
+      "target": "clock.rs",
+      "expected_line": 678,
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12276,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "clock.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12276,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6758400,
+        "timings_us": [
+          21377,
+          2331,
+          2230,
+          3007,
+          2955,
+          2420,
+          3526,
+          2528,
+          3252
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12276,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "clock.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12276,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6615040,
+        "timings_us": [
+          3656,
+          2073,
+          3496,
+          2985,
+          1884,
+          2969,
+          3597,
+          2153,
+          3050
+        ]
+      }
+    },
+    {
+      "case": "competing",
+      "target": "transit.php",
+      "expected_line": 679,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12246,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 202,
+            "path": "transit.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12246,
+        "bytes_outside_required_line": 12246,
+        "peak_rss_bytes": 6721536,
+        "timings_us": [
+          31324,
+          2744,
+          2592,
+          3999,
+          2655,
+          3040,
+          3458,
+          2342,
+          2316
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12283,
+            "complete": false,
+            "first_line": 579,
+            "last_line": 778,
+            "path": "transit.php"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12283,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6795264,
+        "timings_us": [
+          3086,
+          2770,
+          3504,
+          3071,
+          3084,
+          2881,
+          3847,
+          3650,
+          2303
+        ]
+      }
+    },
+    {
+      "case": "four-term-cutoff",
+      "target": "scanner.py",
+      "expected_line": 678,
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12245,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 201,
+            "path": "scanner.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12245,
+        "bytes_outside_required_line": 12245,
+        "peak_rss_bytes": 6725632,
+        "timings_us": [
+          27221,
+          2703,
+          2664,
+          3986,
+          2434,
+          3089,
+          4438,
+          3167,
+          3306
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12245,
+            "complete": false,
+            "first_line": 1,
+            "last_line": 201,
+            "path": "scanner.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12245,
+        "bytes_outside_required_line": 12245,
+        "peak_rss_bytes": 6578176,
+        "timings_us": [
+          2792,
+          2115,
+          2159,
+          3522,
+          2842,
+          2888,
+          4054,
+          3131,
+          3099
+        ]
+      }
+    },
+    {
+      "case": "mixed-case",
+      "target": "registry.rs",
+      "expected_line": 678,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "registry.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6713344,
+        "timings_us": [
+          22531,
+          2834,
+          3071,
+          3498,
+          2354,
+          3493,
+          3467,
+          2191,
+          2797
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12272,
+            "complete": false,
+            "first_line": 578,
+            "last_line": 777,
+            "path": "registry.rs"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12272,
+        "bytes_outside_required_line": 12238,
+        "peak_rss_bytes": 6701056,
+        "timings_us": [
+          3127,
+          2316,
+          2649,
+          2784,
+          1869,
+          1772,
+          3550,
+          3283,
+          2722
+        ]
+      }
+    },
+    {
+      "case": "deeper-anchor",
+      "target": "mapping.py",
+      "expected_line": 1155,
+      "aligned": {
+        "files": [
+          {
+            "bytes": 12257,
+            "complete": false,
+            "first_line": 1037,
+            "last_line": 1272,
+            "path": "mapping.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": true,
+        "context_bytes": 12257,
+        "bytes_outside_required_line": 12210,
+        "peak_rss_bytes": 6905856,
+        "timings_us": [
+          20522,
+          3377,
+          2660,
+          3718,
+          2894,
+          2345,
+          3908,
+          3512,
+          2364
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 12270,
+            "complete": false,
+            "first_line": 559,
+            "last_line": 797,
+            "path": "mapping.py"
+          }
+        ],
+        "incomplete": true,
+        "span_delivered": false,
+        "context_bytes": 12270,
+        "bytes_outside_required_line": 12270,
+        "peak_rss_bytes": 6930432,
+        "timings_us": [
+          3048,
+          2703,
+          2610,
+          2703,
+          2067,
+          2645,
+          4420,
+          2242,
+          3556
+        ]
+      }
+    },
+    {
+      "case": "short-file",
+      "target": "palette.py",
+      "expected_line": 1,
+      "baseline": {
+        "files": [
+          {
+            "bytes": 38,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 1,
+            "path": "palette.py"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 38,
+        "bytes_outside_required_line": 0,
+        "peak_rss_bytes": 6365184,
+        "timings_us": [
+          16270,
+          1436,
+          953,
+          2628,
+          1104,
+          1277,
+          1586,
+          954,
+          1264
+        ]
+      },
+      "aligned": {
+        "files": [
+          {
+            "bytes": 38,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 1,
+            "path": "palette.py"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 38,
+        "bytes_outside_required_line": 0,
+        "peak_rss_bytes": 6410240,
+        "timings_us": [
+          3002,
+          1315,
+          1520,
+          3288,
+          1443,
+          1057,
+          1513,
+          1349,
+          1505
+        ]
+      }
+    },
+    {
+      "case": "short-cross-file",
+      "target": "billing.php",
+      "expected_line": 2,
+      "aligned": {
+        "files": [
+          {
+            "bytes": 55,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "billing.php"
+          },
+          {
+            "bytes": 37,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "worker.php"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 92,
+        "bytes_outside_required_line": 43,
+        "peak_rss_bytes": 6365184,
+        "timings_us": [
+          24338,
+          1862,
+          1195,
+          2169,
+          1808,
+          1512,
+          3197,
+          1559,
+          1788
+        ]
+      },
+      "baseline": {
+        "files": [
+          {
+            "bytes": 55,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "billing.php"
+          },
+          {
+            "bytes": 37,
+            "complete": true,
+            "first_line": 1,
+            "last_line": 2,
+            "path": "worker.php"
+          }
+        ],
+        "incomplete": false,
+        "span_delivered": true,
+        "context_bytes": 92,
+        "bytes_outside_required_line": 43,
+        "peak_rss_bytes": 6410240,
+        "timings_us": [
+          2184,
+          1100,
+          1570,
+          1869,
+          1439,
+          1206,
+          3043,
+          1598,
+          1042
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "complete_spans": 5,
+      "context_bytes": 98185,
+      "bytes_outside_required_line": 97966,
+      "median_case_us": 2798.0
+    },
+    "aligned": {
+      "complete_spans": 9,
+      "context_bytes": 98208,
+      "bytes_outside_required_line": 97804,
+      "median_case_us": 3079.0
+    }
+  },
+  "median_latency_overhead_pct": 10.042887776983566
+}

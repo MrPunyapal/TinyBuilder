@@ -1,9 +1,9 @@
 //! Model-free lab retrieval probe. No target paths, fixture answers or runtime.
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use clap::Parser;
 use serde_json::json;
 use std::{path::PathBuf, time::Instant};
-use tinybuilder::{context::{retrieve_lab, LabRetrieval}, project::Project};
+use tinybuilder::{context::{retrieve_lab, retrieve_lab_aligned, LabRetrieval}, project::Project};
 
 #[derive(Parser)]
 struct Args {
@@ -11,16 +11,28 @@ struct Args {
     project: PathBuf,
     #[arg(long, value_enum)]
     strategy: LabRetrieval,
+    /// Compare identifier-aligned excerpts with the same normalized ranking.
+    #[arg(long)]
+    align_excerpts: bool,
+    /// Give identifier matches on code lines more weight than line comments.
+    #[arg(long, requires = "align_excerpts")]
+    prefer_code_anchors: bool,
     task: String,
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    ensure!(!args.align_excerpts || args.strategy == LabRetrieval::Normalized,
+        "Excerpt alignment requires the normalized strategy");
     let project = Project::new(&args.project)?;
     let mut rows = Vec::new();
     for _ in 0..3 {
         let start = Instant::now();
-        let result = retrieve_lab(&project, &args.task, args.strategy);
+        let result = if args.align_excerpts {
+            retrieve_lab_aligned(&project, &args.task, args.prefer_code_anchors)
+        } else {
+            retrieve_lab(&project, &args.task, args.strategy)
+        };
         let elapsed_us = start.elapsed().as_micros() as u64;
         let mut observation = match result {
             Ok(context) => json!({
@@ -104,6 +116,9 @@ mod tests {
         let project = Project::new(&root).unwrap();
         for arm in <LabRetrieval as clap::ValueEnum>::value_variants() {
             assert!(retrieve_lab(&project, "Find canary_token in ../outside.rs or .env", *arm).is_err());
+        }
+        for prefer_code in [false, true] {
+            assert!(retrieve_lab_aligned(&project, "Find canary_token in ../outside.rs or .env", prefer_code).is_err());
         }
     }
 }

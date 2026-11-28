@@ -59,3 +59,9 @@ required spans, and supporting evidence from distractors and unjudged
 files. Report no-evidence abstention separately. After reading results,
 use different development fixtures for tuning and a fresh confirmation
 set for qualification.
+
+For an excerpt-only ablation, compare the same ordered paths, byte caps
+and complete-file flags in every arm. Report labelled span delivery
+separately from surrounding bytes. Keep partial excerpts ineligible for
+editing even when they contain the requested line. Use
+`benchmarks.excerpt_alignment_measure` for the frozen development cases.
