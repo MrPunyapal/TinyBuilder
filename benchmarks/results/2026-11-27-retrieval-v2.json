@@ -1,0 +1,1767 @@
+{
+  "condition": "public-source-only-retrieval",
+  "lab_sha256": "39ab876967835c48e5e668cd3f7f9cde0a7c241159fe4410fb9d42be449c35ed",
+  "plan_sha256": "2f8fa7985c70500e5a8165ecdac8104c58b9ff31b7f1a7480a9e134fe8a23aa4",
+  "strategies": {
+    "baseline": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 1,
+        "required_recalled": 1,
+        "required_total": 14,
+        "files_selected": 1,
+        "target_precision": 1.0,
+        "non_target_files": 0,
+        "non_target_bytes": 0,
+        "context_bytes": 247,
+        "median_task_latency_us": 1558.5,
+        "multi_file_complete": 0,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Contact.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 2273
+        },
+        {
+          "task": "patient_visibility",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Visibility.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1736
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Reminder.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1162
+        },
+        {
+          "task": "booking_availability",
+          "files": [],
+          "required_total": 2,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Booking.php",
+            "app/CodingV1/BookingRules.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1045
+        },
+        {
+          "task": "available_stock",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Listing.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1501
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 247,
+          "median_latency_us": 1616
+        },
+        {
+          "task": "exempt_tax",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Tax.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 2421
+        },
+        {
+          "task": "listing_response",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/ListingController.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1191
+        },
+        {
+          "task": "priority_normalization",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Header.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1738
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Timing.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1687
+        },
+        {
+          "task": "rural_quote",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/PickupQuote.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1181
+        },
+        {
+          "task": "parcel_weight",
+          "files": [],
+          "required_total": 2,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/ParcelIntake.php",
+            "app/CodingV1/ParcelLimit.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 982
+        }
+      ]
+    },
+    "threshold": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 6,
+        "required_recalled": 7,
+        "required_total": 14,
+        "files_selected": 9,
+        "target_precision": 0.7777777777777778,
+        "non_target_files": 2,
+        "non_target_bytes": 406,
+        "context_bytes": 1677,
+        "median_task_latency_us": 1538.5,
+        "multi_file_complete": 0,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 146,
+          "median_latency_us": 2033
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 1338
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Reminder.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1185
+        },
+        {
+          "task": "booking_availability",
+          "files": [],
+          "required_total": 2,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Booking.php",
+            "app/CodingV1/BookingRules.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1681
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 1600
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 247,
+          "median_latency_us": 1750
+        },
+        {
+          "task": "exempt_tax",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Tax.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 2957
+        },
+        {
+          "task": "listing_response",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/ListingController.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1341
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 1477
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 1399
+        },
+        {
+          "task": "rural_quote",
+          "files": [],
+          "required_total": 1,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/PickupQuote.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1406
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 1,
+          "missing_targets": [
+            "app/CodingV1/ParcelLimit.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 176,
+          "median_latency_us": 2637
+        }
+      ]
+    },
+    "expanded": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 11,
+        "required_recalled": 12,
+        "required_total": 14,
+        "files_selected": 19,
+        "target_precision": 0.631578947368421,
+        "non_target_files": 7,
+        "non_target_bytes": 1352,
+        "context_bytes": 3353,
+        "median_task_latency_us": 1950.0,
+        "multi_file_complete": 1,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 146,
+          "median_latency_us": 2580
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 1844
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 138,
+          "median_latency_us": 1513
+        },
+        {
+          "task": "booking_availability",
+          "files": [],
+          "required_total": 2,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Booking.php",
+            "app/CodingV1/BookingRules.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1974
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 2480
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 540,
+          "bytes": 787,
+          "median_latency_us": 2297
+        },
+        {
+          "task": "exempt_tax",
+          "files": [
+            {
+              "bytes": 142,
+              "complete": true,
+              "path": "app/CodingV1/Tax.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 548,
+          "median_latency_us": 2877
+        },
+        {
+          "task": "listing_response",
+          "files": [
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 181,
+          "median_latency_us": 1864
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 1511
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 1806
+        },
+        {
+          "task": "rural_quote",
+          "files": [
+            {
+              "bytes": 177,
+              "complete": true,
+              "path": "app/CodingV1/PickupQuote.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 177,
+          "median_latency_us": 2317
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 92,
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 268,
+          "median_latency_us": 1926
+        }
+      ]
+    },
+    "caseless": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 11,
+        "required_recalled": 12,
+        "required_total": 14,
+        "files_selected": 19,
+        "target_precision": 0.631578947368421,
+        "non_target_files": 7,
+        "non_target_bytes": 1352,
+        "context_bytes": 3353,
+        "median_task_latency_us": 1974.5,
+        "multi_file_complete": 1,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 146,
+          "median_latency_us": 1442
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 1891
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 138,
+          "median_latency_us": 1703
+        },
+        {
+          "task": "booking_availability",
+          "files": [],
+          "required_total": 2,
+          "required_recalled": 0,
+          "missing_targets": [
+            "app/CodingV1/Booking.php",
+            "app/CodingV1/BookingRules.php"
+          ],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 0,
+          "median_latency_us": 1090
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 2121
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            },
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 540,
+          "bytes": 787,
+          "median_latency_us": 2445
+        },
+        {
+          "task": "exempt_tax",
+          "files": [
+            {
+              "bytes": 142,
+              "complete": true,
+              "path": "app/CodingV1/Tax.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 548,
+          "median_latency_us": 2771
+        },
+        {
+          "task": "listing_response",
+          "files": [
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 181,
+          "median_latency_us": 2482
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 1635
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 2280
+        },
+        {
+          "task": "rural_quote",
+          "files": [
+            {
+              "bytes": 177,
+              "complete": true,
+              "path": "app/CodingV1/PickupQuote.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 177,
+          "median_latency_us": 1895
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 92,
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 268,
+          "median_latency_us": 2054
+        }
+      ]
+    },
+    "normalized": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 12,
+        "required_recalled": 14,
+        "required_total": 14,
+        "files_selected": 24,
+        "target_precision": 0.5833333333333334,
+        "non_target_files": 10,
+        "non_target_bytes": 1890,
+        "context_bytes": 4178,
+        "median_task_latency_us": 2428.0,
+        "multi_file_complete": 2,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            },
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 138,
+          "bytes": 284,
+          "median_latency_us": 1622
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 1547
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 138,
+          "median_latency_us": 1418
+        },
+        {
+          "task": "booking_availability",
+          "files": [
+            {
+              "bytes": 196,
+              "complete": true,
+              "path": "app/CodingV1/Booking.php"
+            },
+            {
+              "bytes": 91,
+              "complete": true,
+              "path": "app/CodingV1/BookingRules.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 287,
+          "median_latency_us": 2371
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 3475
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            },
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 540,
+          "bytes": 787,
+          "median_latency_us": 2737
+        },
+        {
+          "task": "exempt_tax",
+          "files": [
+            {
+              "bytes": 142,
+              "complete": true,
+              "path": "app/CodingV1/Tax.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 606,
+          "bytes": 748,
+          "median_latency_us": 2690
+        },
+        {
+          "task": "listing_response",
+          "files": [
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 200,
+          "bytes": 381,
+          "median_latency_us": 2504
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 2158
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 2433
+        },
+        {
+          "task": "rural_quote",
+          "files": [
+            {
+              "bytes": 177,
+              "complete": true,
+              "path": "app/CodingV1/PickupQuote.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 177,
+          "median_latency_us": 2423
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 92,
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 268,
+          "median_latency_us": 2703
+        }
+      ]
+    },
+    "dependencies": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 12,
+        "required_recalled": 14,
+        "required_total": 14,
+        "files_selected": 24,
+        "target_precision": 0.5833333333333334,
+        "non_target_files": 10,
+        "non_target_bytes": 1890,
+        "context_bytes": 4178,
+        "median_task_latency_us": 3087.5,
+        "multi_file_complete": 2,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            },
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 138,
+          "bytes": 284,
+          "median_latency_us": 3120
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 2201
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 138,
+          "median_latency_us": 3008
+        },
+        {
+          "task": "booking_availability",
+          "files": [
+            {
+              "bytes": 196,
+              "complete": true,
+              "path": "app/CodingV1/Booking.php"
+            },
+            {
+              "bytes": 91,
+              "complete": true,
+              "path": "app/CodingV1/BookingRules.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 287,
+          "median_latency_us": 2819
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 3033
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            },
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 540,
+          "bytes": 787,
+          "median_latency_us": 3424
+        },
+        {
+          "task": "exempt_tax",
+          "files": [
+            {
+              "bytes": 142,
+              "complete": true,
+              "path": "app/CodingV1/Tax.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 606,
+          "bytes": 748,
+          "median_latency_us": 3268
+        },
+        {
+          "task": "listing_response",
+          "files": [
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 200,
+          "bytes": 381,
+          "median_latency_us": 3196
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 3159
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 3055
+        },
+        {
+          "task": "rural_quote",
+          "files": [
+            {
+              "bytes": 177,
+              "complete": true,
+              "path": "app/CodingV1/PickupQuote.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 177,
+          "median_latency_us": 2780
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 92,
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 268,
+          "median_latency_us": 3696
+        }
+      ]
+    },
+    "fallback": {
+      "summary": {
+        "tasks": 12,
+        "complete_tasks": 12,
+        "required_recalled": 14,
+        "required_total": 14,
+        "files_selected": 24,
+        "target_precision": 0.5833333333333334,
+        "non_target_files": 10,
+        "non_target_bytes": 1890,
+        "context_bytes": 4178,
+        "median_task_latency_us": 2785.5,
+        "multi_file_complete": 2,
+        "multi_file_total": 2
+      },
+      "tasks": [
+        {
+          "task": "contact_channel",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            },
+            {
+              "bytes": 146,
+              "complete": true,
+              "path": "app/CodingV1/Contact.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 138,
+          "bytes": 284,
+          "median_latency_us": 2743
+        },
+        {
+          "task": "patient_visibility",
+          "files": [
+            {
+              "bytes": 171,
+              "complete": true,
+              "path": "app/CodingV1/Visibility.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 171,
+          "median_latency_us": 3825
+        },
+        {
+          "task": "urgent_reminders",
+          "files": [
+            {
+              "bytes": 138,
+              "complete": true,
+              "path": "app/CodingV1/Reminder.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 138,
+          "median_latency_us": 2580
+        },
+        {
+          "task": "booking_availability",
+          "files": [
+            {
+              "bytes": 196,
+              "complete": true,
+              "path": "app/CodingV1/Booking.php"
+            },
+            {
+              "bytes": 91,
+              "complete": true,
+              "path": "app/CodingV1/BookingRules.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 287,
+          "median_latency_us": 3953
+        },
+        {
+          "task": "available_stock",
+          "files": [
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 2,
+          "non_target_bytes": 406,
+          "bytes": 606,
+          "median_latency_us": 3214
+        },
+        {
+          "task": "group_inventory",
+          "files": [
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            },
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 540,
+          "bytes": 787,
+          "median_latency_us": 2828
+        },
+        {
+          "task": "exempt_tax",
+          "files": [
+            {
+              "bytes": 142,
+              "complete": true,
+              "path": "app/CodingV1/Tax.php"
+            },
+            {
+              "bytes": 159,
+              "complete": true,
+              "path": "app/CodingV1/Item.php"
+            },
+            {
+              "bytes": 247,
+              "complete": true,
+              "path": "app/CodingV1/Group.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 3,
+          "non_target_bytes": 606,
+          "bytes": 748,
+          "median_latency_us": 3864
+        },
+        {
+          "task": "listing_response",
+          "files": [
+            {
+              "bytes": 181,
+              "complete": true,
+              "path": "app/CodingV1/ListingController.php"
+            },
+            {
+              "bytes": 200,
+              "complete": true,
+              "path": "app/CodingV1/Listing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 1,
+          "non_target_bytes": 200,
+          "bytes": 381,
+          "median_latency_us": 4279
+        },
+        {
+          "task": "priority_normalization",
+          "files": [
+            {
+              "bytes": 161,
+              "complete": true,
+              "path": "app/CodingV1/Header.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 161,
+          "median_latency_us": 2348
+        },
+        {
+          "task": "deadline_boundary",
+          "files": [
+            {
+              "bytes": 170,
+              "complete": true,
+              "path": "app/CodingV1/Timing.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 170,
+          "median_latency_us": 1680
+        },
+        {
+          "task": "rural_quote",
+          "files": [
+            {
+              "bytes": 177,
+              "complete": true,
+              "path": "app/CodingV1/PickupQuote.php"
+            }
+          ],
+          "required_total": 1,
+          "required_recalled": 1,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 177,
+          "median_latency_us": 2498
+        },
+        {
+          "task": "parcel_weight",
+          "files": [
+            {
+              "bytes": 92,
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "bytes": 176,
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "required_total": 2,
+          "required_recalled": 2,
+          "missing_targets": [],
+          "non_target_files": 0,
+          "non_target_bytes": 0,
+          "bytes": 268,
+          "median_latency_us": 2724
+        }
+      ]
+    }
+  },
+  "source_unchanged": true
+}

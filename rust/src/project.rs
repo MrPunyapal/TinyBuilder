@@ -167,7 +167,7 @@ impl Project {
         Ok(ReadResult { path: self.relative(&path)?, text: utf8(&bytes, truncated)?, truncated })
     }
 
-    fn candidates(&self, relative: &str) -> Result<(Vec<String>, bool)> {
+    pub(crate) fn candidates(&self, relative: &str) -> Result<(Vec<String>, bool)> {
         let dir = self.resolve(relative)?;
         ensure!(dir.is_dir(), "Not a directory");
         let root = dir.clone();
@@ -200,8 +200,17 @@ impl Project {
     /// Read a bounded relevant region, not just a prefix. Excerpts are
     /// always marked truncated and cannot be used as complete patch evidence.
     pub fn excerpt(&self, relative: &str, terms: &[String], budget: usize) -> Result<ContextExcerpt> {
-        ensure!((256..=12*1024).contains(&budget) && terms.len()<=4
-            && terms.iter().all(|t| !t.is_empty() && t.len()<=80), "Invalid excerpt budget");
+        ensure!(terms.len()<=4 && terms.iter().all(|t| !t.is_empty() && t.len()<=80), "Invalid excerpt budget");
+        self.excerpt_with(relative, budget,
+            |line| terms.iter().filter(|term| line.contains(term.as_str())).count(),
+            |line| terms.iter().filter_map(|term| line.find(term)).min().unwrap_or(0))
+    }
+
+    pub(crate) fn excerpt_with(
+        &self, relative: &str, budget: usize,
+        score_line: impl Fn(&str) -> usize, anchor_byte: impl Fn(&str) -> usize,
+    ) -> Result<ContextExcerpt> {
+        ensure!((256..=12*1024).contains(&budget), "Invalid excerpt budget");
         let path=self.resolve(relative)?;
         ensure!(path.is_file(),"Not a regular file");
         let (bytes,scan_truncated)=read_bounded(&path,SEARCH_MAX)?;
@@ -218,7 +227,7 @@ impl Project {
         let mut best=0;
         let mut best_score=0;
         for (i,line) in lines.iter().enumerate() {
-            let score=terms.iter().filter(|term|line.contains(term.as_str())).count();
+            let score=score_line(line);
             if score>best_score {best=i;best_score=score;}
         }
         let mut start=best;
@@ -227,7 +236,7 @@ impl Project {
         if used>budget {
             // For an oversized single line, center around the first match.
             let line=lines[best];
-            let hit=terms.iter().filter_map(|t|line.find(t)).min().unwrap_or(0);
+            let hit=anchor_byte(line).min(line.len());
             let mut from=hit.saturating_sub(budget/3);
             while !line.is_char_boundary(from) {from-=1;}
             let mut to=(from+budget).min(line.len());
@@ -294,16 +303,26 @@ impl Project {
     /// Typed lexical ranking for context retrieval; scan each candidate once.
     /// Unlike parsing formatted search output, paths and scores stay separate.
     pub(crate) fn ranked_candidates(&self, terms: &[String], task: &str) -> Result<(Vec<(String,u32)>, bool)> {
-        ensure!(terms.len()<=4 && terms.iter().all(|t|!t.is_empty() && t.len()<=80), "Invalid ranking terms");
+        self.rank_with(terms, task, 4, |path, terms| {
+            let lower = path.to_ascii_lowercase();
+            terms.iter().filter(|term| lower.contains(&term.to_ascii_lowercase())).count()
+        },
+            |text, terms| terms.iter().filter(|term| text.contains(term.as_str())).count())
+    }
+
+    pub(crate) fn rank_with(
+        &self, terms: &[String], task: &str, term_limit: usize,
+        path_hits: impl Fn(&str, &[String]) -> usize + Sync,
+        content_hits: impl Fn(&str, &[String]) -> usize + Sync,
+    ) -> Result<(Vec<(String,u32)>, bool)> {
+        ensure!(term_limit <= 32 && terms.len()<=term_limit && terms.iter().all(|t|!t.is_empty() && t.len()<=80), "Invalid ranking terms");
         let (files, limited) = self.candidates(".")?;
         let lower_task = task.to_ascii_lowercase();
         let rows: Vec<(String,u32,bool)> = files.par_iter().map(|rel| {
             let lower = rel.to_ascii_lowercase();
             let basename = lower.rsplit('/').next().unwrap_or(&lower);
             let mut score = if lower_task.contains(&lower) {100} else {0};
-            for term in terms {
-                if lower.contains(&term.to_ascii_lowercase()) {score+=10;}
-            }
+            score += path_hits(rel, terms) as u32 * 10;
             if matches!(basename,"readme.md"|"cargo.toml"|"pyproject.toml"|"composer.json"|"package.json"|"go.mod") {score+=2;}
             let scan = (|| -> Result<(u32,bool)> {
                 if terms.is_empty() {return Ok((0,false));}
@@ -311,7 +330,7 @@ impl Project {
                 ensure!(path.is_file(),"Not a file");
                 let (bytes,truncated)=read_bounded(&path,SEARCH_MAX)?;
                 let text=utf8(&bytes,truncated)?;
-                let hits=terms.iter().filter(|t|text.contains(t.as_str())).count();
+                let hits=content_hits(&text, terms);
                 Ok((hits as u32*5,truncated))
             })();
             let (hits,partial)=scan.unwrap_or((0,true));

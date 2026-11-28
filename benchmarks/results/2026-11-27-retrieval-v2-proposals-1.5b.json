@@ -1,0 +1,113 @@
+{
+  "condition": "public-source-only-review",
+  "model_sha256": "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+  "runtime_manifest_sha256": "14e4d644a3ea6a082171bbe707bb705e3bfee1e01988943741a880fa89242693",
+  "lab_sha256": "219a58f479445b38b4626652d1c51d53209ecb0a6b4cb5f259bf32f01b588b91",
+  "plan_sha256": "2f8fa7985c70500e5a8165ecdac8104c58b9ff31b7f1a7480a9e134fe8a23aa4",
+  "planned_tasks": 2,
+  "context_tokens": 4096,
+  "retrieval_strategy": "normalized",
+  "planned_semantic_observations": 32,
+  "attempted_semantic_observations": 0,
+  "patches_applied": 0,
+  "trials": [
+    {
+      "task": "booking_availability",
+      "wall_ms": 9609,
+      "exit_code": 1,
+      "events": {
+        "retrieval": {
+          "elapsed_ms": 5,
+          "files": [
+            {
+              "complete": true,
+              "path": "app/CodingV1/Booking.php"
+            },
+            {
+              "complete": true,
+              "path": "app/CodingV1/BookingRules.php"
+            }
+          ],
+          "incomplete": false,
+          "status": "selected"
+        },
+        "startup": {
+          "context_tokens": 4096,
+          "elapsed_ms": 1806,
+          "status": "ready"
+        },
+        "proposal": {
+          "calls": 1,
+          "completion_tokens": 99,
+          "elapsed_ms": 6841,
+          "finish_reason": null,
+          "path": null,
+          "prompt_tokens": 272,
+          "status": "no_change"
+        }
+      },
+      "combined_peak_sampled_bytes": 1853480960,
+      "server_peak_working_set_bytes": 1866514432,
+      "status": "no_change",
+      "allowed_paths_retrieved": [
+        "app/CodingV1/Booking.php",
+        "app/CodingV1/BookingRules.php"
+      ]
+    },
+    {
+      "task": "parcel_weight",
+      "wall_ms": 6797,
+      "exit_code": 0,
+      "events": {
+        "retrieval": {
+          "elapsed_ms": 2,
+          "files": [
+            {
+              "complete": true,
+              "path": "app/CodingV1/ParcelLimit.php"
+            },
+            {
+              "complete": true,
+              "path": "app/CodingV1/ParcelIntake.php"
+            }
+          ],
+          "incomplete": false,
+          "status": "selected"
+        },
+        "startup": {
+          "context_tokens": 4096,
+          "elapsed_ms": 1628,
+          "status": "ready"
+        },
+        "proposal": {
+          "calls": 1,
+          "completion_tokens": 50,
+          "elapsed_ms": 4577,
+          "finish_reason": null,
+          "path": "app/CodingV1/ParcelLimit.php",
+          "prompt_tokens": 269,
+          "status": "proposal_ready"
+        },
+        "approval": {
+          "status": "not_approved"
+        }
+      },
+      "combined_peak_sampled_bytes": 1852989440,
+      "server_peak_working_set_bytes": 1865633792,
+      "status": "proposal_ready",
+      "allowed_paths_retrieved": [
+        "app/CodingV1/ParcelIntake.php",
+        "app/CodingV1/ParcelLimit.php"
+      ]
+    }
+  ],
+  "attempted_tasks": 2,
+  "remaining_tasks": 0,
+  "counts": {
+    "no_change": 1,
+    "proposal_ready": 1
+  },
+  "source_unchanged": true,
+  "model_unchanged": true,
+  "runtime_manifest_unchanged": true
+}

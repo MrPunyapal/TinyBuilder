@@ -1,6 +1,6 @@
 # TinyBuilder project status
 
-Dated snapshot: 2026-11-27. Verified remotely at authoring, not live status.
+Dated snapshot: 2026-11-28. Verified remotely at authoring, not live status.
 Before acting, recheck [main](https://github.com/MrPunyapal/TinyBuilder/tree/main),
 [open PRs](https://github.com/MrPunyapal/TinyBuilder/pulls) and exact-head CI.
 Only local Codex can inspect its uncommitted work. Update this page when a
@@ -8,22 +8,30 @@ milestone, owner, blocker or evidence changes materially.
 
 ## Current milestone: Coding Intelligence v1
 
-Continue model-free lab review and seek a separately approved isolated Linux
-evaluator; live qualification is blocked. Then score broader coding tasks using
-exact-text edits and selective lexical retrieval. Use the existing 1.5B
-and research-only 3B weights. Candidate model downloads and training remain
-deferred. Personal Windows provisioning is suspended; no further system-level changes.
-Follow the [contained qualification checkpoint](research/2026-11-27-contained-qualification.md).
+The [normalized retrieval lab candidate](research/2026-11-27-retrieval-intelligence-v2.md)
+reached 12/12 complete tasks in development. The
+[independent confirmation](research/2026-11-28-retrieval-confirmation.md)
+missed the proposed 90% gate with 38/45 complete positive tasks overall and
+20/25 on Laravel. Keep the candidate in the lab. The maintainer owns
+multi-edit infrastructure. The [excerpt alignment confirmation](research/2026-11-28-excerpt-confirmation.md)
+found that neither new selector met the span or documentation gate.
+Identifier alignment stays experimental at 25/28 spans with one
+documentation regression. Keep the existing baseline for comparison.
+Review the
+[memory and runtime reuse plan](research/2026-11-28-inference-memory-review-plan.md)
+before live inference. Semantic qualification still requires a separately
+approved isolated evaluator.
 
 | Workstream | Snapshot and next action |
 | --- | --- |
-| Native 0.1 | Main `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; read-only, not qualified for publication. Earlier Windows developer-host read pass is not clean-host acceptance. |
-| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Retain draft for provenance; candidate superseded by #23 after integration review and explicit approval. |
-| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Retain original research draft; candidate successor #23 replays and extends its work. Verify overlap before supersession. |
+| Native 0.1 | Main `ce28337552933a671a95d1ad30baa07cfe7cc2b7`; the product remains read-only and clean-host acceptance is open. |
+| Patch lab [#18](https://github.com/MrPunyapal/TinyBuilder/pull/18) | Merged through ancestry at `3f78a2971e4acbe58bfdb44055fe4e22b2f3dfb4`. |
+| Coding research [#20](https://github.com/MrPunyapal/TinyBuilder/pull/20) | Closed as superseded. Its evidence remains available through the original PR and the integrated lab. |
 | Deep Research [#21](https://github.com/MrPunyapal/TinyBuilder/pull/21) | Merged at `4be34b7f737e29c1436fcb269dfd10295457740d`. |
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
-| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Review fixes at `48bc76b26b1a48935eec0cdc96740f882d27b9d2`: project-bound patches, legacy host execution disabled, exact container identity and fresh qualification gate. Previous `99c1eec` native deterministic/Python/guidance/security workflows passed; longer workflows cancelled on branch advance. Recheck latest exact-head CI. Live guest unqualified; personal Windows provisioning cancelled. |
+| Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Merged at `ce28337552933a671a95d1ad30baa07cfe7cc2b7`. All seven workflows passed at the reviewed head `e1e68ae894e322641bb431de81c236081d8920cb`. Guest qualification remains open. |
 | Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Merged at `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; candidate dossiers only, no model downloads or training. Historical VM recommendation superseded on the personal Windows host. |
+| Retrieval integration [#26](https://github.com/MrPunyapal/TinyBuilder/pull/26) | Draft. Development evidence and frozen independent confirmation are available for review. |
 
 ## Evidence to read first
 
@@ -86,27 +94,25 @@ Follow the [contained qualification checkpoint](research/2026-11-27-contained-qu
 
 ## Next handoff
 
-Recheck exact-head CI and approve supersession only after review. The original
-PRs remain open; their useful proposal paths, historical evidence and controls
-are retained, while legacy generated-code execution is intentionally disabled.
+Recheck exact-head CI. The integrated lab retains the original proposal paths,
+historical evidence and controls. Legacy generated-code execution is disabled.
 All twelve public corpus tasks have bridge source (87 reference observations):
 eight dependency-free and four real Laravel-dependent. Exact-lock and capability
 preflight is required for the latter. Trusted control CI must pass; live guest
 and private bridges remain separate gates. A separate real-HTTP route
 validation bridge adds nine probes without changing the original PHPUnit
 oracle; its trusted CI must pass. The public source-only campaign prepares
-isolated model-facing source roots and records scope-only proposal readiness;
-it performs no model inference or PHP execution.
-Continue trusted model-free tests and prepare portable evaluation on a separately approved Linux environment.
+isolated model-facing source roots. The separate measurement runner makes
+review-only model calls and records scope-only proposal readiness.
+Continue retrieval-only measurement on additional public fixtures before
+promoting a strategy. Keep proposal readiness separate from correctness.
 Do not provision or modify the owner's personal Windows host; live guest
 qualification remains blocked. Ordinary CI is not an isolation approval.
 Do not execute arbitrary generated PHP on the ordinary host or transfer
 private data without approval. Freeze development evaluation before private
 confirmation; retain exact text plus selective lexical retrieval. Do not
 repeat the completed smoke campaigns, download weights or train without
-evidence and approval. #21 and #24 are merged; #23 remains draft until
-successful exact-head CI and explicit approval, with #18/#20 preserved. Keep native clean-host
-qualification separate. No release, tag or publication authorized.
+evidence and approval. Keep native clean-host qualification separate.
 
 See [Agent guide](AGENT_GUIDE.md) for stable mission and authority boundaries,
 and [knowledge-maintenance](../.agents/skills/tinybuilder-knowledge-maintenance/SKILL.md)

@@ -45,3 +45,27 @@ For the public source-only proposal condition, use
 then inspect after explicitly approved lab proposals. Keep the plan and
 scorer outside every model-facing root. Scope readiness is not a pass;
 never turn it into a semantic score or use it for private fixtures.
+
+For retrieval changes, run `python -m benchmarks.public_retrieval_measure`
+against the pristine public campaign before using either model. Keep the
+target list in the scorer, report missing paths and extra context, and
+preserve the baseline. See the
+[Retrieval v2 ablation](../../../docs/research/2026-11-27-retrieval-intelligence-v2.md).
+
+For confirmation, freeze new source lineages, prompts and evidence
+annotations before scoring. Use `benchmarks.retrieval_confirmation_measure`
+for the published set. Distinguish delivered paths from complete files or
+required spans, and supporting evidence from distractors and unjudged
+files. Report no-evidence abstention separately. After reading results,
+use different development fixtures for tuning and a fresh confirmation
+set for qualification.
+
+For an excerpt-only ablation, compare the same ordered paths, byte caps
+and complete-file flags in every arm. Report labelled span delivery
+separately from surrounding bytes. Keep partial excerpts ineligible for
+editing even when they contain the requested line. Use
+`benchmarks.excerpt_alignment_measure` for the frozen development cases.
+Use `benchmarks.excerpt_confirmation_measure` for the separate frozen
+confirmation. Check full-line byte counts and paired documentation
+regressions. Aggregate recall can improve while individual required
+documentation spans disappear.

@@ -214,6 +214,16 @@ fn parse_completion(response: &Value) -> Result<ModelCompletion> {
 
 impl Runtime {
     pub fn start(root: &Path, model: &Path) -> Result<Self> {
+        Self::start_configured(root, model, None)
+    }
+
+    /// Lab-only context budget. The product entry point still uses `start`.
+    pub fn start_bounded(root: &Path, model: &Path, tokens: u32) -> Result<Self> {
+        ensure!((2048..=8192).contains(&tokens), "Lab context must be between 2048 and 8192 tokens");
+        Self::start_configured(root, model, Some(tokens))
+    }
+
+    fn start_configured(root: &Path, model: &Path, context_tokens: Option<u32>) -> Result<Self> {
         let (exe, revision) = verify_inventory(root)?;
         inference_revision_allowed(&revision)?;
         let model = model_path(model)?;
@@ -224,6 +234,9 @@ impl Runtime {
         let alias: String = format!("tinybuilder-{}", rand::thread_rng().sample_iter(&Alphanumeric).take(24).map(char::from).collect::<String>());
         let dir = exe.parent().context("Missing runtime directory")?;
         let mut command = server_command(&exe, &model, port, &alias, &key);
+        if let Some(tokens) = context_tokens {
+            command.arg("--ctx-size").arg(tokens.to_string());
+        }
         command.current_dir(dir);
         #[cfg(windows)]
         {
