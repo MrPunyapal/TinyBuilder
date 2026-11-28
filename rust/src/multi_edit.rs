@@ -151,10 +151,13 @@ impl<'a> VirtualWorkspace<'a> {
             ensure!(edit_bytes <= MAX_EDIT_BYTES, "Cumulative edit bytes exceeded");
 
             let text = next.get_mut(&edit.path).context("Edit lacks evidence")?;
-            let mut matches = text.char_indices().filter_map(|(index, _)|
-                text[index..].starts_with(&edit.old).then_some(index));
-            let start = matches.next().context("Exact replacement not found")?;
-            ensure!(matches.next().is_none(), "Exact replacement is ambiguous");
+            // Search from the next UTF-8 boundary, not the end of the
+            // match: overlapping occurrences are ambiguous too.
+            let start = text.find(edit.old.as_str()).context("Exact replacement not found")?;
+            let next_boundary = start + text[start..].chars().next()
+                .context("Invalid replacement boundary")?.len_utf8();
+            ensure!(!text[next_boundary..].contains(edit.old.as_str()),
+                "Exact replacement is ambiguous");
             let end = start + edit.old.len();
             let size = text.len() - edit.old.len() + edit.new.len();
             ensure!(size <= MAX_FILE_BYTES, "Virtual file budget exceeded");
@@ -363,6 +366,49 @@ mod tests {
         assert!(w.stage_json(&payload(&[("a.txt", "start", "other")])).is_err());
         assert_eq!(w.virtual_source("a.txt").unwrap(), original);
         assert_eq!(w.edits, 0);
+    }
+
+    #[test]
+    fn cumulative_fragment_bytes_are_enforced_across_batches() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut old = "a".repeat(MAX_FRAGMENT_BYTES);
+        fs::write(dir.path().join("a.txt"), &old).unwrap();
+        let p = Project::new(dir.path()).unwrap();
+        let reads = [p.read("a.txt").unwrap()];
+        let mut w = VirtualWorkspace::new(&p, &reads, &["a.txt".into()]).unwrap();
+        for ch in ["b", "c", "d", "e"] {
+            let new = ch.repeat(MAX_FRAGMENT_BYTES);
+            w.stage_json(&payload(&[("a.txt", &old, &new)])).unwrap();
+            old = new;
+        }
+        assert_eq!(w.edit_bytes, MAX_EDIT_BYTES);
+        let before = w.preview().unwrap().combined_diff;
+        assert!(w.stage_json(&payload(&[("a.txt", &old, "x")])).is_err());
+        assert_eq!(w.preview().unwrap().combined_diff, before);
+        assert_eq!(w.edits, 4);
+    }
+
+    #[test]
+    fn combined_source_budget_applies_to_evidence_and_virtual_growth() {
+        let dir = tempfile::tempdir().unwrap();
+        let p = Project::new(dir.path()).unwrap();
+        let names = ["a.txt", "b.txt", "c.txt", "d.txt", "e.txt"];
+        let large = "z".repeat(MAX_FILE_BYTES);
+        for name in &names[..3] {
+            fs::write(dir.path().join(name), &large).unwrap();
+        }
+        let half = format!("start{}", "z".repeat(MAX_FILE_BYTES / 2 - 5));
+        for name in &names[3..] {
+            fs::write(dir.path().join(name), &half).unwrap();
+        }
+        let reads: Vec<_> = names.iter().map(|name| p.read(name).unwrap()).collect();
+        let mut w = VirtualWorkspace::new(&p, &reads, &["d.txt".into()]).unwrap();
+        assert!(w.stage_json(&payload(&[("d.txt", "start", "longer")])).is_err());
+        assert_eq!(w.virtual_source("d.txt").unwrap(), half);
+        assert_eq!(w.edits, 0);
+        fs::write(dir.path().join("e.txt"), &large).unwrap();
+        let oversized: Vec<_> = names.iter().map(|name| p.read(name).unwrap()).collect();
+        assert!(VirtualWorkspace::new(&p, &oversized, &["d.txt".into()]).is_err());
     }
 
     #[cfg(unix)]

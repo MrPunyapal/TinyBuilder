@@ -46,7 +46,7 @@ Deterministic unit tests cover multi-file and sequential same-file edits,
 unchanged disk bytes, UTF-8/CRLF preservation, all-or-nothing virtual state,
 explicit scope, malformed and duplicate JSON fields, missing/overlapping
 anchors, stale targets and supporting evidence, links, no-op batches and
-resource limits. No generated PHP or real model execution. Existing
+resource limits, including cumulative fragment bytes and combined evidence/virtual state. No generated PHP or real model execution. Existing
 cross-platform Rust workflow tests all targets, including the new module.
 Local compilation unavailable to remote author (no Cargo, GitHub DNS
 unavailable in the execution container); exact-head hosted CI required.
