@@ -51,3 +51,11 @@ against the pristine public campaign before using either model. Keep the
 target list in the scorer, report missing paths and extra context, and
 preserve the baseline. See the
 [Retrieval v2 ablation](../../../docs/research/2026-11-27-retrieval-intelligence-v2.md).
+
+For confirmation, freeze new source lineages, prompts and evidence
+annotations before scoring. Use `benchmarks.retrieval_confirmation_measure`
+for the published set. Distinguish delivered paths from complete files or
+required spans, and supporting evidence from distractors and unjudged
+files. Report no-evidence abstention separately. After reading results,
+use different development fixtures for tuning and a fresh confirmation
+set for qualification.

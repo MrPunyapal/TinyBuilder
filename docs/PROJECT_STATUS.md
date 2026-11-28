@@ -1,6 +1,6 @@
 # TinyBuilder project status
 
-Dated snapshot: 2026-11-27. Verified remotely at authoring, not live status.
+Dated snapshot: 2026-11-28. Verified remotely at authoring, not live status.
 Before acting, recheck [main](https://github.com/MrPunyapal/TinyBuilder/tree/main),
 [open PRs](https://github.com/MrPunyapal/TinyBuilder/pulls) and exact-head CI.
 Only local Codex can inspect its uncommitted work. Update this page when a
@@ -8,14 +8,15 @@ milestone, owner, blocker or evidence changes materially.
 
 ## Current milestone: Coding Intelligence v1
 
-Evaluate the [normalized retrieval lab candidate](research/2026-11-27-retrieval-intelligence-v2.md)
-on independent public repositories. Rust verified 12/12 task recall and
-14/14 required files on the current public source-only fixtures, with
-58.3% edit-target precision. The 1.5B review-only follow-up produced one
-proposal ready for approval across two multi-file tasks. Available RAM
-blocked the 3B follow-up. Semantic qualification still requires a separately
-approved isolated Linux evaluator. Candidate downloads, training, and personal
-Windows provisioning remain deferred.
+The [normalized retrieval lab candidate](research/2026-11-27-retrieval-intelligence-v2.md)
+reached 12/12 complete tasks in development. The
+[independent confirmation](research/2026-11-28-retrieval-confirmation.md)
+missed the proposed 90% gate with 38/45 complete positive tasks overall and
+20/25 on Laravel. Keep the candidate in the lab. The maintainer owns
+multi-edit infrastructure. Review the
+[memory and runtime reuse plan](research/2026-11-28-inference-memory-review-plan.md)
+before live inference. Semantic qualification still requires a separately
+approved isolated evaluator.
 
 | Workstream | Snapshot and next action |
 | --- | --- |
@@ -26,6 +27,7 @@ Windows provisioning remain deferred.
 | Agent onboarding [#22](https://github.com/MrPunyapal/TinyBuilder/pull/22) | Merged into main at `9d4343141bab4d710f7d16450105673c994d5c51`. Guidance CI passed. ChatGPT project settings and fresh local Codex automatic skill discovery remain unverified. |
 | Integrated lab [#23](https://github.com/MrPunyapal/TinyBuilder/pull/23) | Merged at `ce28337552933a671a95d1ad30baa07cfe7cc2b7`. All seven workflows passed at the reviewed head `e1e68ae894e322641bb431de81c236081d8920cb`. Guest qualification remains open. |
 | Model specialization [#24](https://github.com/MrPunyapal/TinyBuilder/pull/24) | Merged at `ff05f4ef232ebe161f69cbc8cf5dbe49b703fafd`; candidate dossiers only, no model downloads or training. Historical VM recommendation superseded on the personal Windows host. |
+| Retrieval integration [#26](https://github.com/MrPunyapal/TinyBuilder/pull/26) | Draft. Development evidence and frozen independent confirmation are available for review. |
 
 ## Evidence to read first
 
